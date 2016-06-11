@@ -5,6 +5,18 @@
 
 using namespace Rcpp;
 
+// getIMMDate
+Rcpp::Date getIMMDate(int mon, int year);
+RcppExport SEXP Rcppsbmod_getIMMDate(SEXP monSEXP, SEXP yearSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type mon(monSEXP);
+    Rcpp::traits::input_parameter< int >::type year(yearSEXP);
+    __result = Rcpp::wrap(getIMMDate(mon, year));
+    return __result;
+END_RCPP
+}
 // rcpp_hello
 List rcpp_hello();
 RcppExport SEXP Rcppsbmod_rcpp_hello() {
@@ -12,6 +24,39 @@ BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     __result = Rcpp::wrap(rcpp_hello());
+    return __result;
+END_RCPP
+}
+// IC
+NumericVector IC(NumericVector x);
+RcppExport SEXP Rcppsbmod_IC(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    __result = Rcpp::wrap(IC(x));
+    return __result;
+END_RCPP
+}
+// ode_fun
+NumericVector ode_fun(NumericVector x);
+RcppExport SEXP Rcppsbmod_ode_fun(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    __result = Rcpp::wrap(ode_fun(x));
+    return __result;
+END_RCPP
+}
+// timesTwo
+NumericVector timesTwo(NumericVector x);
+RcppExport SEXP Rcppsbmod_timesTwo(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    __result = Rcpp::wrap(timesTwo(x));
     return __result;
 END_RCPP
 }
