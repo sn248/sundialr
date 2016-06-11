@@ -24,22 +24,18 @@ N_Vector y = NULL;
 N_Vector abstol = NULL;
 
 realtype reltol, t, tout;
-void *cvode_mem; // void pointer, can point to any data type -  will have to be cast before use
+void *cvode_mem = NULL;     // void pointer, can point to any data type -  will have to be cast before use
 int flag, iout;
 
-// cvode_mem = NULL;
-
-// Create serial vector of length NEQ for I.C. and abstol
 y = N_VNew_Serial(NEQ);
-
-if (check_flag((void *) y, "N_VNew_Serial", 0)) {
-  return (1);
-}
-
-abstol = N_VNew_Serial(NEQ);
-if (check_flag((void *) abstol, "N_VNew_Serial", 0)) {
-  return (1);
-}
+// if (check_flag((void *) y, "N_VNew_Serial", 0)) {
+//   return (1);
+// }
+//
+// abstol = N_VNew_Serial(NEQ);
+// if (check_flag((void *) abstol, "N_VNew_Serial", 0)) {
+//   return (1);
+// }
 
 // [[Rcpp::export]]
 NumericVector IC(NumericVector x) {
