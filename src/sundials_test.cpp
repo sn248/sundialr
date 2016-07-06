@@ -16,12 +16,11 @@ using namespace Rcpp;
 void InitialConditions (NumericVector x){
 
   N_Vector y = NULL;
-  // y = N_VNew_Serial(3);
+  y = N_VNew_Serial(3);
 
-  // NV_Ith_S(y,0) = 1;
-  // NV_Ith_S(y,1) = 2;
-  // NV_Ith_S(y,2) = 3;
-
+  NV_Ith_S(y,0) = 1;
+  NV_Ith_S(y,1) = 2;
+  NV_Ith_S(y,2) = 3;
 
 }
 
