@@ -15,6 +15,16 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// InitialConditions
+void InitialConditions(NumericVector x);
+RcppExport SEXP Rcppsbmod_InitialConditions(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    InitialConditions(x);
+    return R_NilValue;
+END_RCPP
+}
 // timesTwo
 Rcpp::NumericVector timesTwo(Rcpp::NumericVector x);
 RcppExport SEXP Rcppsbmod_timesTwo(SEXP xSEXP) {

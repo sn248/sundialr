@@ -5,6 +5,10 @@ rcpp_hello <- function() {
     .Call('Rcppsbmod_rcpp_hello', PACKAGE = 'Rcppsbmod')
 }
 
+InitialConditions <- function(x) {
+    invisible(.Call('Rcppsbmod_InitialConditions', PACKAGE = 'Rcppsbmod', x))
+}
+
 timesTwo <- function(x) {
     .Call('Rcppsbmod_timesTwo', PACKAGE = 'Rcppsbmod', x)
 }
