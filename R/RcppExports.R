@@ -5,10 +5,6 @@ rcpp_hello <- function() {
     .Call('Rcppsbmod_rcpp_hello', PACKAGE = 'Rcppsbmod')
 }
 
-MassBalances <- function(t, y, ydot) {
-    .Call('Rcppsbmod_MassBalances', PACKAGE = 'Rcppsbmod', t, y, ydot)
-}
-
 Rcppcvode <- function(t, IC, ydot, reltolerance, abstolerance) {
     .Call('Rcppsbmod_Rcppcvode', PACKAGE = 'Rcppsbmod', t, IC, ydot, reltolerance, abstolerance)
 }

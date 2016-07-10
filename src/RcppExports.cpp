@@ -15,21 +15,8 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// MassBalances
-NumericVector MassBalances(double t, NumericVector y, NumericVector ydot);
-RcppExport SEXP Rcppsbmod_MassBalances(SEXP tSEXP, SEXP ySEXP, SEXP ydotSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< double >::type t(tSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type ydot(ydotSEXP);
-    __result = Rcpp::wrap(MassBalances(t, y, ydot));
-    return __result;
-END_RCPP
-}
 // Rcppcvode
-int Rcppcvode(double t, NumericVector IC, NumericVector ydot, double reltolerance, double abstolerance);
+int Rcppcvode(double t, NumericVector IC, NumericVector ydot, double reltolerance, NumericVector abstolerance);
 RcppExport SEXP Rcppsbmod_Rcppcvode(SEXP tSEXP, SEXP ICSEXP, SEXP ydotSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
@@ -38,7 +25,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type IC(ICSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type ydot(ydotSEXP);
     Rcpp::traits::input_parameter< double >::type reltolerance(reltoleranceSEXP);
-    Rcpp::traits::input_parameter< double >::type abstolerance(abstoleranceSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type abstolerance(abstoleranceSEXP);
     __result = Rcpp::wrap(Rcppcvode(t, IC, ydot, reltolerance, abstolerance));
     return __result;
 END_RCPP
