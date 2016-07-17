@@ -30,14 +30,18 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// timesTwo
-Rcpp::NumericVector timesTwo(Rcpp::NumericVector x);
-RcppExport SEXP Rcppsbmod_timesTwo(SEXP xSEXP) {
+// Rcppcvode_str
+int Rcppcvode_str(double t, NumericVector IC, SEXP xpsexp, double reltolerance, NumericVector abstolerance);
+RcppExport SEXP Rcppsbmod_Rcppcvode_str(SEXP tSEXP, SEXP ICSEXP, SEXP xpsexpSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type x(xSEXP);
-    __result = Rcpp::wrap(timesTwo(x));
+    Rcpp::traits::input_parameter< double >::type t(tSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type IC(ICSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type xpsexp(xpsexpSEXP);
+    Rcpp::traits::input_parameter< double >::type reltolerance(reltoleranceSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type abstolerance(abstoleranceSEXP);
+    __result = Rcpp::wrap(Rcppcvode_str(t, IC, xpsexp, reltolerance, abstolerance));
     return __result;
 END_RCPP
 }

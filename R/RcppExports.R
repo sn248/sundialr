@@ -9,7 +9,7 @@ Rcppcvode <- function(t, IC, ydot, reltolerance, abstolerance) {
     .Call('Rcppsbmod_Rcppcvode', PACKAGE = 'Rcppsbmod', t, IC, ydot, reltolerance, abstolerance)
 }
 
-timesTwo <- function(x) {
-    .Call('Rcppsbmod_timesTwo', PACKAGE = 'Rcppsbmod', x)
+Rcppcvode_str <- function(t, IC, xpsexp, reltolerance, abstolerance) {
+    .Call('Rcppsbmod_Rcppcvode_str', PACKAGE = 'Rcppsbmod', t, IC, xpsexp, reltolerance, abstolerance)
 }
 

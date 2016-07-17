@@ -13,8 +13,8 @@
 using namespace Rcpp;
 
 // #define T0    RCONST(0.0)             // initial time
-#define T1    RCONST(1.0)             // first output time
-#define TMULT RCONST(1.0)             // output time factor
+#define T1    RCONST(0.4)             // first output time
+#define TMULT RCONST(10.0)             // output time factor
 #define NOUT  12
 
 // Check function return value...
@@ -76,6 +76,8 @@ static int MassBalances (realtype t, N_Vector y, N_Vector ydot, void *user_data)
 
 }
 
+
+
 // [[Rcpp::export]]
 int Rcppcvode (double t, NumericVector IC, NumericVector ydot, double reltolerance, NumericVector abstolerance){
 
@@ -105,7 +107,8 @@ int Rcppcvode (double t, NumericVector IC, NumericVector ydot, double reltoleran
   void *cvode_mem;
   cvode_mem = NULL;
 
-  // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula and the use of a Newton iteration
+  // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
+  // and the use of a Newton iteration
   cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
   if (check_flag((void *) cvode_mem, "CVodeCreate", 0)) {
     return (1);
@@ -128,7 +131,8 @@ int Rcppcvode (double t, NumericVector IC, NumericVector ydot, double reltoleran
     return (1);
   }
 
-  // Call CVodeInit to initialize the integrator memory and specify the user's right hand side function in y'=f(t,y), the inital time T0, and the initial dependent variable vector y.
+  // Call CVodeInit to initialize the integrator memory and specify the user's right hand side function in y'=f(t,y),
+  // the inital time T0, and the initial dependent variable vector y.
   iout = 0;
   while (1) {
 
@@ -137,9 +141,9 @@ int Rcppcvode (double t, NumericVector IC, NumericVector ydot, double reltoleran
     if (check_flag(&flag, "CVode", 1)) { break; } // Something went wrong in solving it!
     if (flag == CV_SUCCESS) {
 
-      Rcout << t <<  '\t' << NV_Ith_S(y0,0) << '\t' << NV_Ith_S(y0,1) << '\t' << NV_Ith_S(y0,2) << '\n';
+      Rcout << t <<  "\t" << NV_Ith_S(y0,0) << "\t" << NV_Ith_S(y0,1) << "\t" << NV_Ith_S(y0,2) << '\n';
       iout++;
-      tout += TMULT;
+      tout *= TMULT;
     }
 
     if (iout > NOUT) { break; }
@@ -148,8 +152,91 @@ int Rcppcvode (double t, NumericVector IC, NumericVector ydot, double reltoleran
   return(0); // everything went fine
 }
 
-// [[Rcpp::export]]
-Rcpp::NumericVector timesTwo(Rcpp::NumericVector x) {
-  return x * 2;
-}
+// static int MassBalances (realtype t, N_Vector y, N_Vector ydot, void *user_data);
+typedef int (*funcPtr)(realtype t, N_Vector y, N_Vector ydot, void *user_data);
 
+
+// XPtr<funcPtr> putFunPtrInXPtr(std::string fstr) {
+//
+//   // return(XPtr<funcPtr>(new funcPtr(&MassBalances)));
+//   return(XPtr<funcPtr>(new funcPtr(&MassBalances)));
+//
+// }
+
+// [[Rcpp::export]]
+int Rcppcvode_str (double t, NumericVector IC, SEXP xpsexp, double reltolerance, NumericVector abstolerance){
+
+  int flag;
+  realtype reltol = reltolerance;
+  N_Vector abstol, y0;
+  realtype T0 = RCONST(0.0);
+  realtype tout = T1;
+  realtype iout;
+
+
+  // Set the vector absolute tolerance
+  abstol = N_VNew_Serial(3);
+  for (int i = 0; i<3; i++){
+    NV_Ith_S(abstol, i) = abstolerance[i];
+  }
+
+  // Set the initial conditions
+  y0 = N_VNew_Serial(3);
+  // for (int i = 0; i<3; i++){
+  NV_Ith_S(y0, 0) = 1.0; //IC[i];
+  NV_Ith_S(y0, 1) = 0.0;
+  NV_Ith_S(y0, 2) = 0.0;
+  // }
+
+  // void pointer, can point to any data type -  will have to be cast before use
+  void *cvode_mem;
+  cvode_mem = NULL;
+
+  // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
+  // and the use of a Newton iteration
+  cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
+  if (check_flag((void *) cvode_mem, "CVodeCreate", 0)) {
+    return (1);
+  }
+
+  XPtr<funcPtr> xpfun(xpsexp);
+  funcPtr fun = *xpfun;
+
+  // cast void
+  flag = CVodeInit(cvode_mem, fun, T0, y0);
+  if (check_flag(&flag, "CVodeInit", 1)) {
+    return (1);
+  }
+
+  // Call CVodeSVtolerances to specify the scalar relative tolerance and vector absolute tol
+  flag = CVodeSVtolerances(cvode_mem, reltol, abstol);
+  if (check_flag(&flag, "CVodeSVtolerances", 1)) {
+    return (1);
+  }
+
+  // Call CVDense to specify the CVDENSE dense linear solver
+  flag = CVDense(cvode_mem, 3);
+  if (check_flag(&flag, "CVDense", 1)) {
+    return (1);
+  }
+
+  // Call CVodeInit to initialize the integrator memory and specify the user's right hand side function in y'=f(t,y),
+  // the inital time T0, and the initial dependent variable vector y.
+  iout = 0;
+  while (1) {
+
+    flag = CVode(cvode_mem, tout, y0, &t, CV_NORMAL);
+
+    if (check_flag(&flag, "CVode", 1)) { break; } // Something went wrong in solving it!
+    if (flag == CV_SUCCESS) {
+
+      Rcout << t <<  "\t" << NV_Ith_S(y0,0) << "\t" << NV_Ith_S(y0,1) << "\t" << NV_Ith_S(y0,2) << '\n';
+      iout++;
+      tout *= TMULT;
+    }
+
+    if (iout > NOUT) { break; }
+  }
+
+  return(0); // everything went fine
+}
