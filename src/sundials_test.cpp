@@ -152,16 +152,8 @@ int Rcppcvode (double t, NumericVector IC, NumericVector ydot, double reltoleran
   return(0); // everything went fine
 }
 
-// static int MassBalances (realtype t, N_Vector y, N_Vector ydot, void *user_data);
+
 typedef int (*funcPtr)(realtype t, N_Vector y, N_Vector ydot, void *user_data);
-
-
-// XPtr<funcPtr> putFunPtrInXPtr(std::string fstr) {
-//
-//   // return(XPtr<funcPtr>(new funcPtr(&MassBalances)));
-//   return(XPtr<funcPtr>(new funcPtr(&MassBalances)));
-//
-// }
 
 // [[Rcpp::export]]
 int Rcppcvode_str (double t, NumericVector IC, SEXP xpsexp, double reltolerance, NumericVector abstolerance){
@@ -202,7 +194,6 @@ int Rcppcvode_str (double t, NumericVector IC, SEXP xpsexp, double reltolerance,
   XPtr<funcPtr> xpfun(xpsexp);
   funcPtr fun = *xpfun;
 
-  // cast void
   flag = CVodeInit(cvode_mem, fun, T0, y0);
   if (check_flag(&flag, "CVodeInit", 1)) {
     return (1);
