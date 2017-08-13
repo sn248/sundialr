@@ -13,8 +13,8 @@
 using namespace Rcpp;
 
 // #define T0    RCONST(0.0)             // initial time
-#define T1    RCONST(0.4)             // first output time
-#define TMULT RCONST(10.0)             // output time factor
+#define T1    RCONST(0.4)                // first output time
+#define TMULT RCONST(10.0)               // output time factor
 #define NOUT  12
 
 // Check function return value...
