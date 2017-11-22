@@ -5,51 +5,24 @@
 
 using namespace Rcpp;
 
-// rcpp_hello
-List rcpp_hello();
-RcppExport SEXP Rcppsbmod_rcpp_hello() {
+// cvode
+int cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp, double reltolerance, NumericVector abstolerance);
+RcppExport SEXP _Rcppsbmod_cvode(SEXP time_vecSEXP, SEXP ICSEXP, SEXP xpsexpSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(rcpp_hello());
-    return rcpp_result_gen;
-END_RCPP
-}
-// Rcppcvode
-int Rcppcvode(double t, NumericVector IC, NumericVector ydot, double reltolerance, NumericVector abstolerance);
-RcppExport SEXP Rcppsbmod_Rcppcvode(SEXP tSEXP, SEXP ICSEXP, SEXP ydotSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type t(tSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type IC(ICSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type ydot(ydotSEXP);
-    Rcpp::traits::input_parameter< double >::type reltolerance(reltoleranceSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type abstolerance(abstoleranceSEXP);
-    rcpp_result_gen = Rcpp::wrap(Rcppcvode(t, IC, ydot, reltolerance, abstolerance));
-    return rcpp_result_gen;
-END_RCPP
-}
-// Rcppcvode_str
-int Rcppcvode_str(double t, NumericVector IC, SEXP xpsexp, double reltolerance, NumericVector abstolerance);
-RcppExport SEXP Rcppsbmod_Rcppcvode_str(SEXP tSEXP, SEXP ICSEXP, SEXP xpsexpSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type t(tSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type time_vec(time_vecSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type IC(ICSEXP);
     Rcpp::traits::input_parameter< SEXP >::type xpsexp(xpsexpSEXP);
     Rcpp::traits::input_parameter< double >::type reltolerance(reltoleranceSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type abstolerance(abstoleranceSEXP);
-    rcpp_result_gen = Rcpp::wrap(Rcppcvode_str(t, IC, xpsexp, reltolerance, abstolerance));
+    rcpp_result_gen = Rcpp::wrap(cvode(time_vec, IC, xpsexp, reltolerance, abstolerance));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"Rcppsbmod_rcpp_hello", (DL_FUNC) &Rcppsbmod_rcpp_hello, 0},
-    {"Rcppsbmod_Rcppcvode", (DL_FUNC) &Rcppsbmod_Rcppcvode, 5},
-    {"Rcppsbmod_Rcppcvode_str", (DL_FUNC) &Rcppsbmod_Rcppcvode_str, 5},
+    {"_Rcppsbmod_cvode", (DL_FUNC) &_Rcppsbmod_cvode, 5},
     {NULL, NULL, 0}
 };
 
