@@ -30,7 +30,7 @@ typedef int (*funcPtr)(realtype time, N_Vector y, N_Vector ydot, void *user_data
 //'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
 // [[Rcpp::export]]
 int cvode (NumericVector time_vec, NumericVector IC, SEXP xpsexp,
-               double reltolerance, NumericVector abstolerance){
+           double reltolerance, NumericVector abstolerance){
 
   int flag;
   realtype reltol = reltolerance;
