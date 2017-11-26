@@ -29,7 +29,7 @@ typedef int (*funcPtr)(realtype time, N_Vector y, N_Vector ydot, void *user_data
 //'@param reltolerance Relative Tolerance (a scalar)
 //'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
 // [[Rcpp::export]]
-int cvode (NumericVector time_vec, NumericVector IC, SEXP xpsexp,
+NumericMatrix cvode (NumericVector time_vec, NumericVector IC, SEXP xpsexp,
            double reltolerance, NumericVector abstolerance){
 
   int flag;
@@ -44,17 +44,33 @@ int cvode (NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   double time;
   int NOUT = time_vec.length() - 1;
 
-  // Set the vector absolute tolerance
-  abstol = N_VNew_Serial(abstolerance.length());
-  for (int i = 0; i<abstolerance.length(); i++){
-    NV_Ith_S(abstol, i) = abstolerance[i];
+  // Set the vector absolute tolerance -----------------------------------------
+  // abstol must be same length as IC
+  abstol = N_VNew_Serial(IC.length());
+  if(abstolerance.length() == 1){
+    // if a scalar is provided - use it to make a vector with same values
+    for (int i = 0; i<IC.length(); i++){
+      NV_Ith_S(abstol, i) = abstolerance[0];
+    }
   }
+  else if (abstolerance.length() == IC.length()){
 
-  // Set the initial conditions
+    for (int i = 0; i<abstolerance.length(); i++){
+      NV_Ith_S(abstol, i) = abstolerance[i];
+    }
+  }
+  else if(abstolerance.length() != 1 || abstolerance.length() != IC.length()){
+
+    stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
+  }
+  //----------------------------------------------------------------------------
+
+  // Set the initial conditions-------------------------------------------------
   y0 = N_VNew_Serial(IC.length());
   for (int i = 0; i<IC.length(); i++){
     NV_Ith_S(y0, i) = IC[i];
   }
+  //----------------------------------------------------------------------------
 
   // void pointer, can point to any data type -  will have to be cast before use
   void *cvode_mem;
@@ -87,7 +103,18 @@ int cvode (NumericVector time_vec, NumericVector IC, SEXP xpsexp,
     return (1);
   }
 
-  // Call CVodeInit to initialize the integrator memory and specify the user's right hand side function in y'=f(time,y),
+  // NumericMatrix to store results - filled with 0.0
+  // First row for initial conditions, First column is for time
+  NumericMatrix soln = NumericMatrix(time_vec.length()+1, IC.length() + 1);
+
+  // fill the first row of soln matrix with Initial Conditions
+  soln(0,0) = time_vec[0];
+  for(int i = 0; i<IC.length(); i++){
+    soln(0,i+1) = IC[i];
+  }
+
+  // Call CVodeInit to initialize the integrator memory and specify the
+  // user's right hand side function in y'=f(time,y),
   // the inital time T0, and the initial dependent variable vector y.
   iout = 0;
   while (1) {
@@ -97,13 +124,25 @@ int cvode (NumericVector time_vec, NumericVector IC, SEXP xpsexp,
     if (check_flag(&flag, "CVode", 1)) { break; } // Something went wrong in solving it!
     if (flag == CV_SUCCESS) {
 
+      // store results in soln matrix
+      soln(iout+1, 0) = time;           // first column is for time
+      for (int i = 0; i<IC.length(); i++){
+        soln(iout+1, i+1) = NV_Ith_S(y0, i);
+      }
+
       Rcout << time <<  "\t" << NV_Ith_S(y0,0) << "\t" << NV_Ith_S(y0,1) << "\t" << NV_Ith_S(y0,2) << '\n';
+
       iout++;
-      tout += TMULT; // tout *= TMULT orginally
+
+      if (iout < NOUT){
+        tout += time_vec[iout+1] - time_vec[iout];   //TMULT; // tout *= TMULT orginally
+        }
+
     }
 
     if (iout > NOUT) { break; }
   }
 
-  return(0); // everything went fine
+  return soln;
+  // return(0); // everything went fine
 }

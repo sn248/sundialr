@@ -6,7 +6,7 @@
 using namespace Rcpp;
 
 // cvode
-int cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp, double reltolerance, NumericVector abstolerance);
+NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp, double reltolerance, NumericVector abstolerance);
 RcppExport SEXP _Rcppsbmod_cvode(SEXP time_vecSEXP, SEXP ICSEXP, SEXP xpsexpSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
