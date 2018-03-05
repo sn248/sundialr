@@ -1,7 +1,7 @@
 /*
  * -----------------------------------------------------------------
- * $Revision: 4075 $
- * $Date: 2014-04-24 10:46:58 -0700 (Thu, 24 Apr 2014) $
+ * $Revision$
+ * $Date$
  * ----------------------------------------------------------------- 
  * Programmer(s): Radu Serban and Aaron Collier @ LLNL                               
  * -----------------------------------------------------------------
@@ -31,6 +31,13 @@
  * -----------------------------------------------------------------
  */
 
+N_Vector_ID N_VGetVectorID(N_Vector w)
+{
+  N_Vector_ID id;
+  id = w->ops->nvgetvectorid(w);
+  return(id);
+}
+
 N_Vector N_VClone(N_Vector w)
 {
   N_Vector v = NULL;
@@ -52,7 +59,7 @@ void N_VDestroy(N_Vector v)
   return;
 }
 
-void N_VSpace(N_Vector v, long int *lrw, long int *liw)
+void N_VSpace(N_Vector v, sunindextype *lrw, sunindextype *liw)
 {
   v->ops->nvspace(v, lrw, liw);
   return;
