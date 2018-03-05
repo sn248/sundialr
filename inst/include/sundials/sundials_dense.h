@@ -1,7 +1,7 @@
 /*
  * -----------------------------------------------------------------
- * $Revision: 4378 $
- * $Date: 2015-02-19 10:55:14 -0800 (Thu, 19 Feb 2015) $
+ * $Revision$
+ * $Date$
  * -----------------------------------------------------------------
  * Programmer: Radu Serban @ LLNL
  * -----------------------------------------------------------------
@@ -57,7 +57,7 @@ extern "C" {
  *     (including its diagonal) contains U and the strictly lower
  *     trapezoidal part of A contains the multipliers, I-L.
  *
- * For square matrices (M=N), L is unit lower triangular.
+ * For square matrices (M = N), L is unit lower triangular.
  *
  * DenseGETRF returns 0 if successful. Otherwise it encountered
  * a zero diagonal element during the factorization. In this case
@@ -74,15 +74,15 @@ extern "C" {
  * -----------------------------------------------------------------
  * DenseGETRF and DenseGETRS are simply wrappers around denseGETRF
  * and denseGETRS, respectively, which perform all the work by
- * directly accessing the data in the DlsMat A (i.e. the field cols)
+ * directly accessing the data in the DlsMat A (i.e. in A->cols).
  * -----------------------------------------------------------------
  */
 
-SUNDIALS_EXPORT long int DenseGETRF(DlsMat A, long int *p);
-SUNDIALS_EXPORT void DenseGETRS(DlsMat A, long int *p, realtype *b);
+SUNDIALS_EXPORT sunindextype DenseGETRF(DlsMat A, sunindextype *p);
+SUNDIALS_EXPORT void DenseGETRS(DlsMat A, sunindextype *p, realtype *b);
 
-SUNDIALS_EXPORT long int denseGETRF(realtype **a, long int m, long int n, long int *p);
-SUNDIALS_EXPORT void denseGETRS(realtype **a, long int n, long int *p, realtype *b);
+SUNDIALS_EXPORT sunindextype denseGETRF(realtype **a, sunindextype m, sunindextype n, sunindextype *p);
+SUNDIALS_EXPORT void denseGETRS(realtype **a, sunindextype n, sunindextype *p, realtype *b);
 
 /*
  * -----------------------------------------------------------------
@@ -102,11 +102,11 @@ SUNDIALS_EXPORT void denseGETRS(realtype **a, long int n, long int *p, realtype 
  * -----------------------------------------------------------------
  */
 
-SUNDIALS_EXPORT long int DensePOTRF(DlsMat A);
+SUNDIALS_EXPORT sunindextype DensePOTRF(DlsMat A);
 SUNDIALS_EXPORT void DensePOTRS(DlsMat A, realtype *b);
 
-SUNDIALS_EXPORT long int densePOTRF(realtype **a, long int m);
-SUNDIALS_EXPORT void densePOTRS(realtype **a, long int m, realtype *b);
+SUNDIALS_EXPORT sunindextype densePOTRF(realtype **a, sunindextype m);
+SUNDIALS_EXPORT void densePOTRS(realtype **a, sunindextype m, realtype *b);
 
 /*
  * -----------------------------------------------------------------
@@ -123,7 +123,7 @@ SUNDIALS_EXPORT void densePOTRS(realtype **a, long int m, realtype *b);
  *        Q = H(1) H(2) . . . H(k)
  *
  * as returned by DenseGEQRF. Q is an M-by-N matrix, v is a vector
- * of length N and w is a vector of length M (with M>=N).
+ * of length N and w is a vector of length M (with M >= N).
  *
  * DenseORMQR requires a temporary work vector wrk of length M.
  *
@@ -138,8 +138,9 @@ SUNDIALS_EXPORT int DenseGEQRF(DlsMat A, realtype *beta, realtype *wrk);
 SUNDIALS_EXPORT int DenseORMQR(DlsMat A, realtype *beta, realtype *vn, realtype *vm, 
 			       realtype *wrk);
 
-SUNDIALS_EXPORT int denseGEQRF(realtype **a, long int m, long int n, realtype *beta, realtype *v);
-SUNDIALS_EXPORT int denseORMQR(realtype **a, long int m, long int n, realtype *beta,
+SUNDIALS_EXPORT int denseGEQRF(realtype **a, sunindextype m, sunindextype n, realtype *beta,
+                               realtype *wrk);
+SUNDIALS_EXPORT int denseORMQR(realtype **a, sunindextype m, sunindextype n, realtype *beta,
 			       realtype *v, realtype *w, realtype *wrk);
 
 /*
@@ -150,12 +151,12 @@ SUNDIALS_EXPORT int denseORMQR(realtype **a, long int m, long int n, realtype *b
  * M-by-N matrix B.
  * 
  * DenseCopy is a wrapper around denseCopy which accesses the data
- * in the DlsMat A and B (i.e. the fields cols)
+ * in the DlsMat A and DlsMat B (i.e. the fields cols)
  * -----------------------------------------------------------------
  */
 
 SUNDIALS_EXPORT void DenseCopy(DlsMat A, DlsMat B);
-SUNDIALS_EXPORT void denseCopy(realtype **a, realtype **b, long int m, long int n);
+SUNDIALS_EXPORT void denseCopy(realtype **a, realtype **b, sunindextype m, sunindextype n);
 
 /*
  * -----------------------------------------------------------------
@@ -165,13 +166,12 @@ SUNDIALS_EXPORT void denseCopy(realtype **a, realtype **b, long int m, long int 
  * constant c and stores the result back in A.
  *
  * DenseScale is a wrapper around denseScale which performs the actual
- * scaling by accessing the data in the DlsMat A (i.e. the field
- * cols).
+ * scaling by accessing the data in the DlsMat A (i.e. in A->cols).
  * -----------------------------------------------------------------
  */
 
 SUNDIALS_EXPORT void DenseScale(realtype c, DlsMat A);
-SUNDIALS_EXPORT void denseScale(realtype c, realtype **a, long int m, long int n);
+SUNDIALS_EXPORT void denseScale(realtype c, realtype **a, sunindextype m, sunindextype n);
 
 
 /*
@@ -179,11 +179,11 @@ SUNDIALS_EXPORT void denseScale(realtype c, realtype **a, long int m, long int n
  * Function: denseAddIdentity
  * -----------------------------------------------------------------
  * denseAddIdentity adds the identity matrix to the n-by-n matrix
- * stored in the realtype** arrays.
+ * stored in a realtype** array.
  * -----------------------------------------------------------------
  */
 
-SUNDIALS_EXPORT void denseAddIdentity(realtype **a, long int n);
+SUNDIALS_EXPORT void denseAddIdentity(realtype **a, sunindextype n);
 
 
 /*
@@ -201,7 +201,7 @@ SUNDIALS_EXPORT void denseAddIdentity(realtype **a, long int n);
  */
 
 SUNDIALS_EXPORT void DenseMatvec(DlsMat A, realtype *x, realtype *y);
-SUNDIALS_EXPORT void denseMatvec(realtype **a, realtype *x, realtype *y, long int m, long int n);
+SUNDIALS_EXPORT void denseMatvec(realtype **a, realtype *x, realtype *y, sunindextype m, sunindextype n);
 
 
 #ifdef __cplusplus

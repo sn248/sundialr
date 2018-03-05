@@ -1,6 +1,2 @@
-PKG_CPPFLAGS= -I../inst/include/ -I src/sundials
+CXX=clang++
 PKG_LIBS= $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) /usr/local/lib/libsundials_cvode.a /usr/local/lib/libsundials_nvecserial.a
-
-
-
-

@@ -1,8 +1,4 @@
-/*
- * -----------------------------------------------------------------
- * $Revision: 4378 $
- * $Date: 2015-02-19 10:55:14 -0800 (Thu, 19 Feb 2015) $
- * -----------------------------------------------------------------
+/* -----------------------------------------------------------------
  * Programmer: Radu Serban @ LLNL
  * -----------------------------------------------------------------
  * LLNS Copyright Start
@@ -18,8 +14,7 @@
  * This header file contains definitions and declarations for use by
  * generic direct linear solvers for Ax = b. It defines types for
  * dense and banded matrices and corresponding accessor macros.
- * -----------------------------------------------------------------
- */
+ * -----------------------------------------------------------------*/
 
 #ifndef _SUNDIALS_DIRECT_H
 #define _SUNDIALS_DIRECT_H
@@ -72,7 +67,7 @@ extern "C" {
  *    cols  - array of pointers. cols[j] points to the first element 
  *            of the j-th column of the matrix in the array data.
  *
- * The elements of a dense matrix are stored columnwise (i.e columns 
+ * The elements of a dense matrix are stored columnwise (i.e. columns 
  * are stored one on top of the other in memory). 
  * If A is of type DlsMat, then the (i,j)th element of A (with 
  * 0 <= i < M and 0 <= j < N) is given by (A->data)[j*n+i]. 
@@ -118,14 +113,14 @@ extern "C" {
 
 typedef struct _DlsMat {
   int type;
-  long int M;
-  long int N;
-  long int ldim;
-  long int mu;
-  long int ml;
-  long int s_mu;
+  sunindextype M;
+  sunindextype N;
+  sunindextype ldim;
+  sunindextype mu;
+  sunindextype ml;
+  sunindextype s_mu;
   realtype *data;
-  long int ldata;
+  sunindextype ldata;
   realtype **cols;
 } *DlsMat;
 
@@ -142,9 +137,9 @@ typedef struct _DlsMat {
  *
  * DENSE_COL(A,j) references the jth column of the M-by-N dense
  * matrix A, 0 <= j < N. The type of the expression DENSE_COL(A,j) 
- * is (realtype *). After the assignment in the usage above, col_j 
- * may be treated as an array indexed from 0 to M-1. The (i,j)-th 
- * element of A is thus referenced by col_j[i].
+ * is (realtype *). After the assignment col_j = DENSE_COL(A,j),
+ * col_j may be treated as an array indexed from 0 to M-1.
+ * The (i,j)-th element of A is thus referenced by col_j[i].
  *
  * DENSE_ELEM(A,i,j) references the (i,j)th element of the dense 
  * M-by-N matrix A, 0 <= i < M ; 0 <= j < N.
@@ -199,7 +194,7 @@ typedef struct _DlsMat {
  * -----------------------------------------------------------------
  */
 
-SUNDIALS_EXPORT DlsMat NewDenseMat(long int M, long int N);
+SUNDIALS_EXPORT DlsMat NewDenseMat(sunindextype M, sunindextype N);
 
 /*
  * -----------------------------------------------------------------
@@ -221,7 +216,7 @@ SUNDIALS_EXPORT DlsMat NewDenseMat(long int M, long int N);
  * -----------------------------------------------------------------
  */
 
-SUNDIALS_EXPORT DlsMat NewBandMat(long int N, long int mu, long int ml, long int smu);
+SUNDIALS_EXPORT DlsMat NewBandMat(sunindextype N, sunindextype mu, sunindextype ml, sunindextype smu);
 
 /*
  * -----------------------------------------------------------------
@@ -247,15 +242,15 @@ SUNDIALS_EXPORT int *NewIntArray(int N);
 
 /*
  * -----------------------------------------------------------------
- * Function: NewLintArray
+ * Function: NewIndexArray
  * -----------------------------------------------------------------
- * NewLintArray allocates memory an array of N long int's and returns
- * the pointer to the memory it allocates. If the request for
- * memory storage cannot be satisfied, it returns NULL.
+ * NewIndexArray allocates memory an array of N sunindextype's and
+ * returns the pointer to the memory it allocates. If the request
+ * for memory storage cannot be satisfied, it returns NULL.
  * -----------------------------------------------------------------
  */
 
-SUNDIALS_EXPORT long int *NewLintArray(long int N);
+SUNDIALS_EXPORT sunindextype *NewIndexArray(sunindextype N);
 
 /*
  * -----------------------------------------------------------------
@@ -267,13 +262,13 @@ SUNDIALS_EXPORT long int *NewLintArray(long int N);
  * -----------------------------------------------------------------
  */
 
-SUNDIALS_EXPORT realtype *NewRealArray(long int N);
+SUNDIALS_EXPORT realtype *NewRealArray(sunindextype N);
 
 /*
  * -----------------------------------------------------------------
  * Function: DestroyArray
  * -----------------------------------------------------------------
- * DestroyArray frees memory allocated by NewIntArray, NewLintArray,
+ * DestroyArray frees memory allocated by NewIntArray, NewIndexArray,
  * or NewRealArray.
  * -----------------------------------------------------------------
  */
@@ -284,7 +279,7 @@ SUNDIALS_EXPORT void DestroyArray(void *p);
  * -----------------------------------------------------------------
  * Function : AddIdentity
  * -----------------------------------------------------------------
- * AddIdentity adds 1.0 to the main diagonal (A_ii, i=1,2,...,N-1) of
+ * AddIdentity adds 1.0 to the main diagonal (A_ii, i=0,1,...,N-1) of
  * the M-by-N matrix A (M>= N) and stores the result back in A.
  * AddIdentity is typically used with square matrices.
  * AddIdentity does not check for M >= N and therefore a segmentation
@@ -309,14 +304,14 @@ SUNDIALS_EXPORT void SetToZero(DlsMat A);
  * Functions: PrintMat
  * -----------------------------------------------------------------
  * This function prints the M-by-N (dense or band) matrix A to
- * standard output as it would normally appear on paper.
+ * outfile as it would normally appear on paper.
  * It is intended as debugging tools with small values of M and N.
  * The elements are printed using the %g/%lg/%Lg option. 
  * A blank line is printed before and after the matrix.
  * -----------------------------------------------------------------
  */
 
-SUNDIALS_EXPORT void PrintMat(DlsMat A);
+SUNDIALS_EXPORT void PrintMat(DlsMat A, FILE *outfile);
 
 
 /*
@@ -325,12 +320,12 @@ SUNDIALS_EXPORT void PrintMat(DlsMat A);
  * ==================================================================
  */
 
-SUNDIALS_EXPORT realtype **newDenseMat(long int m, long int n);
-SUNDIALS_EXPORT realtype **newBandMat(long int n, long int smu, long int ml);
+SUNDIALS_EXPORT realtype **newDenseMat(sunindextype m, sunindextype n);
+SUNDIALS_EXPORT realtype **newBandMat(sunindextype n, sunindextype smu, sunindextype ml);
 SUNDIALS_EXPORT void destroyMat(realtype **a);
 SUNDIALS_EXPORT int *newIntArray(int n);
-SUNDIALS_EXPORT long int *newLintArray(long int n);
-SUNDIALS_EXPORT realtype *newRealArray(long int m);
+SUNDIALS_EXPORT sunindextype *newIndexArray(sunindextype n);
+SUNDIALS_EXPORT realtype *newRealArray(sunindextype m);
 SUNDIALS_EXPORT void destroyArray(void *v);
 
 

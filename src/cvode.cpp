@@ -3,9 +3,11 @@
 
 #include <cvode/cvode.h>               /* prototypes for CVODE fcts., consts. */
 #include <nvector/nvector_serial.h>    /* serial N_Vector types, fcts., macros */
-#include <cvode/cvode_dense.h>         /* prototype for CVDense */
-#include <sundials/sundials_dense.h>   /* definitions DlsMat DENSE_ELEM */
+#include <cvode/cvode_direct.h>         /* prototype for CVDense */
+// #include <sundials/sundials_dense.h>   /* definitions DlsMat DENSE_ELEM */
 #include <sundials/sundials_types.h>   /* definition of type realtype */
+#include <sunmatrix/sunmatrix_dense.h>
+#include <sunlinsol/sunlinsol_dense.h>
 
 #include "checkflag.h"
 
@@ -35,11 +37,17 @@ NumericMatrix cvode (NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   int flag;
   realtype reltol = reltolerance;
   N_Vector abstol, y0;
+  y0 = abstol = NULL;
+
   // realtype T0 = RCONST(0.0);
   // realtype tout = T1;
   realtype T0 = RCONST(time_vec[0]); //RCONST(0.0);  // Initial Time
   realtype tout = RCONST(time_vec[1]); // T1;        // First output time
   realtype iout;
+  SUNMatrix SM;
+  SUNLinearSolver LS;
+  SM = NULL;
+  LS = NULL;
 
   double time;
   int NOUT = time_vec.length() - 1;
@@ -97,11 +105,26 @@ NumericMatrix cvode (NumericVector time_vec, NumericVector IC, SEXP xpsexp,
     return (1);
   }
 
+  //------not required now for the new version ---------------------------------
   // Call CVDense to specify the CVDENSE dense linear solver
-  flag = CVDense(cvode_mem, 3);
-  if (check_flag(&flag, "CVDense", 1)) {
-    return (1);
-  }
+  // flag = CVDense(cvode_mem, 3);
+  // if (check_flag(&flag, "CVDense", 1)) {
+  //   return (1);
+  // }
+  //----------------------------------------------------------------------------
+
+  //--required in the new version ----------------------------------------------
+  // Create dense SUNMatrix for use in linear solves
+  SM = SUNDenseMatrix(IC.length(), IC.length());
+  if(check_flag((void *)SM, "SUNDenseMatrix", 0)) return (1);
+
+  // Create dense SUNLinearSolver object for use by CVode
+  LS = SUNDenseLinearSolver(y0, SM);
+  if(check_flag((void *)LS, "SUNDenseLinearSolver", 0)) return(1);
+
+  // Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode
+  flag = CVDlsSetLinearSolver(cvode_mem, LS, SM);
+  if(check_flag(&flag, "CVDlsSetLinearSolver", 1)) return(1);
 
   // NumericMatrix to store results - filled with 0.0
   // First row for initial conditions, First column is for time
@@ -130,7 +153,7 @@ NumericMatrix cvode (NumericVector time_vec, NumericVector IC, SEXP xpsexp,
         soln(iout+1, i+1) = NV_Ith_S(y0, i);
       }
 
-      Rcout << time <<  "\t" << NV_Ith_S(y0,0) << "\t" << NV_Ith_S(y0,1) << "\t" << NV_Ith_S(y0,2) << '\n';
+      // Rcout << time <<  "\t" << NV_Ith_S(y0,0) << "\t" << NV_Ith_S(y0,1) << "\t" << NV_Ith_S(y0,2) << '\n';
 
       iout++;
 
@@ -142,6 +165,19 @@ NumericMatrix cvode (NumericVector time_vec, NumericVector IC, SEXP xpsexp,
 
     if (iout > NOUT) { break; }
   }
+
+  // free the vectors
+  N_VDestroy(y0);
+  N_VDestroy(abstol);
+
+  // free integrator memory
+  CVodeFree(&cvode_mem);
+
+  // free the linear solver memory
+  SUNLinSolFree(LS);
+
+  // Free the matrix memory
+  SUNMatDestroy(SM);
 
   return soln;
   // return(0); // everything went fine

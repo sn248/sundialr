@@ -1,7 +1,7 @@
 /*
  * -----------------------------------------------------------------
- * $Revision: 4378 $
- * $Date: 2015-02-19 10:55:14 -0800 (Thu, 19 Feb 2015) $
+ * $Revision$
+ * $Date$
  * ----------------------------------------------------------------- 
  * Programmer(s): Scott D. Cohen, Alan C. Hindmarsh, Radu Serban
  *                and Dan Shumaker @ LLNL
@@ -303,12 +303,12 @@ SUNDIALS_EXPORT void *CVodeCreate(int lmm, int iter);
  *                         | [10]
  *                         |
  * CVodeSetStabLimDet      | flag to turn on/off stability limit
- *                         | detection (TRUE = on, FALSE = off).
+ *                         | detection (SUNTRUE = on, SUNFALSE = off).
  *                         | When BDF is used and order is 3 or
  *                         | greater, CVsldet is called to detect
  *                         | stability limit.  If limit is detected,
  *                         | the order is reduced.
- *                         | [FALSE]
+ *                         | [SUNFALSE]
  *                         |
  * CVodeSetInitStep        | initial step size.
  *                         | [estimated by CVODE]

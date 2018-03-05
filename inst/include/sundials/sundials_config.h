@@ -1,21 +1,20 @@
-/*
- * -----------------------------------------------------------------
- * $Revision: 4500 $
- * $Date: 2015-05-21 16:29:49 -0700 (Thu, 21 May 2015) $
- * ----------------------------------------------------------------- 
+/* ----------------------------------------------------------------- 
  * Programmer(s): Aaron Collier and Radu Serban @ LLNL
  * -----------------------------------------------------------------
  * Copyright (c) 2005, The Regents of the University of California.
  * Produced at the Lawrence Livermore National Laboratory.
  * All rights reserved.
  * For details, see the LICENSE file.
- *------------------------------------------------------------------
+ * -----------------------------------------------------------------
  * SUNDIALS configuration header file
- *------------------------------------------------------------------
- */
+ * -----------------------------------------------------------------*/
 
-/* Define SUNDIALS version number */
-#define SUNDIALS_PACKAGE_VERSION "2.6.2"
+/* Define SUNDIALS version numbers */
+#define SUNDIALS_VERSION "3.1.0"
+#define SUNDIALS_VERSION_MAJOR 3
+#define SUNDIALS_VERSION_MINOR 1
+#define SUNDIALS_VERSION_PATCH 0
+#define SUNDIALS_VERSION_LABEL ""
 
 /* FCMIX: Define Fortran name-mangling macro for C identifiers.
  * Depending on the inferred scheme, one of the following six
@@ -27,7 +26,7 @@
  *     #define SUNDIALS_F77_FUNC(name,NAME) NAME ## _
  *     #define SUNDIALS_F77_FUNC(name,NAME) NAME ## __
  */
-
+#define SUNDIALS_F77_FUNC(name,NAME) name ## _
 
 /* FCMIX: Define Fortran name-mangling macro for C identifiers
  *        which contain underscores.
@@ -42,6 +41,14 @@
  *     #define SUNDIALS_EXTENDED_PRECISION 1
  */
 #define SUNDIALS_DOUBLE_PRECISION 1
+
+/* Define type of vector indices in SUNDIALS 'sunindextype'. 
+ * Depending on user choice of index type, one of the following 
+ * two macros will be defined:
+ *     #define SUNDIALS_INT64_T 1
+ *     #define SUNDIALS_INT32_T 1
+ */
+#define SUNDIALS_INT64_T 1
 
 /* Use generic math functions 
  * If it was decided that generic math functions can be used, then
@@ -65,6 +72,7 @@
  *     #define SUNDIALS_SUPERLUMT 
  */
 /* #undef SUNDIALS_SUPERLUMT */
+/* #undef SUNDIALS_SUPERLUMT_THREAD_TYPE */
 
 /* KLU available
  * If working libraries for KLU support were found, then
