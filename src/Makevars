@@ -1,2 +1,5 @@
 CXX=clang++
-PKG_LIBS= $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) /usr/local/lib/libsundials_cvode.a /usr/local/lib/libsundials_nvecserial.a
+
+PKG_CPPFLAGS =-I../inst/include -I./src/sundials
+PKG_LDFLAGS =/usr/local/lib/
+PKG_LIBS =$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(PKG_LDFLAGS)libsundials_cvode.a $(PKG_LDFLAGS)libsundials_nvecserial.a

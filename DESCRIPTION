@@ -1,11 +1,11 @@
 Package: Rcppsbmod
 Type: Package
-Title: Provides a wrapper around SUNDIALS library
+Title: Provides a Wrapper Around CVODE from Sundials Library
 Version: 0.1.0
 Author: Satya
 Maintainer: Satya <sn248@cornell.edu>
 Description: Provides a way to call the CVODE function in SUNDIALS C ODE solving library.
-License: What license is it under?
+License: MIT + file LICENSE
 LazyData: TRUE
 Imports:
     Rcpp (>= 0.12.5)
