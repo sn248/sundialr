@@ -1,2 +1,73 @@
-PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-PKG_CPPFLAGS =  -I../inst/include/ -I src/sundials
+$(info The compilation root directory is:$(ROOT_DIR))
+$(info The name of the shared library to be created is: $(SHLIB))
+CXX=clang++
+PKG_CPPFLAGS= -I../inst/include/ -I./inst/
+PKG_LIBS= $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -L../inst/ ../inst/libsundials_all.a
+LIBS=-L./ -L../inst/
+
+SOURCES= cvode.cpp RcppExports.cpp
+OBJECTS= $(SOURCES:.cpp=.o)
+
+SOURCES_CVODE= ./sundials/cvode/cvode.c ./sundials/cvode/cvode_bandpre.c \
+./sundials/cvode/cvode_bandpre_impl.h ./sundials/cvode/cvode_bbdpre.c \
+./sundials/cvode/cvode_bbdpre_impl.h ./sundials/cvode/cvode_diag.c \
+./sundials/cvode/cvode_diag_impl.h ./sundials/cvode/cvode_direct.c \
+./sundials/cvode/cvode_direct_impl.h ./sundials/cvode/cvode_impl.h \
+./sundials/cvode/cvode_io.c \
+./sundials/cvode/cvode_spils.c ./sundials/cvode/cvode_spils_impl.h \
+../inst/include/cvode/cvode.h \
+../inst/include/cvode/cvode_bandpre.h ../inst/include/cvode/cvode_bbdpre.h \
+../inst/include/cvode/cvode_diag.h ../inst/include/cvode/cvode_direct.h \
+../inst/include/cvode/cvode_impl.h ../inst/include/cvode/cvode_spils.h
+
+
+SOURCES_NVECSERIAL= ./sundials/nvec_ser/fnvector_serial.c ./sundials/nvec_ser/fnvector_serial.h \
+./sundials/nvec_ser/nvector_serial.c ../inst/include/nvector/nvector_serial.h
+
+SOURCES_SUNDIALS= ./sundials/sundials/sundials_band.c ./sundials/sundials/sundials_dense.c \
+./sundials/sundials/sundials_direct.c ./sundials/sundials/sundials_iterative.c \
+./sundials/sundials/sundials_linearsolver.c \
+./sundials/sundials/sundials_math.c ./sundials/sundials/sundials_matrix.c \
+./sundials/sundials/sundials_nvector.c ./sundials/sundials/sundials_pcg.c \
+./sundials/sundials/sundials_sparse.c ./sundials/sundials/sundials_spbcgs.c \
+./sundials/sundials/sundials_spfgmr.c ./sundials/sundials/sundials_spgmr.c \
+./sundials/sundials/sundials_sptfqmr.c ./sundials/sundials/sundials_version.c \
+../inst/include/sundials/sundials_band.h ../inst/include/sundials/sundials_config.h \
+../inst/include/sundials/sundials_dense.h ../inst/include/sundials/sundials_direct.h \
+../inst/include/sundials/sundials_fconfig.h ../inst/include/sundials/sundials_fnvector.h \
+../inst/include/sundials/sundials_iterative.h ../inst/include/sundials/sundials_linearsolver.h \
+../inst/include/sundials/sundials_math.h ../inst/include/sundials/sundials_matrix.h \
+../inst/include/sundials/sundials_nvector.h ../inst/include/sundials/sundials_pcg.h \
+../inst/include/sundials/sundials_sparse.h ../inst/include/sundials/sundials_spbcgs.h \
+../inst/include/sundials/sundials_spfgmr.h ../inst/include/sundials/sundials_spgmr.h \
+../inst/include/sundials/sundials_sptfqmr.h ../inst/include/sundials/sundials_types.h \
+../inst/include/sundials/sundials_version.h
+
+
+SOURCES_SUNLINSOL_DENSE = ./sundials/sunlinsol_dense/fsunlinsol_dense.c \
+./sundials/sunlinsol_dense/fsunlinsol_dense.h ./sundials/sunlinsol_dense/sunlinsol_dense.c \
+../inst/include/sunlinsol/sunlinsol_band.h ../inst/include/sunlinsol/sunlinsol_dense.h \
+../inst/include/sunlinsol/sunlinsol_pcg.h ../inst/include/sunlinsol/sunlinsol_spbcgs.h \
+../inst/include/sunlinsol/sunlinsol_spfgmr.h ../inst/include/sunlinsol/sunlinsol_spgmr.h \
+../inst/include/sunlinsol/sunlinsol_sptfqmr.h \
+
+
+SOURCES_SUNMAT = ./sundials/sunmat_dense/fsunmatrix_dense.c \
+./sundials/sunmat_dense/fsunmatrix_dense.h ./sundials/sunmat_dense/sunmatrix_dense.c \
+./sundials/sunmat_band/fsunmatrix_band.c ./sundials/sunmat_band/fsunmatrix_band.h \
+./sundials/sunmat_band/sunmatrix_band.c \
+../inst/include/sunmatrix/sunmatrix_band.h ../inst/include/sunmatrix/sunmatrix_dense.h \
+../inst/include/sunmatrix/sunmatrix_sparse.h
+
+SOURCES_SUNDIALS_ALL= $(SOURCES_CVODE) $(SOURCES_NVECSERIAL) $(SOURCES_SUNDIALS) \
+$(SOURCES_SUNLINSOL_DENSE) $(SOURCES_SUNMAT)
+
+OBJECTS_SUNDIALS_ALL = $(SOURCES_SUNDIALS_ALL:.c=.o)
+
+all: ($SHLIB) ../inst/libsundials_all.a
+
+($SHLIB): $(OBJECTS) ../inst/libsundials_all.a
+
+../inst/libsundials_all.a: $(OBJECTS_SUNDIALS_ALL)
+	ar -rvs ../inst/libsundials_all.a $(OBJECTS_SUNDIALS_ALL)
+
