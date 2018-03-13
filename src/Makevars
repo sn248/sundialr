@@ -1,6 +1,6 @@
 $(info The compilation root directory is:$(ROOT_DIR))
 $(info The name of the shared library to be created is: $(SHLIB))
-CXX=clang++
+CXX=g++
 PKG_CPPFLAGS= -I../inst/include/ -I./inst/
 PKG_LIBS= $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -L../inst/ ../inst/libsundials_all.a
 LIBS=-L./ -L../inst/
