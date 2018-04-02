@@ -7,5 +7,5 @@ src/*.so
 src/*.dll
 
 *.o
-
 *.a
+inst/doc

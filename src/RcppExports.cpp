@@ -20,9 +20,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cvode_test
+NumericMatrix cvode_test(NumericVector time_vec, NumericVector IC, SEXP xpsexp, double reltolerance, NumericVector abstolerance);
+RcppExport SEXP _Rcppsbmod_cvode_test(SEXP time_vecSEXP, SEXP ICSEXP, SEXP xpsexpSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type time_vec(time_vecSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type IC(ICSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type xpsexp(xpsexpSEXP);
+    Rcpp::traits::input_parameter< double >::type reltolerance(reltoleranceSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type abstolerance(abstoleranceSEXP);
+    rcpp_result_gen = Rcpp::wrap(cvode_test(time_vec, IC, xpsexp, reltolerance, abstolerance));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_Rcppsbmod_cvode", (DL_FUNC) &_Rcppsbmod_cvode, 5},
+    {"_Rcppsbmod_cvode_test", (DL_FUNC) &_Rcppsbmod_cvode_test, 5},
     {NULL, NULL, 0}
 };
 

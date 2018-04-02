@@ -13,3 +13,15 @@ cvode <- function(time_vec, IC, xpsexp, reltolerance, abstolerance) {
     .Call('_Rcppsbmod_cvode', PACKAGE = 'Rcppsbmod', time_vec, IC, xpsexp, reltolerance, abstolerance)
 }
 
+#'cvode
+#'
+#' CVODE solver to solve stiff ODEs
+#'@param time_vec time vector
+#'@param IC Initial Conditions
+#'@param xpsexp External pointer to RHS function
+#'@param reltolerance Relative Tolerance (a scalar)
+#'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
+cvode_test <- function(time_vec, IC, xpsexp, reltolerance, abstolerance) {
+    .Call('_Rcppsbmod_cvode_test', PACKAGE = 'Rcppsbmod', time_vec, IC, xpsexp, reltolerance, abstolerance)
+}
+
