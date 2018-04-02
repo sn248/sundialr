@@ -1,0 +1,24 @@
+---
+title: "Rcppsbmod - A wrapper around CVODE solver from SUNDIALS"
+author: "Satya"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Rcppsbmod - A wrapper around CVODE solver from SUNDIALS}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+Ordinary Differential Equations (ODEs) describe the rate of change of dependent variables with respect to a single independent variable and are used in many fields to model behavior of the system. There are many good C libraries available to solve (i.e., integrate systems of ODEs) and [SUNDIALS](https://computation.llnl.gov/projects/sundials/sundials-software) available from the Lawrence Livermore National Laboratory is a C library for solving non-stiff and stiff systems of ODEs.
+
+
+> "He who gives up [code] safety for [code] speed deserves neither."
+([via](https://twitter.com/hadleywickham/status/504368538874703872))
