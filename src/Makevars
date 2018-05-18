@@ -64,9 +64,15 @@ $(SOURCES_SUNLINSOL_DENSE) $(SOURCES_SUNMAT)
 
 OBJECTS_SUNDIALS_ALL = $(SOURCES_SUNDIALS_ALL:.c=.o)
 
-all: ($SHLIB) ../inst/libsundials_all.a
+all: ($SHLIB)
 
 ($SHLIB): $(OBJECTS) ../inst/libsundials_all.a
 
 ../inst/libsundials_all.a: $(OBJECTS_SUNDIALS_ALL)
-	ar -rvs ../inst/libsundials_all.a $(OBJECTS_SUNDIALS_ALL)
+	$(AR) -crvs ../inst/libsundials_all.a $(OBJECTS_SUNDIALS_ALL)
+
+clean:
+	echo "cleaning .."
+	(rm -f ./sundials/cvode/*.o; rm -f ./sundials/nvec_ser/*.o; rm -f ./sundials/sun*/*.o;)
+	(rm -f *.o *.a)
+	(rm -f ../inst/*.a)

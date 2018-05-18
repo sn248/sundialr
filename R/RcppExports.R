@@ -10,10 +10,10 @@
 #'@param reltolerance Relative Tolerance (a scalar)
 #'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
 cvode <- function(time_vec, IC, xpsexp, reltolerance, abstolerance) {
-    .Call('_Rcppsbmod_cvode', PACKAGE = 'Rcppsbmod', time_vec, IC, xpsexp, reltolerance, abstolerance)
+    .Call('_sundialr_cvode', PACKAGE = 'sundialr', time_vec, IC, xpsexp, reltolerance, abstolerance)
 }
 
-#'cvode
+#'cvode_test
 #'
 #' CVODE solver to solve stiff ODEs
 #'@param time_vec time vector
@@ -22,6 +22,6 @@ cvode <- function(time_vec, IC, xpsexp, reltolerance, abstolerance) {
 #'@param reltolerance Relative Tolerance (a scalar)
 #'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
 cvode_test <- function(time_vec, IC, xpsexp, reltolerance, abstolerance) {
-    .Call('_Rcppsbmod_cvode_test', PACKAGE = 'Rcppsbmod', time_vec, IC, xpsexp, reltolerance, abstolerance)
+    .Call('_sundialr_cvode_test', PACKAGE = 'sundialr', time_vec, IC, xpsexp, reltolerance, abstolerance)
 }
 

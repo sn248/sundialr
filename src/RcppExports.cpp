@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // cvode
 NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp, double reltolerance, NumericVector abstolerance);
-RcppExport SEXP _Rcppsbmod_cvode(SEXP time_vecSEXP, SEXP ICSEXP, SEXP xpsexpSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
+RcppExport SEXP _sundialr_cvode(SEXP time_vecSEXP, SEXP ICSEXP, SEXP xpsexpSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -22,7 +22,7 @@ END_RCPP
 }
 // cvode_test
 NumericMatrix cvode_test(NumericVector time_vec, NumericVector IC, SEXP xpsexp, double reltolerance, NumericVector abstolerance);
-RcppExport SEXP _Rcppsbmod_cvode_test(SEXP time_vecSEXP, SEXP ICSEXP, SEXP xpsexpSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
+RcppExport SEXP _sundialr_cvode_test(SEXP time_vecSEXP, SEXP ICSEXP, SEXP xpsexpSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -37,12 +37,12 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_Rcppsbmod_cvode", (DL_FUNC) &_Rcppsbmod_cvode, 5},
-    {"_Rcppsbmod_cvode_test", (DL_FUNC) &_Rcppsbmod_cvode_test, 5},
+    {"_sundialr_cvode", (DL_FUNC) &_sundialr_cvode, 5},
+    {"_sundialr_cvode_test", (DL_FUNC) &_sundialr_cvode_test, 5},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_Rcppsbmod(DllInfo *dll) {
+RcppExport void R_init_sundialr(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }
