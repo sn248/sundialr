@@ -20,7 +20,22 @@ using namespace Rcpp;
 // #define NOUT  12
 
 //------------------------------------------------------------------------------
+struct sexp_global {
+  SEXP sexp_g;
+};
+
+// struct sexp_global my_sexp_g = {R_NilValue};
+// struct sexp_global *my_sexp = &my_sexp_g;
+
 typedef int (*funcPtr)(realtype time, N_Vector y, N_Vector ydot, void *user_data);
+typedef NumericVector (*funcPtr_test) (double t, NumericVector y, NumericVector ydot);
+
+struct rhs_data{
+  SEXP rhs_eqn;
+};
+
+struct rhs_data my_rhs = {R_NilValue}; // sets rhs_eqn to NULL
+struct rhs_data *my_rhs_ptr = &my_rhs;
 //------------------------------------------------------------------------------
 
 // function with the definition required
@@ -198,9 +213,9 @@ NumericMatrix cvode (NumericVector time_vec, NumericVector IC, SEXP xpsexp,
 
 
 // cvode - test ----------------------------------------------------------------
-typedef int (*funcPtr_test)(double time, NumericVector y, NumericVector ydot);
+// typedef int (*funcPtr_test)(double time, NumericVector y, NumericVector ydot);
 
-SEXP sexp_g;  // declare a global SEXP
+// SEXP sexp_g = R_NilValue;  // declare a global SEXP
 
 // XPtr<funcPtr_test> xpfun(sexp_g);
 // funcPtr_test fun_test = *xpfun;
@@ -216,8 +231,12 @@ int fun_test1(realtype t, N_Vector y, N_Vector ydot, void* user_data){
      y1[i] = NV_Ith_S(y,i);
    }
 
+  // cast void pointer to struct
+  struct rhs_data *my_rhs_ptr2 = (struct rhs_data*)user_data;
+  SEXP xpsexp = (*my_rhs_ptr2).rhs_eqn;
+
   // use function pointer to get the derivatives
-  XPtr<funcPtr_test> xpfun(sexp_g);
+  XPtr<funcPtr_test> xpfun(xpsexp);
   funcPtr_test fun_test = *xpfun;
 
   NumericVector ydot1(y1.length());
@@ -233,7 +252,49 @@ int fun_test1(realtype t, N_Vector y, N_Vector ydot, void* user_data){
 
   return (0);
 }
-//'cvode
+
+int fun_test2(realtype t, N_Vector y, N_Vector ydot, void* user_data){
+
+  // convert y to NumericVector y1
+  int y_len = NV_LENGTH_S(y);
+
+  NumericVector y1(y_len);    // filled with zeros
+  for (int i = 0; i < y_len; i++){
+    y1[i] = NV_Ith_S(y,i);
+  }
+
+  // convert ydot to NumericVector ydot1
+  int ydot_len = NV_LENGTH_S(ydot);
+
+  NumericVector ydot1(ydot_len);    // filled with zeros
+  for (int i = 0; i < ydot_len; i++){
+    ydot1[i] = NV_Ith_S(ydot,i);
+  }
+
+  // cast void pointer to struct
+  struct rhs_data *my_rhs_ptr2 = (struct rhs_data*)user_data;
+  SEXP xpsexp = (*my_rhs_ptr2).rhs_eqn;
+
+  // use function pointer to get the derivatives
+  XPtr<funcPtr_test> xpfun(xpsexp);
+  funcPtr_test fun = *xpfun;
+
+
+  ydot1 = fun(t, y1, ydot1);
+
+  // convert NumericVector ydot1 to N_Vector ydot
+  // N_Vector ydot; ydot = NULL;
+  // ydot = N_VNew_Serial(ydot1.length());
+  for (int i = 0; i<ydot1.length(); i++){
+    NV_Ith_S(ydot, i) = ydot1[i];
+  }
+
+
+  // return ydot1;
+  return(0);
+}
+
+//'cvode_test
 //'
 //' CVODE solver to solve stiff ODEs
 //'@param time_vec time vector
@@ -315,8 +376,18 @@ NumericMatrix cvode_test (NumericVector time_vec, NumericVector IC,
   //   NV_Ith_S(ydot1, i) = ydot[i];
   // }
 
-  sexp_g = xpsexp;  // assign to glocal sexp
-  flag = CVodeInit(cvode_mem, fun_test1, T0, y0);
+  // (*my_sexp).sexp_g = xpsexp;  // assign to glocal sexp
+
+  (*my_rhs_ptr).rhs_eqn = xpsexp;
+
+  void* my_rhs_ptr1 = (void*)&my_rhs;
+
+  flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs);
+  if (check_flag(&flag, "CVodeSetUserData", 1)) {
+    return (1);
+  }
+
+  flag = CVodeInit(cvode_mem, fun_test2, T0, y0);
 
   // flag = CVodeInit(cvode_mem, fun, T0, y0);
   if (check_flag(&flag, "CVodeInit", 1)) {
@@ -352,7 +423,8 @@ NumericMatrix cvode_test (NumericVector time_vec, NumericVector IC,
 
   // NumericMatrix to store results - filled with 0.0
   // First row for initial conditions, First column is for time
-  NumericMatrix soln = NumericMatrix(time_vec.length()+1, IC.length() + 1);
+  // ASSUMING input time vector (time_vec) has the first element as 0
+  NumericMatrix soln = NumericMatrix(time_vec.length(), IC.length() + 1);
 
   // fill the first row of soln matrix with Initial Conditions
   soln(0,0) = time_vec[0];
@@ -443,6 +515,37 @@ int check_flag(void *flagvalue, const char *funcname, int opt)
   return (0); // so returns 0 if everything is okay
 
 }
+
+
+//------------------------------------------------------------------------------
+
+// // [[Rcpp::export]]
+// NumericVector test_sexp(double t, NumericVector y, NumericVector ydot, SEXP xpsexp){
+//
+//   // convert NumericVector to N_Vector
+//   // Set the initial conditions-------------------------------------------------
+//   N_Vector y0; y0 = NULL;
+//   y0 = N_VNew_Serial(y.length());
+//   for (int i = 0; i<y.length(); i++){
+//     NV_Ith_S(y0, i) = y[i];
+//   }
+//
+//   N_Vector ydot0; ydot0 = NULL;
+//   ydot0 = N_VNew_Serial(ydot.length());
+//   for (int i = 0; i<ydot.length(); i++){
+//     NV_Ith_S(ydot0, i) = ydot[i];
+//   }
+//
+//   (*my_rhs_ptr).rhs_eqn = xpsexp;
+//
+//   // XPtr<funcPtr_test> xpfun(xpsexp);
+//   // funcPtr_test fun = *xpfun;
+//   //
+//   // return fun(t, y, ydot);
+//
+//   return fun_test2(t, y0, ydot0, (void*)&my_rhs);
+//
+// }
 
 
 

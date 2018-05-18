@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{cvode_test}
 \alias{cvode_test}
-\title{cvode}
+\title{cvode_test}
 \usage{
 cvode_test(time_vec, IC, xpsexp, reltolerance, abstolerance)
 }

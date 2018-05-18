@@ -1,10 +1,10 @@
-Package: Rcppsbmod
+Package: sundialr
 Type: Package
-Title: Provides a Wrapper Around CVODE from Sundials Library
+Title: Ordinary Differential Equation Solvers (ODE) from Sundials C Library in R
 Version: 0.1.0
-Author: Satya
-Maintainer: Satya <sn248@cornell.edu>
-Description: Provides a way to call the CVODE function in SUNDIALS C ODE solving library.
+Author: Satyaprakash Nayak
+Maintainer: Satyaprakash Nayak <sn248@cornell.edu>
+Description: Provides a way to call the functions in SUNDIALS C ODE solving library (developed by Lawrence Livermore National Laboratory) in R. Currently ODE solver, CVODE, and routine to perform sensitivity analysis, CVODES, from the library can be accessed.
 License: MIT + file LICENSE
 LazyData: TRUE
 Imports:

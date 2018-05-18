@@ -1,10 +1,10 @@
 ---
-title: "Rcppsbmod - A wrapper around CVODE solver from SUNDIALS"
-author: "Satya"
+title: "sundialr - A wrapper around SUNDIALS ODE solving library"
+author: "Satyaprakash Nayak"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Rcppsbmod - A wrapper around CVODE solver from SUNDIALS}
+  %\VignetteIndexEntry{sundialr - A wrapper around CVODE solver from SUNDIALS}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
