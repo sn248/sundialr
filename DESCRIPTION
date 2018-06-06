@@ -1,11 +1,29 @@
 Package: sundialr
 Type: Package
-Title: Ordinary Differential Equation Solvers (ODE) from Sundials C Library in R
+Title: Ordinary Differential Equation Solvers (ODE) from `SUNDIALS` C Library
 Version: 0.1.0
-Author: Satyaprakash Nayak
+Author@R: c(
+    person("Satyaprakash", "Nayak", "", "sn248@cornell.edu", c("aut", "cre")),
+    person("Scott D", "Cohen", "", "", c("ctb")),
+    person("Alan C", "Hindmarsh", "", "", c("ctb")),
+    person("Radu", "Serban", "", "", c("ctb")),
+    person("Dan", "Shumaker", "", "", c("ctb")),
+    person("Daniel R", "Reynolds", "", "", c("ctb")),
+    person("Aaron", "Collier", "", "", c("ctb")),
+    person("David", "Gardner", "", "", c("ctb")),
+    person("Carol", "Woodward", "", "", c("ctb")),
+    person("Slaven", "Peles", "", "", c("ctb")),
+    person("Peter", "Brown", "", "", c("ctb")),
+    person("Hilari C", "Tiedman", "", "", c("ctb")),
+    person("Ting", "Yan", "", "", c("ctb")),
+    person("Lawrence Livermore National Security", role =  c("cph")),
+    person("Southern Methodist University", role =  c("cph"))
+    )
 Maintainer: Satyaprakash Nayak <sn248@cornell.edu>
-Description: Provides a way to call the functions in SUNDIALS C ODE solving library (developed by Lawrence Livermore National Laboratory) in R. Currently ODE solver, CVODE, and routine to perform sensitivity analysis, CVODES, from the library can be accessed.
-License: MIT + file LICENSE
+URL: https://github.com/sn248/sundialr
+BugReports: https://github.com/sn248/sundialr/issues
+Description: Provides a way to call the functions in `SUNDIALS` C ODE solving library (<https://computation.llnl.gov/projects/sundials>). Currently ODE solver, `CVODE` from the library can be accessed. The package requires ODE to be written using `Rcpp` and does not require the libraries to be installed on the system.
+License: GPL (>=2)
 LazyData: TRUE
 Imports:
     Rcpp (>= 0.12.5)
