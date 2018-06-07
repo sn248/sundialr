@@ -2,7 +2,7 @@ Package: sundialr
 Type: Package
 Title: An Interface to `SUNDIALS` Ordinary Differential Equation (ODE) Solvers 
 Version: 0.1.0
-Author@R: c(
+Authors@R: c(
     person("Satyaprakash", "Nayak", "", "sn248@cornell.edu", c("aut", "cre")),
     person("Scott D", "Cohen", "", "", c("ctb")),
     person("Alan C", "Hindmarsh", "", "", c("ctb")),
