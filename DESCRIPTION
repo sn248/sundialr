@@ -1,6 +1,6 @@
 Package: sundialr
 Type: Package
-Title: Ordinary Differential Equation Solvers (ODE) from `SUNDIALS` C Library
+Title: An Interface to `SUNDIALS` Ordinary Differential Equation (ODE) Solvers 
 Version: 0.1.0
 Author@R: c(
     person("Satyaprakash", "Nayak", "", "sn248@cornell.edu", c("aut", "cre")),
