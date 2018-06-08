@@ -9,6 +9,7 @@
 #'@param xpsexp External pointer to RHS function
 #'@param reltolerance Relative Tolerance (a scalar)
 #'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
+#'@example /inst/examples/cv_Roberts_dns.r
 cvode <- function(time_vec, IC, xpsexp, reltolerance, abstolerance) {
     .Call('_sundialr_cvode', PACKAGE = 'sundialr', time_vec, IC, xpsexp, reltolerance, abstolerance)
 }
