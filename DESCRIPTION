@@ -1,6 +1,6 @@
 Package: sundialr
 Type: Package
-Title: An Interface to `SUNDIALS` Ordinary Differential Equation (ODE) Solvers 
+Title: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers 
 Version: 0.1.0
 Authors@R: c(
     person("Satyaprakash", "Nayak", "", "sn248@cornell.edu", c("aut", "cre")),
@@ -22,7 +22,7 @@ Authors@R: c(
 Maintainer: Satyaprakash Nayak <sn248@cornell.edu>
 URL: https://github.com/sn248/sundialr
 BugReports: https://github.com/sn248/sundialr/issues
-Description: Provides a way to call the functions in `SUNDIALS` C ODE solving library (<https://computation.llnl.gov/projects/sundials>). Currently ODE solver, `CVODE` from the library can be accessed. The package requires ODE to be written using `Rcpp` and does not require the libraries to be installed on the system.
+Description: Provides a way to call the functions in 'SUNDIALS' C ODE solving library (<https://computation.llnl.gov/projects/sundials>). Currently the serial version of ODE solver, 'CVODE' from the library can be accessed. The package requires ODE to be written using 'Rcpp' and does not require the libraries to be installed on the system.
 License: GPL (>=2)
 LazyData: TRUE
 Imports:

@@ -78,6 +78,7 @@ int rhs_fun(realtype t, N_Vector y, N_Vector ydot, void* user_data){
 //'@param xpsexp External pointer to RHS function
 //'@param reltolerance Relative Tolerance (a scalar)
 //'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
+//'@example /inst/examples/cv_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
                      double reltolerance, NumericVector abstolerance){
