@@ -15,7 +15,7 @@
 using namespace Rcpp;
 
 //-- typedefs for RHS function pointer input in from R -------------------------
-typedef NumericVector (*funcPtr) (double t, NumericVector y, NumericVector ydot);
+typedef NumericVector (*funcPtr) (double t, NumericVector y);
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -58,7 +58,7 @@ int rhs_fun(realtype t, N_Vector y, N_Vector ydot, void* user_data){
   funcPtr rhs_fun = *rhs_xptr;
 
   // use the function to calculate value of RHS ----
-  ydot1 = rhs_fun(t, y1, ydot1);
+  ydot1 = rhs_fun(t, y1);
 
   // convert NumericVector ydot1 to N_Vector ydot
   realtype *ydot_ptr = N_VGetArrayPointer(ydot);
