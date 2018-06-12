@@ -1,11 +1,16 @@
-Rcpp::sourceCpp(code = '#include <Rcpp.h>
+Rcpp::sourceCpp(code = '
 
+#include <Rcpp.h>
 using namespace Rcpp;
 
-typedef NumericVector (*funcPtr) (double t, NumericVector y, NumericVector ydot);
+typedef NumericVector (*funcPtr) (double t, NumericVector y);
 
 // [[Rcpp::export]]
-NumericVector cv_Roberts_dns (double t, NumericVector y, NumericVector ydot){
+NumericVector cv_Roberts_dns (double t, NumericVector y){
+
+  // Initialize ydot filled with zeros
+  NumericVector ydot(y.length());
+
   ydot[0] = -0.04 * y[0] + 1e04 * y[1] * y[2];
   ydot[2] = 3e07 * y[1] * y[1];
   ydot[1] = -ydot[0] - ydot[2];
@@ -17,8 +22,8 @@ NumericVector cv_Roberts_dns (double t, NumericVector y, NumericVector ydot){
 // [[Rcpp::export]]
 XPtr<funcPtr> putFunPtrInXPtr() {
 
-  XPtr<funcPtr> testptr(new funcPtr(&cv_Roberts_dns), false);
-  return testptr;
+  XPtr<funcPtr> rhs_ptr(new funcPtr(&cv_Roberts_dns), false);
+  return rhs_ptr;
 
 }')
 
