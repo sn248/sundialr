@@ -36,17 +36,18 @@ int rhs_fun(realtype t, N_Vector y, N_Vector ydot, void* user_data){
   int y_len = NV_LENGTH_S(y);
 
   NumericVector y1(y_len);    // filled with zeros
+  realtype *y_ptr = N_VGetArrayPointer(y);
   for (int i = 0; i < y_len; i++){
-    y1[i] = NV_Ith_S(y,i);
+    y1[i] = y_ptr[i]; //  NV_Ith_S(y,i);
   }
 
   // convert ydot to NumericVector ydot1
   int ydot_len = NV_LENGTH_S(ydot);
 
   NumericVector ydot1(ydot_len);    // filled with zeros
-  for (int i = 0; i < ydot_len; i++){
-    ydot1[i] = NV_Ith_S(ydot,i);
-  }
+  // for (int i = 0; i < ydot_len; i++){
+  //   ydot1[i] = NV_Ith_S(ydot,i);
+  // }
 
   // cast void pointer to struct and assign rhs to a SEXP
   struct rhs_data *my_rhs_ptr = (struct rhs_data*)user_data;
@@ -60,8 +61,9 @@ int rhs_fun(realtype t, N_Vector y, N_Vector ydot, void* user_data){
   ydot1 = rhs_fun(t, y1, ydot1);
 
   // convert NumericVector ydot1 to N_Vector ydot
+  realtype *ydot_ptr = N_VGetArrayPointer(ydot);
   for (int i = 0; i<ydot1.length(); i++){
-    NV_Ith_S(ydot, i) = ydot1[i];
+     ydot_ptr[i] = ydot1[i]; // NV_Ith_S(ydot, i)
   }
 
   // everything went smoothly
@@ -104,16 +106,17 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
   abstol = N_VNew_Serial(IC.length());
+  realtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstolerance.length() == 1){
     // if a scalar is provided - use it to make a vector with same values
     for (int i = 0; i<IC.length(); i++){
-      NV_Ith_S(abstol, i) = abstolerance[0];
+       abstol_ptr[i] = abstolerance[0]; // NV_Ith_S(abstol, i)
     }
   }
   else if (abstolerance.length() == IC.length()){
 
     for (int i = 0; i<abstolerance.length(); i++){
-      NV_Ith_S(abstol, i) = abstolerance[i];
+       abstol_ptr[i] = abstolerance[i];  // NV_Ith_S(abstol, i)
     }
   }
   else if(abstolerance.length() != 1 || abstolerance.length() != IC.length()){
@@ -124,8 +127,9 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
 
   // Set the initial conditions-------------------------------------------------
   y0 = N_VNew_Serial(IC.length());
+  realtype *y0_ptr = N_VGetArrayPointer(y0);
   for (int i = 0; i<IC.length(); i++){
-    NV_Ith_S(y0, i) = IC[i];
+    y0_ptr[i] = IC[i]; // NV_Ith_S(y0, i)
   }
   //----------------------------------------------------------------------------
 
@@ -143,7 +147,7 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   //-- assign user input to the rhs-data struct
   (*my_rhs_ptr).rhs_eqn = xpsexp;
 
-
+  // setting the user_data in rhs function
   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs);
   if (check_flag(&flag, "CVodeSetUserData", 1)) {
     return (1);
@@ -208,7 +212,7 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
       // store results in soln matrix
       soln(iout+1, 0) = time;           // first column is for time
       for (int i = 0; i<IC.length(); i++){
-        soln(iout+1, i+1) = NV_Ith_S(y0, i);
+        soln(iout+1, i+1) = y0_ptr[i]; //  NV_Ith_S(y0, i);
       }
 
       // Rcout << time <<  "\t" << NV_Ith_S(y0,0) << "\t" << NV_Ith_S(y0,1) << "\t" << NV_Ith_S(y0,2) << '\n';
