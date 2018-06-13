@@ -70,7 +70,10 @@ The system of equations can be expressed using `Rcpp`'s `NumericVector` as follo
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-NumericVector cvRoberts_dns (double t, NumericVector y, NumericVector ydot){
+NumericVector cvRoberts_dns (double t, NumericVector y){
+
+  // Initialize ydot filled with zeros
+  NumericVector ydot(y.length());
 
   ydot[0] = -0.04 * y[0] + 1e04 * y[1] * y[2];
   ydot[2] = 3e07 * y[1] * y[1];
@@ -90,27 +93,34 @@ A key step is to generate a pointer to the function defined above. This requires
 See the code below, make sure that the name after `&` sign *must match* the name of the function used to calculate `ydot` or rates of change. Although a little convoluted, defining the function using `C++` using `Rcpp` and accessing it using `XPtr` can lead to significant gain in performance, hence this approach is applied over defining the function in `R`.
 
 ```c++
-typedef NumericVector (*funcPtr) (double t, NumericVector y, NumericVector ydot);
+typedef NumericVector (*funcPtr) (double t, NumericVector y);
 
 // [[Rcpp::export]]
 XPtr<funcPtr> putFunPtrInXPtr() {
 
-	XPtr<funcPtr> testptr(new funcPtr1(&cvRoberts_dns), false); // MUST MATCH function name
-	return testptr;
+  // variable after `&` below MUST MATCH function name used to make RHS of ODEs
+	XPtr<funcPtr> rhs_ptr(new funcPtr(&cvRoberts_dns), false); 
+	return rhs_ptr;
 
 }
 ```
 
 Both `c++` code fragments should be combined in the same file. Finally, we need to call the `putFunPtrInXPtr()`
-function from `R`. The entire file to create right hand side of ODE function (which calculates rates of change) is as follows:
+function from `R`. The entire `R` file to create right hand side of ODE function (which calculates rates of change) is as follows (also found in `/inst/examples/cv_Roberts_dns.r`):
 
-```c++
+```r
+Rcpp::sourceCpp(code = '
+
 #include <Rcpp.h>
 using namespace Rcpp;
 
-// Create the function for RHS
+typedef NumericVector (*funcPtr) (double t, NumericVector y);
+
 // [[Rcpp::export]]
-NumericVector cvRoberts_dns (double t, NumericVector y, NumericVector ydot){
+NumericVector cv_Roberts_dns (double t, NumericVector y){
+
+  // Initialize ydot filled with zeros
+  NumericVector ydot(y.length());
 
   ydot[0] = -0.04 * y[0] + 1e04 * y[1] * y[2];
   ydot[2] = 3e07 * y[1] * y[1];
@@ -120,30 +130,39 @@ NumericVector cvRoberts_dns (double t, NumericVector y, NumericVector ydot){
 
 }
 
-typedef NumericVector (*funcPtr) (double t, NumericVector y, NumericVector ydot);
-
-// Create pointer to the RHS function
 // [[Rcpp::export]]
 XPtr<funcPtr> putFunPtrInXPtr() {
 
-	XPtr<funcPtr> testptr(new funcPtr1(&cvRoberts_dns), false); // MUST MATCH function name
-	return testptr;
+  XPtr<funcPtr> rhs_ptr(new funcPtr(&cv_Roberts_dns), false);
+  return rhs_ptr;
 
-}
+}')
 
-// Code to be run in R after loading the library -------------------------------
 
-/*** R
-# create a time vector
-time_t <- c(0.0, 0.4, 4, 40, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
-
-# generate the function pointer
+# R code to generate time vector, IC and solve the equations
+time_t <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
 my_fun <- putFunPtrInXPtr()
+df <- cvode(time_t, c(1,0,0), my_fun , 1e-04, c(1e-8,1e-14,1e-6))
 
-# call the cvode function with specified relative and absolute tolerances
-# output is a numeric matrix of size `(length(time_t), length(IC))`
-IC <- c(1,0,0) # y1(0) = 1, y2(0) = y3(0) = 0, Initial Conditions
+```
 
-df <- cvode(time_t, IC, my_fun , 1e-04, c(1e-8,1e-14,1e-6))
-*/
+The final output is the `df` matrix in which first column is time, second, third
+and fourth column are the values of `y1`, `y2` and `y3` respectively.
+
+```
+> df
+       [,1]         [,2]         [,3]       [,4]
+ [1,] 0e+00 1.000000e+00 0.000000e+00 0.00000000
+ [2,] 4e-01 9.851641e-01 3.386242e-05 0.01480205
+ [3,] 4e+00 9.055097e-01 2.240338e-05 0.09446793
+ [4,] 4e+01 7.158016e-01 9.185043e-06 0.28418924
+ [5,] 4e+02 4.505209e-01 3.222826e-06 0.54947590
+ [6,] 4e+03 1.832217e-01 8.943516e-07 0.81677741
+ [7,] 4e+04 3.898091e-02 1.621669e-07 0.96101893
+ [8,] 4e+05 4.936971e-03 1.984450e-08 0.99506301
+ [9,] 4e+06 5.170103e-04 2.069098e-09 0.99948299
+[10,] 4e+07 5.204927e-05 2.082078e-10 0.99994795
+[11,] 4e+08 5.184946e-06 2.073989e-11 0.99999482
+[12,] 4e+09 5.246212e-07 2.098486e-12 0.99999948
+[13,] 4e+10 6.043000e-08 2.417200e-13 0.99999994
 ```

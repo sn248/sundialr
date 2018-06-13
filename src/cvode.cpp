@@ -26,7 +26,6 @@ struct rhs_data{
 };
 
 struct rhs_data my_rhs = {R_NilValue}; // sets rhs_eqn to NULL
-struct rhs_data *my_rhs_ptr = &my_rhs;
 //------------------------------------------------------------------------------
 
 //---RHS function that is an input to CVODE, takes user input of RHS in user_data
@@ -38,16 +37,13 @@ int rhs_fun(realtype t, N_Vector y, N_Vector ydot, void* user_data){
   NumericVector y1(y_len);    // filled with zeros
   realtype *y_ptr = N_VGetArrayPointer(y);
   for (int i = 0; i < y_len; i++){
-    y1[i] = y_ptr[i]; //  NV_Ith_S(y,i);
+    y1[i] = y_ptr[i];
   }
 
   // convert ydot to NumericVector ydot1
   int ydot_len = NV_LENGTH_S(ydot);
 
   NumericVector ydot1(ydot_len);    // filled with zeros
-  // for (int i = 0; i < ydot_len; i++){
-  //   ydot1[i] = NV_Ith_S(ydot,i);
-  // }
 
   // cast void pointer to struct and assign rhs to a SEXP
   struct rhs_data *my_rhs_ptr = (struct rhs_data*)user_data;
@@ -63,7 +59,7 @@ int rhs_fun(realtype t, N_Vector y, N_Vector ydot, void* user_data){
   // convert NumericVector ydot1 to N_Vector ydot
   realtype *ydot_ptr = N_VGetArrayPointer(ydot);
   for (int i = 0; i<ydot1.length(); i++){
-     ydot_ptr[i] = ydot1[i]; // NV_Ith_S(ydot, i)
+     ydot_ptr[i] = ydot1[i];
   }
 
   // everything went smoothly
@@ -90,18 +86,16 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   N_Vector abstol, y0;
   y0 = abstol = NULL;
 
-  // realtype T0 = RCONST(0.0);
-  // realtype tout = T1;
   realtype T0 = RCONST(time_vec[0]);     //RCONST(0.0);  // Initial Time
-  realtype tout = RCONST(time_vec[1]);   // T1;        // First output time
-  realtype iout;
+
+  // realtype iout;
   SUNMatrix SM;
   SUNLinearSolver LS;
   SM = NULL;
   LS = NULL;
 
   double time;
-  int NOUT = time_vec.length() - 1;
+  int NOUT = time_vec.length();
 
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
@@ -110,13 +104,13 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   if(abstolerance.length() == 1){
     // if a scalar is provided - use it to make a vector with same values
     for (int i = 0; i<IC.length(); i++){
-       abstol_ptr[i] = abstolerance[0]; // NV_Ith_S(abstol, i)
+       abstol_ptr[i] = abstolerance[0];
     }
   }
   else if (abstolerance.length() == IC.length()){
 
     for (int i = 0; i<abstolerance.length(); i++){
-       abstol_ptr[i] = abstolerance[i];  // NV_Ith_S(abstol, i)
+       abstol_ptr[i] = abstolerance[i];
     }
   }
   else if(abstolerance.length() != 1 || abstolerance.length() != IC.length()){
@@ -133,7 +127,6 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   }
   //----------------------------------------------------------------------------
 
-  // void pointer, can point to any data type -  will have to be cast before use
   void *cvode_mem;
   cvode_mem = NULL;
 
@@ -145,7 +138,7 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   }
 
   //-- assign user input to the rhs-data struct
-  (*my_rhs_ptr).rhs_eqn = xpsexp;
+  my_rhs.rhs_eqn = xpsexp;
 
   // setting the user_data in rhs function
   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs);
@@ -154,8 +147,6 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   }
 
   flag = CVodeInit(cvode_mem, rhs_fun, T0, y0);
-
-  // flag = CVodeInit(cvode_mem, fun, T0, y0);
   if (check_flag(&flag, "CVodeInit", 1)) {
     return (1);
   }
@@ -165,14 +156,6 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   if (check_flag(&flag, "CVodeSVtolerances", 1)) {
     return (1);
   }
-
-  //------not required now for the new version ---------------------------------
-  // Call CVDense to specify the CVDENSE dense linear solver
-  // flag = CVDense(cvode_mem, 3);
-  // if (check_flag(&flag, "CVDense", 1)) {
-  //   return (1);
-  // }
-  //----------------------------------------------------------------------------
 
   //--required in the new version ----------------------------------------------
   // Create dense SUNMatrix for use in linear solves
@@ -189,7 +172,6 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
 
   // NumericMatrix to store results - filled with 0.0
   // First row for initial conditions, First column is for time
-  // ASSUMING input time vector (time_vec) has the first element as 0
   NumericMatrix soln = NumericMatrix(time_vec.length(), IC.length() + 1);
 
   // fill the first row of soln matrix with Initial Conditions
@@ -201,8 +183,11 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   // Call CVodeInit to initialize the integrator memory and specify the
   // user's right hand side function in y'=f(time,y),
   // the inital time T0, and the initial dependent variable vector y.
-  iout = 0;
-  while (1) {
+  realtype tout;  // For output times
+  for(int iout = 0; iout < NOUT-1; iout++) {
+
+    // output times start from the index after initial time
+    tout = time_vec[iout+1];
 
     flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
 
@@ -212,20 +197,9 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
       // store results in soln matrix
       soln(iout+1, 0) = time;           // first column is for time
       for (int i = 0; i<IC.length(); i++){
-        soln(iout+1, i+1) = y0_ptr[i]; //  NV_Ith_S(y0, i);
+        soln(iout+1, i+1) = y0_ptr[i];
       }
-
-      // Rcout << time <<  "\t" << NV_Ith_S(y0,0) << "\t" << NV_Ith_S(y0,1) << "\t" << NV_Ith_S(y0,2) << '\n';
-
-      iout++;
-
-      if (iout < NOUT){
-        tout += time_vec[iout+1] - time_vec[iout];   //TMULT; // tout *= TMULT orginally
-      }
-
     }
-
-    if (iout > NOUT) { break; }
   }
 
   // free the vectors
@@ -242,7 +216,7 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   SUNMatDestroy(SM);
 
   return soln;
-  // return(0); // everything went fine
+
 }
 
 //--- CVODE definition ends ----------------------------------------------------

@@ -12,7 +12,7 @@
 
 <meta name="author" content="Satyaprakash Nayak" />
 
-<meta name="date" content="2018-06-02" />
+<meta name="date" content="2018-06-12" />
 
 <title>sundialr - A wrapper around SUNDIALS ODE solving library</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">sundialr - A wrapper around SUNDIALS ODE solving library</h1>
 <h4 class="author"><em>Satyaprakash Nayak</em></h4>
-<h4 class="date"><em>2018-06-02</em></h4>
+<h4 class="date"><em>2018-06-12</em></h4>
 
 
 
@@ -106,7 +106,10 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <span class="kw">using</span> <span class="kw">namespace</span> Rcpp;
 
 <span class="co">// [[Rcpp::export]]</span>
-NumericVector cvRoberts_dns (<span class="dt">double</span> t, NumericVector y, NumericVector ydot){
+NumericVector cvRoberts_dns (<span class="dt">double</span> t, NumericVector y){
+
+  <span class="co">// Initialize ydot filled with zeros</span>
+  NumericVector ydot(y.length());
 
   ydot[<span class="dv">0</span>] = <span class="dv">-0</span>.<span class="bn">04</span> * y[<span class="dv">0</span>] + <span class="fl">1e04</span> * y[<span class="dv">1</span>] * y[<span class="dv">2</span>];
   ydot[<span class="dv">2</span>] = <span class="fl">3e07</span> * y[<span class="dv">1</span>] * y[<span class="dv">1</span>];
@@ -122,57 +125,67 @@ NumericVector cvRoberts_dns (<span class="dt">double</span> t, NumericVector y, 
 <li>using function address to return <code>XPtr</code> (which is an <code>Rcpp</code> version of <code>ExternalPointer</code> in <code>R</code>)</li>
 </ul>
 <p>See the code below, make sure that the name after <code>&amp;</code> sign <em>must match</em> the name of the function used to calculate <code>ydot</code> or rates of change. Although a little convoluted, defining the function using <code>C++</code> using <code>Rcpp</code> and accessing it using <code>XPtr</code> can lead to significant gain in performance, hence this approach is applied over defining the function in <code>R</code>.</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">typedef</span> NumericVector (*funcPtr) (<span class="dt">double</span> t, NumericVector y, NumericVector ydot);
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">typedef</span> NumericVector (*funcPtr) (<span class="dt">double</span> t, NumericVector y);
 
 <span class="co">// [[Rcpp::export]]</span>
 XPtr&lt;funcPtr&gt; putFunPtrInXPtr() {
 
-    XPtr&lt;funcPtr&gt; testptr(<span class="kw">new</span> funcPtr1(&amp;cvRoberts_dns), <span class="kw">false</span>); <span class="co">// MUST MATCH function name</span>
-    <span class="cf">return</span> testptr;
+  <span class="co">// variable after `&amp;` below MUST MATCH function name used to make RHS of ODEs</span>
+    XPtr&lt;funcPtr&gt; rhs_ptr(<span class="kw">new</span> funcPtr(&amp;cvRoberts_dns), <span class="kw">false</span>); 
+    <span class="cf">return</span> rhs_ptr;
 
 }</code></pre></div>
-<p>Both <code>c++</code> code fragments should be combined in the same file. Finally, we need to call the <code>putFunPtrInXPtr()</code> function from <code>R</code>. The entire file to create right hand side of ODE function (which calculates rates of change) is as follows:</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span>
-<span class="kw">using</span> <span class="kw">namespace</span> Rcpp;
+<p>Both <code>c++</code> code fragments should be combined in the same file. Finally, we need to call the <code>putFunPtrInXPtr()</code> function from <code>R</code>. The entire <code>R</code> file to create right hand side of ODE function (which calculates rates of change) is as follows (also found in <code>/inst/examples/cv_Roberts_dns.r</code>):</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">Rcpp<span class="op">::</span><span class="kw">sourceCpp</span>(<span class="dt">code =</span> <span class="st">'</span>
 
-<span class="co">// Create the function for RHS</span>
-<span class="co">// [[Rcpp::export]]</span>
-NumericVector cvRoberts_dns (<span class="dt">double</span> t, NumericVector y, NumericVector ydot){
+<span class="st">#include &lt;Rcpp.h&gt;</span>
+<span class="st">using namespace Rcpp;</span>
 
-  ydot[<span class="dv">0</span>] = <span class="dv">-0</span>.<span class="bn">04</span> * y[<span class="dv">0</span>] + <span class="fl">1e04</span> * y[<span class="dv">1</span>] * y[<span class="dv">2</span>];
-  ydot[<span class="dv">2</span>] = <span class="fl">3e07</span> * y[<span class="dv">1</span>] * y[<span class="dv">1</span>];
-  ydot[<span class="dv">1</span>] = -ydot[<span class="dv">0</span>] - ydot[<span class="dv">2</span>];
+<span class="st">typedef NumericVector (*funcPtr) (double t, NumericVector y);</span>
 
-  <span class="cf">return</span> ydot;
+<span class="st">// [[Rcpp::export]]</span>
+<span class="st">NumericVector cv_Roberts_dns (double t, NumericVector y){</span>
 
-}
+<span class="st">  // Initialize ydot filled with zeros</span>
+<span class="st">  NumericVector ydot(y.length());</span>
 
-<span class="kw">typedef</span> NumericVector (*funcPtr) (<span class="dt">double</span> t, NumericVector y, NumericVector ydot);
+<span class="st">  ydot[0] = -0.04 * y[0] + 1e04 * y[1] * y[2];</span>
+<span class="st">  ydot[2] = 3e07 * y[1] * y[1];</span>
+<span class="st">  ydot[1] = -ydot[0] - ydot[2];</span>
 
-<span class="co">// Create pointer to the RHS function</span>
-<span class="co">// [[Rcpp::export]]</span>
-XPtr&lt;funcPtr&gt; putFunPtrInXPtr() {
+<span class="st">  return ydot;</span>
 
-    XPtr&lt;funcPtr&gt; testptr(<span class="kw">new</span> funcPtr1(&amp;cvRoberts_dns), <span class="kw">false</span>); <span class="co">// MUST MATCH function name</span>
-    <span class="cf">return</span> testptr;
+<span class="st">}</span>
 
-}
+<span class="st">// [[Rcpp::export]]</span>
+<span class="st">XPtr&lt;funcPtr&gt; putFunPtrInXPtr() {</span>
 
-<span class="co">// Code to be run in R after loading the library -------------------------------</span>
+<span class="st">  XPtr&lt;funcPtr&gt; rhs_ptr(new funcPtr(&amp;cv_Roberts_dns), false);</span>
+<span class="st">  return rhs_ptr;</span>
 
-<span class="co">/*** R</span>
-<span class="co"># create a time vector</span>
-<span class="co">time_t &lt;- c(0.0, 0.4, 4, 40, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)</span>
+<span class="st">}'</span>)
 
-<span class="co"># generate the function pointer</span>
-<span class="co">my_fun &lt;- putFunPtrInXPtr()</span>
 
-<span class="co"># call the cvode function with specified relative and absolute tolerances</span>
-<span class="co"># output is a numeric matrix of size `(length(time_t), length(IC))`</span>
-<span class="co">IC &lt;- c(1,0,0) # y1(0) = 1, y2(0) = y3(0) = 0, Initial Conditions</span>
-
-<span class="co">df &lt;- cvode(time_t, IC, my_fun , 1e-04, c(1e-8,1e-14,1e-6))</span>
-<span class="co">*/</span></code></pre></div>
+<span class="co"># R code to generate time vector, IC and solve the equations</span>
+time_t &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">0.4</span>, <span class="fl">4.0</span>, <span class="fl">40.0</span>, <span class="fl">4E2</span>, <span class="fl">4E3</span>, <span class="fl">4E4</span>, <span class="fl">4E5</span>, <span class="fl">4E6</span>, <span class="fl">4E7</span>, <span class="fl">4E8</span>, <span class="fl">4E9</span>, <span class="fl">4E10</span>)
+my_fun &lt;-<span class="st"> </span><span class="kw">putFunPtrInXPtr</span>()
+df &lt;-<span class="st"> </span><span class="kw">cvode</span>(time_t, <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">0</span>), my_fun , <span class="fl">1e-04</span>, <span class="kw">c</span>(<span class="fl">1e-8</span>,<span class="fl">1e-14</span>,<span class="fl">1e-6</span>))</code></pre></div>
+<p>The final output is the <code>df</code> matrix in which first column is time, second, third and fourth column are the values of <code>y1</code>, <code>y2</code> and <code>y3</code> respectively.</p>
+<pre><code>&gt; df
+       [,1]         [,2]         [,3]       [,4]
+ [1,] 0e+00 1.000000e+00 0.000000e+00 0.00000000
+ [2,] 4e-01 9.851641e-01 3.386242e-05 0.01480205
+ [3,] 4e+00 9.055097e-01 2.240338e-05 0.09446793
+ [4,] 4e+01 7.158016e-01 9.185043e-06 0.28418924
+ [5,] 4e+02 4.505209e-01 3.222826e-06 0.54947590
+ [6,] 4e+03 1.832217e-01 8.943516e-07 0.81677741
+ [7,] 4e+04 3.898091e-02 1.621669e-07 0.96101893
+ [8,] 4e+05 4.936971e-03 1.984450e-08 0.99506301
+ [9,] 4e+06 5.170103e-04 2.069098e-09 0.99948299
+[10,] 4e+07 5.204927e-05 2.082078e-10 0.99994795
+[11,] 4e+08 5.184946e-06 2.073989e-11 0.99999482
+[12,] 4e+09 5.246212e-07 2.098486e-12 0.99999948
+[13,] 4e+10 6.043000e-08 2.417200e-13 0.99999994</code></pre>
 </div>
 
 
