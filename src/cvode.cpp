@@ -26,6 +26,7 @@ struct rhs_data{
 };
 
 struct rhs_data my_rhs = {R_NilValue}; // sets rhs_eqn to NULL
+struct rhs_data *my_rhs_ptr = &my_rhs;
 //------------------------------------------------------------------------------
 
 //---RHS function that is an input to CVODE, takes user input of RHS in user_data
@@ -138,7 +139,7 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   }
 
   //-- assign user input to the rhs-data struct
-  my_rhs.rhs_eqn = xpsexp;
+  (*my_rhs_ptr).rhs_eqn = xpsexp;
 
   // setting the user_data in rhs function
   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs);

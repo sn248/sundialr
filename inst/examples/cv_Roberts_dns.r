@@ -29,6 +29,6 @@ XPtr<funcPtr> putFunPtrInXPtr() {
 
 
 # R code to generate time vector, IC and solve the equations
-time_t <- c(0.0, 0.4, 4, 40, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
+time_t <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
 my_fun <- putFunPtrInXPtr()
 df <- cvode(time_t, c(1,0,0), my_fun , 1e-04, c(1e-8,1e-14,1e-6))
