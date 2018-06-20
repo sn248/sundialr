@@ -41,7 +41,7 @@ parameter (REALTYPE=8)
 !          8  (64BIT)
 !
 integer SUNINDEXTYPE
-parameter (SUNINDEXTYPE=8)
+parameter (SUNINDEXTYPE=4)
 
 !     If building with MPI enabled, define the logical flag 
 !     "SUNDIALS_MPI_COMM_F2C" indicating whether the user can specify

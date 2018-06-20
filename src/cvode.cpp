@@ -60,8 +60,14 @@ int rhs_fun(realtype t, N_Vector y, N_Vector ydot, void* user_data){
   // convert NumericVector ydot1 to N_Vector ydot
   realtype *ydot_ptr = N_VGetArrayPointer(ydot);
   for (int i = 0; i<ydot1.length(); i++){
-     ydot_ptr[i] = ydot1[i];
+    ydot_ptr[i] = ydot1[i];
   }
+
+  // N_VPrint_Serial(ydot);
+  // Rprintf("First value in ydot is %g\n", ydot_ptr[0]);
+  // Rprintf("Second value in ydot is %g\n", ydot_ptr[1]);
+  // Rprintf("Third value in ydot is %g\n", ydot_ptr[2]);
+  // Rprintf("ydot length is %d\n", N_VGetLength_Serial(ydot));
 
   // everything went smoothly
   return(0);
@@ -80,16 +86,25 @@ int rhs_fun(realtype t, N_Vector y, N_Vector ydot, void* user_data){
 //'@example /inst/examples/cv_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
-                     double reltolerance, NumericVector abstolerance){
+                    double reltolerance, NumericVector abstolerance){
+
+
+  int time_vec_len = time_vec.length();
+  int y_len = IC.length();
+  int abstol_len = abstolerance.length();
+
+  // Rprintf("Time vec length is %d\n", time_vec_len);
+  // Rprintf("IC length is %d\n", y_len);
+  // Rprintf("abstolerance length is %d\n", abstol_len);
 
   int flag;
   realtype reltol = reltolerance;
   N_Vector abstol, y0;
   y0 = abstol = NULL;
-
+  //
   realtype T0 = RCONST(time_vec[0]);     //RCONST(0.0);  // Initial Time
-
-  // realtype iout;
+  //
+  // // realtype iout;
   SUNMatrix SM;
   SUNLinearSolver LS;
   SM = NULL;
@@ -100,33 +115,43 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
 
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
-  abstol = N_VNew_Serial(IC.length());
+  abstol = N_VNew_Serial(abstol_len);
   realtype *abstol_ptr = N_VGetArrayPointer(abstol);
-  if(abstolerance.length() == 1){
+  if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
-    for (int i = 0; i<IC.length(); i++){
-       abstol_ptr[i] = abstolerance[0];
+    for (int i = 0; i<y_len; i++){
+      abstol_ptr[i] = abstolerance[0];
     }
   }
-  else if (abstolerance.length() == IC.length()){
+  else if (abstol_len == y_len){
 
-    for (int i = 0; i<abstolerance.length(); i++){
-       abstol_ptr[i] = abstolerance[i];
+    for (int i = 0; i<abstol_len; i++){
+      abstol_ptr[i] = abstolerance[i];
     }
   }
-  else if(abstolerance.length() != 1 || abstolerance.length() != IC.length()){
+  else if(abstol_len != 1 || abstol_len != y_len){
 
     stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
   //----------------------------------------------------------------------------
+  // Rprintf("First value in abstol is %g\n", abstol_ptr[0]);
+  // Rprintf("Second value in abstol is %g\n", abstol_ptr[1]);
+  // Rprintf("Third value in abstol is %g\n", abstol_ptr[2]);
+  // Rprintf("Abstol length is %d\n", N_VGetLength_Serial(abstol));
+  // N_VPrint_Serial(abstol);
 
   // Set the initial conditions-------------------------------------------------
-  y0 = N_VNew_Serial(IC.length());
+  y0 = N_VNew_Serial(3);
   realtype *y0_ptr = N_VGetArrayPointer(y0);
-  for (int i = 0; i<IC.length(); i++){
+  for (int i = 0; i<y_len; i++){
     y0_ptr[i] = IC[i]; // NV_Ith_S(y0, i)
   }
   //----------------------------------------------------------------------------
+  // N_VPrint_Serial(y0);
+  // Rprintf("First value in y0 is %g\n", y0_ptr[0]);
+  // Rprintf("Second value in y0 is %g\n", y0_ptr[1]);
+  // Rprintf("Third value in y0 is %g\n", y0_ptr[2]);
+  // Rprintf("y0 length is %d\n", N_VGetLength_Serial(y0));
 
   void *cvode_mem;
   cvode_mem = NULL;
@@ -160,7 +185,9 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
 
   //--required in the new version ----------------------------------------------
   // Create dense SUNMatrix for use in linear solves
-  SM = SUNDenseMatrix(IC.length(), IC.length());
+  // sunindextype y_len_M = y_len;
+  int32_t mm = 3;
+  SM = SUNDenseMatrix(mm, mm);
   if(check_flag((void *)SM, "SUNDenseMatrix", 0)) return (1);
 
   // Create dense SUNLinearSolver object for use by CVode
@@ -183,7 +210,7 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
 
   // Call CVodeInit to initialize the integrator memory and specify the
   // user's right hand side function in y'=f(time,y),
-  // the inital time T0, and the initial dependent variable vector y.
+  // // the inital time T0, and the initial dependent variable vector y.
   realtype tout;  // For output times
   for(int iout = 0; iout < NOUT-1; iout++) {
 
@@ -217,11 +244,11 @@ NumericMatrix cvode(NumericVector time_vec, NumericVector IC, SEXP xpsexp,
   SUNMatDestroy(SM);
 
   return soln;
+  // return flag;
 
 }
 
 //--- CVODE definition ends ----------------------------------------------------
-
 
 
 
