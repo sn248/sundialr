@@ -10,10 +10,10 @@
  * -----------------------------------------------------------------*/
 
 /* Define SUNDIALS version numbers */
-#define SUNDIALS_VERSION "3.1.0"
+#define SUNDIALS_VERSION "3.1.1"
 #define SUNDIALS_VERSION_MAJOR 3
 #define SUNDIALS_VERSION_MINOR 1
-#define SUNDIALS_VERSION_PATCH 0
+#define SUNDIALS_VERSION_PATCH 1
 #define SUNDIALS_VERSION_LABEL ""
 
 /* FCMIX: Define Fortran name-mangling macro for C identifiers.
@@ -26,7 +26,7 @@
  *     #define SUNDIALS_F77_FUNC(name,NAME) NAME ## _
  *     #define SUNDIALS_F77_FUNC(name,NAME) NAME ## __
  */
-#define SUNDIALS_F77_FUNC(name,NAME) name ## _
+
 
 /* FCMIX: Define Fortran name-mangling macro for C identifiers
  *        which contain underscores.
@@ -48,7 +48,7 @@
  *     #define SUNDIALS_INT64_T 1
  *     #define SUNDIALS_INT32_T 1
  */
-#define SUNDIALS_INT64_T 1
+#define SUNDIALS_INT32_T 1
 
 /* Use generic math functions 
  * If it was decided that generic math functions can be used, then

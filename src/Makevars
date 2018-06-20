@@ -1,4 +1,3 @@
-$(info The compilation root directory is:$(ROOT_DIR))
 $(info The name of the shared library to be created is: $(SHLIB))
 CXX=g++
 PKG_CPPFLAGS= -I../inst/include/ -I./inst/
@@ -72,7 +71,14 @@ all: ($SHLIB)
 	$(AR) -crvs ../inst/libsundials_all.a $(OBJECTS_SUNDIALS_ALL)
 
 clean:
-	echo "cleaning .."
-	(rm -f ./sundials/cvode/*.o; rm -f ./sundials/nvec_ser/*.o; rm -f ./sundials/sun*/*.o;)
-	(rm -f *.o *.a)
-	(rm -f ../inst/*.a)
+	echo "cleaning ..."
+	(cd ./sundials/cvode;rm -f *.o)
+	(cd ./sundials/nvec_ser;rm -f *.o)
+	(cd ./sundials/sundials;rm -f *.o)
+	(cd ./sundials/sunlinsol_dense;rm -f *.o)
+	(cd ./sundials/sunmat_band;rm -f *.o)
+	(cd ./sundials/sunmat_dense;rm -f *.o)
+	rm -f *.dll
+	rm -f *.exe
+	rm -f *.so
+	(cd ../inst;rm -f *.a)

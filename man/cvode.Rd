@@ -23,36 +23,38 @@ CVODE solver to solve stiff ODEs
 \examples{
 Rcpp::sourceCpp(code = '
 
-#include <Rcpp.h>
-using namespace Rcpp;
+                #include <Rcpp.h>
+                using namespace Rcpp;
 
-typedef NumericVector (*funcPtr) (double t, NumericVector y);
+                typedef NumericVector (*funcPtr) (double t, NumericVector y);
 
-// [[Rcpp::export]]
-NumericVector cv_Roberts_dns (double t, NumericVector y){
+                // [[Rcpp::export]]
+                NumericVector cv_Roberts_dns (double t, NumericVector y){
 
-  // Initialize ydot filled with zeros
-  NumericVector ydot(y.length());
+                // Initialize ydot filled with zeros
+                NumericVector ydot(y.length());
 
-  ydot[0] = -0.04 * y[0] + 1e04 * y[1] * y[2];
-  ydot[2] = 3e07 * y[1] * y[1];
-  ydot[1] = -ydot[0] - ydot[2];
+                ydot[0] = -0.04 * y[0] + 1e04 * y[1] * y[2];
+                ydot[2] = 3e07 * y[1] * y[1];
+                ydot[1] = -ydot[0] - ydot[2];
 
-  return ydot;
+                return ydot;
 
-}
+                }
 
-// [[Rcpp::export]]
-XPtr<funcPtr> putFunPtrInXPtr() {
+                // [[Rcpp::export]]
+                XPtr<funcPtr> putFunPtrInXPtr() {
 
-  XPtr<funcPtr> rhs_ptr(new funcPtr(&cv_Roberts_dns), false);
-  return rhs_ptr;
+                XPtr<funcPtr> rhs_ptr(new funcPtr(&cv_Roberts_dns), false);
+                return rhs_ptr;
 
-}')
+                }')
 
 
-# R code to generate time vector, IC and solve the equations
-time_t <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
+# R code to genrate time vector, IC and solve the equations
+time_vec <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
+IC <- c(1,0,0)
+abstol <- c(1e-8,1e-14,1e-6)
 my_fun <- putFunPtrInXPtr()
-df <- cvode(time_t, c(1,0,0), my_fun , 1e-04, c(1e-8,1e-14,1e-6))
+df <- cvode(time_vec, IC, my_fun , 1e-04, abstol)
 }
