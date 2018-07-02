@@ -14,7 +14,7 @@ Authors@R: c(
     person("Carol", "Woodward", "", "", c("ctb")),
     person("Slaven", "Peles", "", "", c("ctb")),
     person("Peter", "Brown", "", "", c("ctb")),
-    person("Hilari C", "Tiedman", "", "", c("ctb")),
+    person("Hilari C", "Tiedeman", "", "", c("ctb")),
     person("Ting", "Yan", "", "", c("ctb")),
     person("Lawrence Livermore National Security", role =  c("cph")),
     person("Southern Methodist University", role =  c("cph"))
