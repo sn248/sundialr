@@ -1,5 +1,5 @@
 ---
-title: "sundialr - A wrapper around SUNDIALS ODE solving library"
+title: "sundialr - An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers"
 author: "Satyaprakash Nayak"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -19,11 +19,9 @@ knitr::opts_chunk$set(
 ## Introduction
 Ordinary Differential Equations (ODEs) describe the rate of change of dependent variables with respect to a single independent variable and are used in many fields to model behavior of the system. There are many good C libraries available to solve (i.e., integrate systems of ODEs) and [SUNDIALS](https://computation.llnl.gov/projects/sundials/sundials-software) available from the Lawrence Livermore National Laboratory is a one of the most popular and well-respected C library for solving non-stiff and stiff systems of ODEs.
 
-_*Currently, this package provides an interface to the CVODE function (serial version) in the library which is used to solve ODEs (or Initial Value Problems). In future, I plan to provide interface for the other solvers in the library also. Right now, this package serves as a test case for providing an interface to the SUNDIALS library for R users.*_ 
+_*Currently, this package provides an interface to the CVODE function (serial version) in the library which is used to solve ODEs (or Initial Value Problems). In future, we plan to provide interface for the other solvers in the library also. Right now, this package serves as a test case for providing an interface to the SUNDIALS library for R users.*_ 
 
 _One of the advantage of using this package is that all the source code of the `SUNDIALS` library is bundled with the package itself, so it does not require the `SUNDIALS` library to be installed on the machine separately (which is sometimes not trivial for Windows)._
-
-Also, since this package using `Rcpp` to bundle the C code, we can use the notation used in `Rcpp` to describe the system of ODEs. As an example, we try to solve the `cv_Roberts_dns.c` problem, the original code can be found [here](https://github.com/LLNL/sundials/blob/master/examples/cvode/serial/cvRoberts_dns.c).
 
 As described in the link above,  the problem is from chemical kinetics, and consists of the following three rate equations:         
 
@@ -54,7 +52,7 @@ or at which
 
 $$ y_3 = 0.01 $$, 
 
-but currently root-finding is not supported in this version. As, in the original example this package also solves the problem with the BDF method, Newton iteration with the SUNDENSE dense linear solver, however, without a user-supplied Jacobian routine. (unlike the original example). It uses a scalar relative tolerance and a vector absolute
+but currently root-finding is not supported in this version. As, in the original example this package also solves the problem with the BDF method, Newton iteration with the SUNDENSE dense linear solver, however, without a user-supplied Jacobian routine (unlike the original example). It uses a scalar relative tolerance and a vector absolute
 tolerance (which can be provided as an input). Output is printed in decades from 
 
 $$ t = 0.4 $$ 
@@ -63,14 +61,40 @@ to
 
 $$ t = 4 \times 10^{10} $$.
 
-The system of equations can be expressed using `Rcpp`'s `NumericVector` as follows:
+## Writing the Differential Equations
+
+### Using R
+Differential equations can be written as an `R` function or as an `Rcpp` function. Differential equations function must be written as
+
+```r
+function(t, y){
+
+  # code to write differential equations
+}
+```
+The key aspect to keep in mind is that the signature of the function must be `function(t,y)`. As an example, we try to solve the `cv_Roberts_dns.c` problem described above, the original code can be found [here](https://github.com/LLNL/sundials/blob/master/examples/cvode/serial/cvRoberts_dns.c). An example of an `R` function is as follows:
+
+```r
+ODE_R <- function(t, y){
+
+   ## initialize the derivative vector
+   ydot <- vector(mode = "numeric", length = length(y))
+   
+   ydot[1] = -0.04 * y[1] + 1e04 * y[2] * y[3]
+   ydot[3] = 3e07 * y[2] * y[2]
+   ydot[2] = -ydot[1] - ydot[3]
+
+   ydot
+}
+```
+Also, since this package using `Rcpp` to bundle the C code, we can use the notation used in `Rcpp` to describe the system of ODEs. The `cv_Roberts_dns` problem describe above can be described in an `Rcpp` function as follows (indices in `C++` start from `0`, functions need to declare their return type, here `NumericVector`  and every expression ends in a semicolon, `;`) :
 
 ```c++
 #include <Rcpp.h>
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-NumericVector cvRoberts_dns (double t, NumericVector y){
+NumericVector ODE_Rcpp (double t, NumericVector y){
 
   // Initialize ydot filled with zeros
   NumericVector ydot(y.length());
@@ -85,39 +109,33 @@ NumericVector cvRoberts_dns (double t, NumericVector y){
 ```
 The above is a re-write of the `cvRoberts_dns` example in the documentation of `CVODE`. The original example can be found the document [here](https://computation.llnl.gov/sites/default/files/public/cv_examples.pdf).
 
-A key step is to generate a pointer to the function defined above. This requires two sub-steps
-
-- defining a type (`typedef`) for the function pointer
-- using function address to return `XPtr` (which is an `Rcpp` version of `ExternalPointer` in `R`)
-
-See the code below, make sure that the name after `&` sign *must match* the name of the function used to calculate `ydot` or rates of change. Although a little convoluted, defining the function using `C++` using `Rcpp` and accessing it using `XPtr` can lead to significant gain in performance, hence this approach is applied over defining the function in `R`.
-
-```c++
-typedef NumericVector (*funcPtr) (double t, NumericVector y);
-
-// [[Rcpp::export]]
-XPtr<funcPtr> putFunPtrInXPtr() {
-
-  // variable after `&` below MUST MATCH function name used to make RHS of ODEs
-	XPtr<funcPtr> rhs_ptr(new funcPtr(&cvRoberts_dns), false); 
-	return rhs_ptr;
-
-}
-```
-
-Both `c++` code fragments should be combined in the same file. Finally, we need to call the `putFunPtrInXPtr()`
-function from `R`. The entire `R` file to create right hand side of ODE function (which calculates rates of change) is as follows (also found in `/inst/examples/cv_Roberts_dns.r`):
+## Putting everything together
+The entire `R` file to create right hand side of ODE function (which calculates rates of change) is as follows (also found in `/inst/examples/cv_Roberts_dns.r`):
 
 ```r
+# ODEs described by an R function
+ODE_R <- function(t, y){
+
+  # vector containing the right hand side gradients
+  ydot = vector(mode = "numeric", length = length(y))
+
+  # R indices start from 1
+  ydot[1] = -0.04 * y[1] + 1e04 * y[2] * y[3]
+  ydot[3] = 3e07 * y[2] * y[2]
+  ydot[2] = -ydot[1] - ydot[3]
+
+  ydot
+
+}
+
+# ODEs can also be described using Rcpp
 Rcpp::sourceCpp(code = '
 
 #include <Rcpp.h>
 using namespace Rcpp;
 
-typedef NumericVector (*funcPtr) (double t, NumericVector y);
-
 // [[Rcpp::export]]
-NumericVector cv_Roberts_dns (double t, NumericVector y){
+NumericVector ODE_Rcpp (double t, NumericVector y){
 
   // Initialize ydot filled with zeros
   NumericVector ydot(y.length());
@@ -128,29 +146,28 @@ NumericVector cv_Roberts_dns (double t, NumericVector y){
 
   return ydot;
 
-}
+}'
 
-// [[Rcpp::export]]
-XPtr<funcPtr> putFunPtrInXPtr() {
+# Generate time vector, IC and call cvode to solve the equations
+# R code to genrate time vector, IC and solve the equations
+time_vec <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
+IC <- c(1,0,0)
+reltol <- 1e-04
+abstol <- c(1e-8,1e-14,1e-6)
 
-  XPtr<funcPtr> rhs_ptr(new funcPtr(&cv_Roberts_dns), false);
-  return rhs_ptr;
+## Solving the ODEs using cvode function
+df1 <- cvode(time_vec, IC, ODE_R , reltol, abstol)           ## using R
+df2 <- cvode(time_vec, IC, ODE_Rcpp , reltol, abstol)        ## using Rcpp
 
-}')
-
-
-# R code to generate time vector, IC and solve the equations
-time_t <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
-my_fun <- putFunPtrInXPtr()
-df <- cvode(time_t, c(1,0,0), my_fun , 1e-04, c(1e-8,1e-14,1e-6))
-
+## Check that both solutions are identical
+identical(df1, df2)
 ```
 
-The final output is the `df` matrix in which first column is time, second, third
+The final output is the `df1` matrix in which first column is time, second, third
 and fourth column are the values of `y1`, `y2` and `y3` respectively.
 
-```
-> df
+```r
+> df1
        [,1]         [,2]         [,3]       [,4]
  [1,] 0e+00 1.000000e+00 0.000000e+00 0.00000000
  [2,] 4e-01 9.851641e-01 3.386242e-05 0.01480205
@@ -166,3 +183,7 @@ and fourth column are the values of `y1`, `y2` and `y3` respectively.
 [12,] 4e+09 5.246212e-07 2.098486e-12 0.99999948
 [13,] 4e+10 6.043000e-08 2.417200e-13 0.99999994
 ```
+## Summary
+The package `sundialr` provides a way to interface with the famous 'SUNDIALS' C library 
+to solver initial value problems. The package allows differential equation to be written 
+in `R` or using `Rcpp`. Currently only a single initialization is supported, but we plan to add repeated initializations (e.g., repeated dosing) in near future. In addition, other solvers from the C library such as `cvodes` and `IDA` will be added soon.

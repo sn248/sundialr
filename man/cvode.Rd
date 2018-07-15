@@ -4,14 +4,14 @@
 \alias{cvode}
 \title{cvode}
 \usage{
-cvode(time_vec, IC, xpsexp, reltolerance, abstolerance)
+cvode(time_vector, IC, input_function, reltolerance, abstolerance)
 }
 \arguments{
-\item{time_vec}{time vector}
+\item{time_vector}{time vector}
 
 \item{IC}{Initial Conditions}
 
-\item{xpsexp}{External pointer to RHS function}
+\item{input_function}{External pointer to RHS function}
 
 \item{reltolerance}{Relative Tolerance (a scalar)}
 
@@ -21,15 +21,31 @@ cvode(time_vec, IC, xpsexp, reltolerance, abstolerance)
 CVODE solver to solve stiff ODEs
 }
 \examples{
+# ODEs described by an R function
+ODE_R <- function(t, y){
+
+  # vector containing the right hand side gradients
+  ydot = vector(mode = "numeric", length = length(y))
+
+  # R indices start from 1
+  ydot[1] = -0.04 * y[1] + 1e04 * y[2] * y[3]
+  ydot[3] = 3e07 * y[2] * y[2]
+  ydot[2] = -ydot[1] - ydot[3]
+
+  ydot
+
+}
+
+# ODEs can also be described using Rcpp
 Rcpp::sourceCpp(code = '
 
                 #include <Rcpp.h>
                 using namespace Rcpp;
 
-                typedef NumericVector (*funcPtr) (double t, NumericVector y);
 
+                // ODE functions defined using Rcpp
                 // [[Rcpp::export]]
-                NumericVector cv_Roberts_dns (double t, NumericVector y){
+                NumericVector ODE_Rcpp (double t, NumericVector y){
 
                 // Initialize ydot filled with zeros
                 NumericVector ydot(y.length());
@@ -42,19 +58,29 @@ Rcpp::sourceCpp(code = '
 
                 }
 
-                // [[Rcpp::export]]
-                XPtr<funcPtr> putFunPtrInXPtr() {
+                // code to generate function pointer
 
-                XPtr<funcPtr> rhs_ptr(new funcPtr(&cv_Roberts_dns), false);
+                typedef NumericVector (*funcPtr) (double t, NumericVector y);
+                // [[Rcpp::export]]
+                XPtr<funcPtr> ODE_Rcpp_ptr() {
+
+                XPtr<funcPtr> rhs_ptr(new funcPtr(&ODE_Rcpp), false);
                 return rhs_ptr;
 
                 }')
 
 
+
 # R code to genrate time vector, IC and solve the equations
 time_vec <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
 IC <- c(1,0,0)
+reltol <- 1e-04
 abstol <- c(1e-8,1e-14,1e-6)
-my_fun <- putFunPtrInXPtr()
-df <- cvode(time_vec, IC, my_fun , 1e-04, abstol)
+
+## Solving the ODEs using cvode function
+df1 <- cvode(time_vec, IC, ODE_R , reltol, abstol)           ## using R
+df2 <- cvode(time_vec, IC, ODE_Rcpp , reltol, abstol)        ## using Rcpp
+
+## Check that both solutions are identical
+identical(df1, df2)
 }

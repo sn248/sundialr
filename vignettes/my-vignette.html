@@ -12,9 +12,9 @@
 
 <meta name="author" content="Satyaprakash Nayak" />
 
-<meta name="date" content="2018-06-12" />
+<meta name="date" content="2018-07-14" />
 
-<title>sundialr - A wrapper around SUNDIALS ODE solving library</title>
+<title>sundialr - An Interface to SUNDIALS Ordinary Differential Equation (ODE) Solvers</title>
 
 
 
@@ -68,18 +68,17 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 
-<h1 class="title toc-ignore">sundialr - A wrapper around SUNDIALS ODE solving library</h1>
+<h1 class="title toc-ignore">sundialr - An Interface to ‘SUNDIALS’ Ordinary Differential Equation (ODE) Solvers</h1>
 <h4 class="author"><em>Satyaprakash Nayak</em></h4>
-<h4 class="date"><em>2018-06-12</em></h4>
+<h4 class="date"><em>2018-07-14</em></h4>
 
 
 
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
 <p>Ordinary Differential Equations (ODEs) describe the rate of change of dependent variables with respect to a single independent variable and are used in many fields to model behavior of the system. There are many good C libraries available to solve (i.e., integrate systems of ODEs) and <a href="https://computation.llnl.gov/projects/sundials/sundials-software">SUNDIALS</a> available from the Lawrence Livermore National Laboratory is a one of the most popular and well-respected C library for solving non-stiff and stiff systems of ODEs.</p>
-<p><em><em>Currently, this package provides an interface to the CVODE function (serial version) in the library which is used to solve ODEs (or Initial Value Problems). In future, I plan to provide interface for the other solvers in the library also. Right now, this package serves as a test case for providing an interface to the SUNDIALS library for R users.</em></em></p>
+<p><em><em>Currently, this package provides an interface to the CVODE function (serial version) in the library which is used to solve ODEs (or Initial Value Problems). In future, we plan to provide interface for the other solvers in the library also. Right now, this package serves as a test case for providing an interface to the SUNDIALS library for R users.</em></em></p>
 <p><em>One of the advantage of using this package is that all the source code of the <code>SUNDIALS</code> library is bundled with the package itself, so it does not require the <code>SUNDIALS</code> library to be installed on the machine separately (which is sometimes not trivial for Windows).</em></p>
-<p>Also, since this package using <code>Rcpp</code> to bundle the C code, we can use the notation used in <code>Rcpp</code> to describe the system of ODEs. As an example, we try to solve the <code>cv_Roberts_dns.c</code> problem, the original code can be found <a href="https://github.com/LLNL/sundials/blob/master/examples/cvode/serial/cvRoberts_dns.c">here</a>.</p>
 <p>As described in the link above, the problem is from chemical kinetics, and consists of the following three rate equations:</p>
 <p><span class="math display">\[ 
 \begin{aligned}
@@ -97,16 +96,38 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p><span class="math display">\[ y_1 = 1 \times 10^{-4} \]</span></p>
 <p>or at which</p>
 <p><span class="math display">\[ y_3 = 0.01 \]</span>,</p>
-<p>but currently root-finding is not supported in this version. As, in the original example this package also solves the problem with the BDF method, Newton iteration with the SUNDENSE dense linear solver, however, without a user-supplied Jacobian routine. (unlike the original example). It uses a scalar relative tolerance and a vector absolute tolerance (which can be provided as an input). Output is printed in decades from</p>
+<p>but currently root-finding is not supported in this version. As, in the original example this package also solves the problem with the BDF method, Newton iteration with the SUNDENSE dense linear solver, however, without a user-supplied Jacobian routine (unlike the original example). It uses a scalar relative tolerance and a vector absolute tolerance (which can be provided as an input). Output is printed in decades from</p>
 <p><span class="math display">\[ t = 0.4 \]</span></p>
 <p>to</p>
 <p><span class="math display">\[ t = 4 \times 10^{10} \]</span>.</p>
-<p>The system of equations can be expressed using <code>Rcpp</code>’s <code>NumericVector</code> as follows:</p>
+</div>
+<div id="writing-the-differential-equations" class="section level2">
+<h2>Writing the Differential Equations</h2>
+<div id="using-r" class="section level3">
+<h3>Using R</h3>
+<p>Differential equations can be written as an <code>R</code> function or as an <code>Rcpp</code> function. Differential equations function must be written as</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="cf">function</span>(t, y){
+
+  <span class="co"># code to write differential equations</span>
+}</code></pre></div>
+<p>The key aspect to keep in mind is that the signature of the function must be <code>function(t,y)</code>. As an example, we try to solve the <code>cv_Roberts_dns.c</code> problem described above, the original code can be found <a href="https://github.com/LLNL/sundials/blob/master/examples/cvode/serial/cvRoberts_dns.c">here</a>. An example of an <code>R</code> function is as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ODE_R &lt;-<span class="st"> </span><span class="cf">function</span>(t, y){
+
+   ## initialize the derivative vector
+   ydot &lt;-<span class="st"> </span><span class="kw">vector</span>(<span class="dt">mode =</span> <span class="st">&quot;numeric&quot;</span>, <span class="dt">length =</span> <span class="kw">length</span>(y))
+   
+   ydot[<span class="dv">1</span>] =<span class="st"> </span><span class="op">-</span><span class="fl">0.04</span> <span class="op">*</span><span class="st"> </span>y[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span><span class="fl">1e04</span> <span class="op">*</span><span class="st"> </span>y[<span class="dv">2</span>] <span class="op">*</span><span class="st"> </span>y[<span class="dv">3</span>]
+   ydot[<span class="dv">3</span>] =<span class="st"> </span><span class="fl">3e07</span> <span class="op">*</span><span class="st"> </span>y[<span class="dv">2</span>] <span class="op">*</span><span class="st"> </span>y[<span class="dv">2</span>]
+   ydot[<span class="dv">2</span>] =<span class="st"> </span><span class="op">-</span>ydot[<span class="dv">1</span>] <span class="op">-</span><span class="st"> </span>ydot[<span class="dv">3</span>]
+
+   ydot
+}</code></pre></div>
+<p>Also, since this package using <code>Rcpp</code> to bundle the C code, we can use the notation used in <code>Rcpp</code> to describe the system of ODEs. The <code>cv_Roberts_dns</code> problem describe above can be described in an <code>Rcpp</code> function as follows (indices in <code>C++</code> start from <code>0</code>, functions need to declare their return type, here <code>NumericVector</code> and every expression ends in a semicolon, <code>;</code>) :</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span>
 <span class="kw">using</span> <span class="kw">namespace</span> Rcpp;
 
 <span class="co">// [[Rcpp::export]]</span>
-NumericVector cvRoberts_dns (<span class="dt">double</span> t, NumericVector y){
+NumericVector ODE_Rcpp (<span class="dt">double</span> t, NumericVector y){
 
   <span class="co">// Initialize ydot filled with zeros</span>
   NumericVector ydot(y.length());
@@ -119,32 +140,34 @@ NumericVector cvRoberts_dns (<span class="dt">double</span> t, NumericVector y){
 
 }</code></pre></div>
 <p>The above is a re-write of the <code>cvRoberts_dns</code> example in the documentation of <code>CVODE</code>. The original example can be found the document <a href="https://computation.llnl.gov/sites/default/files/public/cv_examples.pdf">here</a>.</p>
-<p>A key step is to generate a pointer to the function defined above. This requires two sub-steps</p>
-<ul>
-<li>defining a type (<code>typedef</code>) for the function pointer</li>
-<li>using function address to return <code>XPtr</code> (which is an <code>Rcpp</code> version of <code>ExternalPointer</code> in <code>R</code>)</li>
-</ul>
-<p>See the code below, make sure that the name after <code>&amp;</code> sign <em>must match</em> the name of the function used to calculate <code>ydot</code> or rates of change. Although a little convoluted, defining the function using <code>C++</code> using <code>Rcpp</code> and accessing it using <code>XPtr</code> can lead to significant gain in performance, hence this approach is applied over defining the function in <code>R</code>.</p>
-<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">typedef</span> NumericVector (*funcPtr) (<span class="dt">double</span> t, NumericVector y);
+</div>
+</div>
+<div id="putting-everything-together" class="section level2">
+<h2>Putting everything together</h2>
+<p>The entire <code>R</code> file to create right hand side of ODE function (which calculates rates of change) is as follows (also found in <code>/inst/examples/cv_Roberts_dns.r</code>):</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># ODEs described by an R function</span>
+ODE_R &lt;-<span class="st"> </span><span class="cf">function</span>(t, y){
 
-<span class="co">// [[Rcpp::export]]</span>
-XPtr&lt;funcPtr&gt; putFunPtrInXPtr() {
+  <span class="co"># vector containing the right hand side gradients</span>
+  ydot =<span class="st"> </span><span class="kw">vector</span>(<span class="dt">mode =</span> <span class="st">&quot;numeric&quot;</span>, <span class="dt">length =</span> <span class="kw">length</span>(y))
 
-  <span class="co">// variable after `&amp;` below MUST MATCH function name used to make RHS of ODEs</span>
-    XPtr&lt;funcPtr&gt; rhs_ptr(<span class="kw">new</span> funcPtr(&amp;cvRoberts_dns), <span class="kw">false</span>); 
-    <span class="cf">return</span> rhs_ptr;
+  <span class="co"># R indices start from 1</span>
+  ydot[<span class="dv">1</span>] =<span class="st"> </span><span class="op">-</span><span class="fl">0.04</span> <span class="op">*</span><span class="st"> </span>y[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span><span class="fl">1e04</span> <span class="op">*</span><span class="st"> </span>y[<span class="dv">2</span>] <span class="op">*</span><span class="st"> </span>y[<span class="dv">3</span>]
+  ydot[<span class="dv">3</span>] =<span class="st"> </span><span class="fl">3e07</span> <span class="op">*</span><span class="st"> </span>y[<span class="dv">2</span>] <span class="op">*</span><span class="st"> </span>y[<span class="dv">2</span>]
+  ydot[<span class="dv">2</span>] =<span class="st"> </span><span class="op">-</span>ydot[<span class="dv">1</span>] <span class="op">-</span><span class="st"> </span>ydot[<span class="dv">3</span>]
 
-}</code></pre></div>
-<p>Both <code>c++</code> code fragments should be combined in the same file. Finally, we need to call the <code>putFunPtrInXPtr()</code> function from <code>R</code>. The entire <code>R</code> file to create right hand side of ODE function (which calculates rates of change) is as follows (also found in <code>/inst/examples/cv_Roberts_dns.r</code>):</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">Rcpp<span class="op">::</span><span class="kw">sourceCpp</span>(<span class="dt">code =</span> <span class="st">'</span>
+  ydot
+
+}
+
+<span class="co"># ODEs can also be described using Rcpp</span>
+Rcpp<span class="op">::</span><span class="kw">sourceCpp</span>(<span class="dt">code =</span> <span class="st">'</span>
 
 <span class="st">#include &lt;Rcpp.h&gt;</span>
 <span class="st">using namespace Rcpp;</span>
 
-<span class="st">typedef NumericVector (*funcPtr) (double t, NumericVector y);</span>
-
 <span class="st">// [[Rcpp::export]]</span>
-<span class="st">NumericVector cv_Roberts_dns (double t, NumericVector y){</span>
+<span class="st">NumericVector ODE_Rcpp (double t, NumericVector y){</span>
 
 <span class="st">  // Initialize ydot filled with zeros</span>
 <span class="st">  NumericVector ydot(y.length());</span>
@@ -155,37 +178,41 @@ XPtr&lt;funcPtr&gt; putFunPtrInXPtr() {
 
 <span class="st">  return ydot;</span>
 
-<span class="st">}</span>
+<span class="st">}'</span>
 
-<span class="st">// [[Rcpp::export]]</span>
-<span class="st">XPtr&lt;funcPtr&gt; putFunPtrInXPtr() {</span>
+<span class="co"># Generate time vector, IC and call cvode to solve the equations</span>
+<span class="co"># R code to genrate time vector, IC and solve the equations</span>
+time_vec &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">0.4</span>, <span class="fl">4.0</span>, <span class="fl">40.0</span>, <span class="fl">4E2</span>, <span class="fl">4E3</span>, <span class="fl">4E4</span>, <span class="fl">4E5</span>, <span class="fl">4E6</span>, <span class="fl">4E7</span>, <span class="fl">4E8</span>, <span class="fl">4E9</span>, <span class="fl">4E10</span>)
+IC &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">0</span>)
+reltol &lt;-<span class="st"> </span><span class="fl">1e-04</span>
+abstol &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="fl">1e-8</span>,<span class="fl">1e-14</span>,<span class="fl">1e-6</span>)
 
-<span class="st">  XPtr&lt;funcPtr&gt; rhs_ptr(new funcPtr(&amp;cv_Roberts_dns), false);</span>
-<span class="st">  return rhs_ptr;</span>
+## Solving the ODEs using cvode function
+df1 &lt;-<span class="st"> </span><span class="kw">cvode</span>(time_vec, IC, ODE_R , reltol, abstol)           ## using R
+df2 &lt;-<span class="st"> </span><span class="kw">cvode</span>(time_vec, IC, ODE_Rcpp , reltol, abstol)        ## using Rcpp
 
-<span class="st">}'</span>)
-
-
-<span class="co"># R code to generate time vector, IC and solve the equations</span>
-time_t &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">0.4</span>, <span class="fl">4.0</span>, <span class="fl">40.0</span>, <span class="fl">4E2</span>, <span class="fl">4E3</span>, <span class="fl">4E4</span>, <span class="fl">4E5</span>, <span class="fl">4E6</span>, <span class="fl">4E7</span>, <span class="fl">4E8</span>, <span class="fl">4E9</span>, <span class="fl">4E10</span>)
-my_fun &lt;-<span class="st"> </span><span class="kw">putFunPtrInXPtr</span>()
-df &lt;-<span class="st"> </span><span class="kw">cvode</span>(time_t, <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">0</span>), my_fun , <span class="fl">1e-04</span>, <span class="kw">c</span>(<span class="fl">1e-8</span>,<span class="fl">1e-14</span>,<span class="fl">1e-6</span>))</code></pre></div>
-<p>The final output is the <code>df</code> matrix in which first column is time, second, third and fourth column are the values of <code>y1</code>, <code>y2</code> and <code>y3</code> respectively.</p>
-<pre><code>&gt; df
-       [,1]         [,2]         [,3]       [,4]
- [1,] 0e+00 1.000000e+00 0.000000e+00 0.00000000
- [2,] 4e-01 9.851641e-01 3.386242e-05 0.01480205
- [3,] 4e+00 9.055097e-01 2.240338e-05 0.09446793
- [4,] 4e+01 7.158016e-01 9.185043e-06 0.28418924
- [5,] 4e+02 4.505209e-01 3.222826e-06 0.54947590
- [6,] 4e+03 1.832217e-01 8.943516e-07 0.81677741
- [7,] 4e+04 3.898091e-02 1.621669e-07 0.96101893
- [8,] 4e+05 4.936971e-03 1.984450e-08 0.99506301
- [9,] 4e+06 5.170103e-04 2.069098e-09 0.99948299
-[10,] 4e+07 5.204927e-05 2.082078e-10 0.99994795
-[11,] 4e+08 5.184946e-06 2.073989e-11 0.99999482
-[12,] 4e+09 5.246212e-07 2.098486e-12 0.99999948
-[13,] 4e+10 6.043000e-08 2.417200e-13 0.99999994</code></pre>
+## Check that both solutions are identical
+<span class="kw">identical</span>(df1, df2)</code></pre></div>
+<p>The final output is the <code>df1</code> matrix in which first column is time, second, third and fourth column are the values of <code>y1</code>, <code>y2</code> and <code>y3</code> respectively.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="op">&gt;</span><span class="st"> </span>df1
+       [,<span class="dv">1</span>]         [,<span class="dv">2</span>]         [,<span class="dv">3</span>]       [,<span class="dv">4</span>]
+ [<span class="dv">1</span>,] <span class="fl">0e+00</span> <span class="fl">1.000000e+00</span> <span class="fl">0.000000e+00</span> <span class="fl">0.00000000</span>
+ [<span class="dv">2</span>,] <span class="fl">4e-01</span> <span class="fl">9.851641e-01</span> <span class="fl">3.386242e-05</span> <span class="fl">0.01480205</span>
+ [<span class="dv">3</span>,] <span class="fl">4e+00</span> <span class="fl">9.055097e-01</span> <span class="fl">2.240338e-05</span> <span class="fl">0.09446793</span>
+ [<span class="dv">4</span>,] <span class="fl">4e+01</span> <span class="fl">7.158016e-01</span> <span class="fl">9.185043e-06</span> <span class="fl">0.28418924</span>
+ [<span class="dv">5</span>,] <span class="fl">4e+02</span> <span class="fl">4.505209e-01</span> <span class="fl">3.222826e-06</span> <span class="fl">0.54947590</span>
+ [<span class="dv">6</span>,] <span class="fl">4e+03</span> <span class="fl">1.832217e-01</span> <span class="fl">8.943516e-07</span> <span class="fl">0.81677741</span>
+ [<span class="dv">7</span>,] <span class="fl">4e+04</span> <span class="fl">3.898091e-02</span> <span class="fl">1.621669e-07</span> <span class="fl">0.96101893</span>
+ [<span class="dv">8</span>,] <span class="fl">4e+05</span> <span class="fl">4.936971e-03</span> <span class="fl">1.984450e-08</span> <span class="fl">0.99506301</span>
+ [<span class="dv">9</span>,] <span class="fl">4e+06</span> <span class="fl">5.170103e-04</span> <span class="fl">2.069098e-09</span> <span class="fl">0.99948299</span>
+[<span class="dv">10</span>,] <span class="fl">4e+07</span> <span class="fl">5.204927e-05</span> <span class="fl">2.082078e-10</span> <span class="fl">0.99994795</span>
+[<span class="dv">11</span>,] <span class="fl">4e+08</span> <span class="fl">5.184946e-06</span> <span class="fl">2.073989e-11</span> <span class="fl">0.99999482</span>
+[<span class="dv">12</span>,] <span class="fl">4e+09</span> <span class="fl">5.246212e-07</span> <span class="fl">2.098486e-12</span> <span class="fl">0.99999948</span>
+[<span class="dv">13</span>,] <span class="fl">4e+10</span> <span class="fl">6.043000e-08</span> <span class="fl">2.417200e-13</span> <span class="fl">0.99999994</span></code></pre></div>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>The package <code>sundialr</code> provides a way to interface with the famous ‘SUNDIALS’ C library to solver initial value problems. The package allows differential equation to be written in <code>R</code> or using <code>Rcpp</code>. Currently only a single initialization is supported, but we plan to add repeated initializations (e.g., repeated dosing) in near future. In addition, other solvers from the C library such as <code>cvodes</code> and <code>IDA</code> will be added soon.</p>
 </div>
 
 

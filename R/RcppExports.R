@@ -4,13 +4,13 @@
 #'cvode
 #'
 #' CVODE solver to solve stiff ODEs
-#'@param time_vec time vector
+#'@param time_vector time vector
 #'@param IC Initial Conditions
-#'@param xpsexp External pointer to RHS function
+#'@param input_function External pointer to RHS function
 #'@param reltolerance Relative Tolerance (a scalar)
 #'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
 #'@example /inst/examples/cv_Roberts_dns.r
-cvode <- function(time_vec, IC, xpsexp, reltolerance, abstolerance) {
-    .Call('_sundialr_cvode', PACKAGE = 'sundialr', time_vec, IC, xpsexp, reltolerance, abstolerance)
+cvode <- function(time_vector, IC, input_function, reltolerance, abstolerance) {
+    .Call('_sundialr_cvode', PACKAGE = 'sundialr', time_vector, IC, input_function, reltolerance, abstolerance)
 }
 

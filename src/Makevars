@@ -70,7 +70,6 @@ all: ($SHLIB)
 	$(AR) -crvs ../inst/libsundials_all.a $(OBJECTS_SUNDIALS_ALL)
 
 clean:
-	echo "cleaning ..."
 	(cd ./sundials/cvode;rm -f *.o)
 	(cd ./sundials/nvec_ser;rm -f *.o)
 	(cd ./sundials/sundials;rm -f *.o)
