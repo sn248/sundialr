@@ -72,7 +72,6 @@ all: ($SHLIB)
 
 
 clean:
-	echo "cleaning ..."
 	(cd ./sundials/cvode;rm -f *.o)
 	(cd ./sundials/nvec_ser;rm -f *.o)
 	(cd ./sundials/sundials;rm -f *.o)
