@@ -99,7 +99,7 @@ int rhs_func(realtype t, N_Vector y, N_Vector ydot, void* user_data){
       ydot1 = rhs_fun(t, y1);
     }
     else{
-      stop("Something went wrong");
+      stop("Something went wrong, stopping!");
     }
   }
   else {

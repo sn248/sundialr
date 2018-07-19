@@ -19,7 +19,6 @@ Rcpp::sourceCpp(code = '
                 #include <Rcpp.h>
                 using namespace Rcpp;
 
-
                 // ODE functions defined using Rcpp
                 // [[Rcpp::export]]
                 NumericVector ODE_Rcpp (double t, NumericVector y){
@@ -33,19 +32,7 @@ Rcpp::sourceCpp(code = '
 
                 return ydot;
 
-                }
-
-                // code to generate function pointer
-
-                //// typedef NumericVector (*funcPtr) (double t, NumericVector y);
-                //// // [[Rcpp::export]]
-                //// XPtr<funcPtr> ODE_Rcpp_ptr() {
-
-                //// XPtr<funcPtr> rhs_ptr(new funcPtr(&ODE_Rcpp), false);
-                //// return rhs_ptr;
-
-                //// }
-                ')
+                }')
 
 
 
