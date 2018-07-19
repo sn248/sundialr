@@ -26,7 +26,7 @@ typedef NumericVector (*funcPtr) (double t, NumericVector y);
 //   SEXP rhs_eqn;
 // };
 
-// struct to use if R function is input as RHS function
+// struct to use if R or Rcpp function is input as RHS function
 struct rhs_func{
   Function rhs_eqn;
 };
@@ -85,24 +85,31 @@ int rhs_func(realtype t, N_Vector y, N_Vector ydot, void* user_data){
   }
 
   // convert ydot to NumericVector ydot1
-  int ydot_len = NV_LENGTH_S(ydot);
+  // int ydot_len = NV_LENGTH_S(ydot);
 
-  NumericVector ydot1(ydot_len);    // filled with zeros
+  NumericVector ydot1(y_len);    // filled with zeros
 
-  // cast void pointer to pointer to struct and assign rhs to a Function
+  // // cast void pointer to pointer to struct and assign rhs to a Function
   struct rhs_func *my_rhs_fun = (struct rhs_func*)user_data;
-  Function rhs_fun = (*my_rhs_fun).rhs_eqn;
 
-  // use function pointer to get the derivatives
-  // XPtr<funcPtr> rhs_fun_xptr(rhs_fun_sexp);
-  // funcPtr rhs_fun = *rhs_fun_xptr;
+  if(my_rhs_fun){
+    Function rhs_fun = (*my_rhs_fun).rhs_eqn;
+    if (rhs_fun){
+      // use the function to calculate value of RHS ----
+      ydot1 = rhs_fun(t, y1);
+    }
+    else{
+      stop("Something went wrong");
+    }
+  }
+  else {
+    stop("Something went wrong, stopping!");
+  }
 
-  // use the function to calculate value of RHS ----
-  ydot1 = rhs_fun(t, y1);
 
   // convert NumericVector ydot1 to N_Vector ydot
   realtype *ydot_ptr = N_VGetArrayPointer(ydot);
-  for (int i = 0; i<ydot1.length(); i++){
+  for (int i = 0; i<  y_len; i++){
     ydot_ptr[i] = ydot1[i];
   }
 
@@ -178,6 +185,11 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
   if (check_flag((void *) cvode_mem, "CVodeCreate", 0)) { stop("Stopping cvode!"); }
 
   //-- assign user input to the struct based on SEXP type of input_function
+
+  if (!input_function){
+    stop("Something is wrong with input function, stopping!");
+  }
+
   switch(TYPEOF(input_function)){
 
   case CLOSXP:{
