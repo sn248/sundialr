@@ -60,14 +60,15 @@ Rcpp::sourceCpp(code = '
 
                 // code to generate function pointer
 
-                typedef NumericVector (*funcPtr) (double t, NumericVector y);
-                // [[Rcpp::export]]
-                XPtr<funcPtr> ODE_Rcpp_ptr() {
+                //// typedef NumericVector (*funcPtr) (double t, NumericVector y);
+                //// // [[Rcpp::export]]
+                //// XPtr<funcPtr> ODE_Rcpp_ptr() {
 
-                XPtr<funcPtr> rhs_ptr(new funcPtr(&ODE_Rcpp), false);
-                return rhs_ptr;
+                //// XPtr<funcPtr> rhs_ptr(new funcPtr(&ODE_Rcpp), false);
+                //// return rhs_ptr;
 
-                }')
+                //// }
+                ')
 
 
 
@@ -82,5 +83,5 @@ df1 <- cvode(time_vec, IC, ODE_R , reltol, abstol)           ## using R
 df2 <- cvode(time_vec, IC, ODE_Rcpp , reltol, abstol)        ## using Rcpp
 
 ## Check that both solutions are identical
-identical(df1, df2)
+# identical(df1, df2)
 }
