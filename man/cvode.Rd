@@ -42,7 +42,6 @@ Rcpp::sourceCpp(code = '
                 #include <Rcpp.h>
                 using namespace Rcpp;
 
-
                 // ODE functions defined using Rcpp
                 // [[Rcpp::export]]
                 NumericVector ODE_Rcpp (double t, NumericVector y){
@@ -56,6 +55,16 @@ Rcpp::sourceCpp(code = '
 
                 return ydot;
 
+                }
+
+                typedef NumericVector (*funcPtr) (double t, NumericVector y);
+
+                // [[Rcpp::export]]
+                XPtr<funcPtr> putFunPtrInXPtr() {
+
+                XPtr<funcPtr> rhs_ptr(new funcPtr(&ODE_Rcpp), false);
+                return rhs_ptr;
+
                 }')
 
 
@@ -68,6 +77,7 @@ abstol <- c(1e-8,1e-14,1e-6)
 
 ## Solving the ODEs using cvode function
 df1 <- cvode(time_vec, IC, ODE_R , reltol, abstol)           ## using R
+# my_ptr <- putFunPtrInXPtr()
 df2 <- cvode(time_vec, IC, ODE_Rcpp , reltol, abstol)        ## using Rcpp
 
 ## Check that both solutions are identical
