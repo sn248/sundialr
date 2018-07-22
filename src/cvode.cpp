@@ -15,7 +15,7 @@
 using namespace Rcpp;
 
 //-- typedefs for RHS function pointer input in from R -------------------------
-typedef NumericVector (*funcPtr) (double t, NumericVector y);
+// typedef NumericVector (*funcPtr) (double t, NumericVector y);
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -137,7 +137,6 @@ int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
 NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_function,
                     double reltolerance, NumericVector abstolerance){
 
-
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
   int abstol_len = abstolerance.length();
@@ -171,21 +170,18 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
   //----------------------------------------------------------------------------
-
-  // Set the initial conditions-------------------------------------------------
+  // // Set the initial conditions-------------------------------------------------
   N_Vector y0 = N_VNew_Serial(y_len);
   realtype *y0_ptr = N_VGetArrayPointer(y0);
   for (int i = 0; i<y_len; i++){
     y0_ptr[i] = IC[i]; // NV_Ith_S(y0, i)
   }
-  //----------------------------------------------------------------------------
-
-
+  // //----------------------------------------------------------------------------
   void *cvode_mem;
   cvode_mem = NULL;
 
-  // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
-  // and the use of a Newton iteration
+  // // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
+  // // and the use of a Newton iteration
   cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
   if (check_flag((void *) cvode_mem, "CVodeCreate", 0)) { stop("Stopping cvode!"); }
 
@@ -194,7 +190,6 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
   if (!input_function){
     stop("Something is wrong with input function, stopping!");
   }
-
   switch(TYPEOF(input_function)){
 
   case CLOSXP:{
@@ -224,10 +219,11 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     // Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode
     flag = CVDlsSetLinearSolver(cvode_mem, LS, SM);
     if(check_flag(&flag, "CVDlsSetLinearSolver", 1)) { stop("Stopping cvode!"); }
-
     // NumericMatrix to store results - filled with 0.0
+
     // First row for initial conditions, First column is for time
-    NumericMatrix soln = NumericMatrix(time_vec_len, y_len + 1);
+    int y_len_1 = y_len + 1;
+    NumericMatrix soln(Dimension(time_vec_len,y_len_1));
 
     // fill the first row of soln matrix with Initial Conditions
     soln(0,0) = time_vector[0];   // get the first time value
@@ -298,8 +294,4 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
 
 }
 
-//--- CVODE definition ends ----------------------------------------------------
-
-
-
-
+// //--- CVODE definition ends ----------------------------------------------------
