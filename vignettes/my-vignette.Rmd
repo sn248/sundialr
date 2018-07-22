@@ -146,7 +146,7 @@ NumericVector ODE_Rcpp (double t, NumericVector y){
 
   return ydot;
 
-}'
+}')
 
 # Generate time vector, IC and call cvode to solve the equations
 # R code to genrate time vector, IC and solve the equations
