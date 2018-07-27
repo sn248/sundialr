@@ -129,7 +129,7 @@ int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
 //' CVODE solver to solve stiff ODEs
 //'@param time_vector time vector
 //'@param IC Initial Conditions
-//'@param input_function External pointer to RHS function
+//'@param input_function Right Hand Side function of ODEs
 //'@param reltolerance Relative Tolerance (a scalar)
 //'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
 //'@example /inst/examples/cv_Roberts_dns.r

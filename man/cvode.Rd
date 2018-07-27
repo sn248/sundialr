@@ -11,7 +11,7 @@ cvode(time_vector, IC, input_function, reltolerance, abstolerance)
 
 \item{IC}{Initial Conditions}
 
-\item{input_function}{External pointer to RHS function}
+\item{input_function}{Right Hand Side function of ODEs}
 
 \item{reltolerance}{Relative Tolerance (a scalar)}
 
@@ -28,8 +28,8 @@ ODE_R <- function(t, y){
   ydot = vector(mode = "numeric", length = length(y))
 
   # R indices start from 1
-  ydot[1] = -0.04 * y[1] + 1e04 * y[2] * y[3]
-  ydot[3] = 3e07 * y[2] * y[2]
+  ydot[1] = -0.04 * y[1] + 10000 * y[2] * y[3]
+  ydot[3] = 30000000 * y[2] * y[2]
   ydot[2] = -ydot[1] - ydot[3]
 
   ydot
@@ -49,8 +49,8 @@ Rcpp::sourceCpp(code = '
                 // Initialize ydot filled with zeros
                 NumericVector ydot(y.length());
 
-                ydot[0] = -0.04 * y[0] + 1e04 * y[1] * y[2];
-                ydot[2] = 3e07 * y[1] * y[1];
+                ydot[0] = -0.04 * y[0] + 10000 * y[1] * y[2];
+                ydot[2] = 30000000 * y[1] * y[1];
                 ydot[1] = -ydot[0] - ydot[2];
 
                 return ydot;
