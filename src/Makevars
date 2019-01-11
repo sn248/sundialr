@@ -3,6 +3,8 @@ PKG_CPPFLAGS= -I../inst/include/ -I./inst/
 PKG_LIBS= $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -L../inst/ ../inst/libsundials_all.a
 LIBS=-L./ -L../inst/
 
+.NOTPARALLEL:
+
 SOURCES= cvode.cpp RcppExports.cpp
 OBJECTS= $(SOURCES:.cpp=.o)
 
