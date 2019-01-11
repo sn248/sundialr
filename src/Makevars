@@ -62,9 +62,9 @@ $(SOURCES_SUNLINSOL_DENSE) $(SOURCES_SUNMAT)
 
 OBJECTS_SUNDIALS_ALL = $(SOURCES_SUNDIALS_ALL:.c=.o)
 
-all: ($SHLIB)
+all: $(SHLIB)
 
-($SHLIB): $(OBJECTS) ../inst/libsundials_all.a
+$(SHLIB): ../inst/libsundials_all.a
 
 ../inst/libsundials_all.a: $(OBJECTS_SUNDIALS_ALL)
 	$(AR) -crvs ../inst/libsundials_all.a $(OBJECTS_SUNDIALS_ALL)

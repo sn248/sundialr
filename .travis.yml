@@ -3,3 +3,7 @@
 language: R
 sudo: false
 cache: packages
+# to check parallel make
+env:
+  global:
+  - MAKEFLAGS="-j 2"
