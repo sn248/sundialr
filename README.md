@@ -3,3 +3,7 @@
 # sundialr
 
 A wrapper around the SUNDIALS ODE solving C library.
+
+# What's new?
+
+The branch works with the version 4.0.1 of SUNDIALS (released in Dec 2018)

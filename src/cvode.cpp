@@ -3,7 +3,7 @@
 
 #include <cvode/cvode.h>               /* prototypes for CVODE fcts., consts. */
 #include <nvector/nvector_serial.h>    /* serial N_Vector types, fcts., macros */
-#include <cvode/cvode_direct.h>         /* prototype for CVDense */
+// #include <cvode/cvode_direct.h>         /* prototype for CVDense */
 // #include <sundials/sundials_dense.h>   /* definitions DlsMat DENSE_ELEM */
 #include <sundials/sundials_types.h>   /* definition of type realtype */
 #include <sunmatrix/sunmatrix_dense.h>
@@ -80,7 +80,7 @@ struct rhs_func{
 // function called by CVodeInit if user inputs R function
 int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
 
-    // convert y to NumericVector y1
+  // convert y to NumericVector y1
   int y_len = NV_LENGTH_S(y);
 
   NumericVector y1(y_len);    // filled with zeros
@@ -181,8 +181,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
   cvode_mem = NULL;
 
   // // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
-  // // and the use of a Newton iteration
-  cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
+  cvode_mem = CVodeCreate(CV_BDF);
   if (check_flag((void *) cvode_mem, "CVodeCreate", 0)) { stop("Stopping cvode!"); }
 
   //-- assign user input to the struct based on SEXP type of input_function
@@ -213,11 +212,11 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     if(check_flag((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping cvode!"); }
 
     // Create dense SUNLinearSolver object for use by CVode
-    SUNLinearSolver LS = SUNDenseLinearSolver(y0, SM);
-    if(check_flag((void *)LS, "SUNDenseLinearSolver", 0)) { stop("Stopping cvode!"); }
+    SUNLinearSolver LS = SUNLinSol_Dense(y0, SM);
+    if(check_flag((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping cvode!"); }
 
     // Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode
-    flag = CVDlsSetLinearSolver(cvode_mem, LS, SM);
+    flag = CVodeSetLinearSolver(cvode_mem, LS, SM);
     if(check_flag(&flag, "CVDlsSetLinearSolver", 1)) { stop("Stopping cvode!"); }
     // NumericMatrix to store results - filled with 0.0
 
@@ -270,23 +269,23 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     break;
   }
 
-  // case EXTPTRSXP: {
-  //   Rprintf("Reached in EXTPTRSXP\n");
-  //   Rprintf("Type of input_function is %d\n", TYPEOF(input_function));
-  //   struct rhs_xptr my_rhs_xptr = {input_function};
-  //   // setting the user_data in rhs function
-  //   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_xptr);
-  //   if (check_flag(&flag, "CVodeSetUserData", 1)) { stop("Stopping cvode!"); }
-  //
-  //   flag = CVodeInit(cvode_mem, rhs_pointer, T0, y0);
-  //   if (check_flag(&flag, "CVodeInit", 1)) { stop("Stopping cvode!"); }
-  //
-  //   break;
-  // }
+    // case EXTPTRSXP: {
+    //   Rprintf("Reached in EXTPTRSXP\n");
+    //   Rprintf("Type of input_function is %d\n", TYPEOF(input_function));
+    //   struct rhs_xptr my_rhs_xptr = {input_function};
+    //   // setting the user_data in rhs function
+    //   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_xptr);
+    //   if (check_flag(&flag, "CVodeSetUserData", 1)) { stop("Stopping cvode!"); }
+    //
+    //   flag = CVodeInit(cvode_mem, rhs_pointer, T0, y0);
+    //   if (check_flag(&flag, "CVodeInit", 1)) { stop("Stopping cvode!"); }
+    //
+    //   break;
+    // }
 
   default: {
     stop("Incorrect input function type - input function can be an R or Rcpp function");
-    }
+  }
 
   }
 
