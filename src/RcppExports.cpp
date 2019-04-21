@@ -6,23 +6,24 @@
 using namespace Rcpp;
 
 // cvode
-NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_function, double reltolerance, NumericVector abstolerance);
-RcppExport SEXP _sundialr_cvode(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
+NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, double reltolerance, NumericVector abstolerance);
+RcppExport SEXP _sundialr_cvode(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type time_vector(time_vectorSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type IC(ICSEXP);
     Rcpp::traits::input_parameter< SEXP >::type input_function(input_functionSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type Parameters(ParametersSEXP);
     Rcpp::traits::input_parameter< double >::type reltolerance(reltoleranceSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type abstolerance(abstoleranceSEXP);
-    rcpp_result_gen = Rcpp::wrap(cvode(time_vector, IC, input_function, reltolerance, abstolerance));
+    rcpp_result_gen = Rcpp::wrap(cvode(time_vector, IC, input_function, Parameters, reltolerance, abstolerance));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_sundialr_cvode", (DL_FUNC) &_sundialr_cvode, 5},
+    {"_sundialr_cvode", (DL_FUNC) &_sundialr_cvode, 6},
     {NULL, NULL, 0}
 };
 

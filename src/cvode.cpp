@@ -9,8 +9,8 @@
 #include <sunmatrix/sunmatrix_dense.h>
 #include <sunlinsol/sunlinsol_dense.h>
 
-#include <check_flag.h>
-#include "check_flag.cpp"
+#include <check_retval.h>
+#include "check_retval.cpp"
 
 using namespace Rcpp;
 
@@ -29,6 +29,7 @@ using namespace Rcpp;
 // struct to use if R or Rcpp function is input as RHS function
 struct rhs_func{
   Function rhs_eqn;
+  NumericVector params;
 };
 //------------------------------------------------------------------------------
 
@@ -99,10 +100,12 @@ int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
   struct rhs_func *my_rhs_fun = (struct rhs_func*)user_data;
 
   if(my_rhs_fun){
-    Function rhs_fun = (*my_rhs_fun).rhs_eqn;
+    Function rhs_fun = (*my_rhs_fun).rhs_eqn;           // function
+    NumericVector p_values = (*my_rhs_fun).params;      // rate parameters
+
     if (rhs_fun && (TYPEOF(rhs_fun) == CLOSXP)){
       // use the function to calculate value of RHS ----
-      ydot1 = rhs_fun(t, y1);
+      ydot1 = rhs_fun(t, y1, p_values);
     }
     else{
       stop("Something went wrong, stopping!");
@@ -130,12 +133,13 @@ int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
 //'@param time_vector time vector
 //'@param IC Initial Conditions
 //'@param input_function Right Hand Side function of ODEs
+//'@param Parameters Parameters input to ODEs
 //'@param reltolerance Relative Tolerance (a scalar)
 //'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
 //'@example /inst/examples/cv_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_function,
-                    double reltolerance, NumericVector abstolerance){
+                    NumericVector Parameters, double reltolerance, NumericVector abstolerance){
 
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
@@ -182,7 +186,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
 
   // // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
   cvode_mem = CVodeCreate(CV_BDF);
-  if (check_flag((void *) cvode_mem, "CVodeCreate", 0)) { stop("Stopping cvode!"); }
+  if (check_retval((void *) cvode_mem, "CVodeCreate", 0)) { stop("Stopping cvode!"); }
 
   //-- assign user input to the struct based on SEXP type of input_function
 
@@ -193,31 +197,32 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
 
   case CLOSXP:{
 
-    struct rhs_func my_rhs_function = {input_function};
+    struct rhs_func my_rhs_function = {input_function, Parameters};
+
     // setting the user_data in rhs function
     flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
-    if (check_flag(&flag, "CVodeSetUserData", 1)) { stop("Stopping cvode!"); }
+    if (check_retval(&flag, "CVodeSetUserData", 1)) { stop("Stopping cvode!"); }
 
     flag = CVodeInit(cvode_mem, rhs_function, T0, y0);
-    if (check_flag(&flag, "CVodeInit", 1)) { stop("Stopping cvode!"); }
+    if (check_retval(&flag, "CVodeInit", 1)) { stop("Stopping cvode!"); }
 
     // Call CVodeSVtolerances to specify the scalar relative tolerance and vector absolute tol
     flag = CVodeSVtolerances(cvode_mem, reltol, abstol);
-    if (check_flag(&flag, "CVodeSVtolerances", 1)) { stop("Stopping cvode!"); }
+    if (check_retval(&flag, "CVodeSVtolerances", 1)) { stop("Stopping cvode!"); }
 
     //--required in the new version ----------------------------------------------
     // Create dense SUNMatrix for use in linear solves
     sunindextype y_len_M = y_len;
     SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M);
-    if(check_flag((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping cvode!"); }
+    if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping cvode!"); }
 
     // Create dense SUNLinearSolver object for use by CVode
     SUNLinearSolver LS = SUNLinSol_Dense(y0, SM);
-    if(check_flag((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping cvode!"); }
+    if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping cvode!"); }
 
     // Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode
     flag = CVodeSetLinearSolver(cvode_mem, LS, SM);
-    if(check_flag(&flag, "CVDlsSetLinearSolver", 1)) { stop("Stopping cvode!"); }
+    if(check_retval(&flag, "CVDlsSetLinearSolver", 1)) { stop("Stopping cvode!"); }
     // NumericMatrix to store results - filled with 0.0
 
     // First row for initial conditions, First column is for time
@@ -241,7 +246,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
 
       flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
 
-      if (check_flag(&flag, "CVode", 1)) { break; } // Something went wrong in solving it!
+      if (check_retval(&flag, "CVode", 1)) { break; } // Something went wrong in solving it!
       if (flag == CV_SUCCESS) {
 
         // store results in soln matrix
