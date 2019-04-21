@@ -7,10 +7,11 @@
 #'@param time_vector time vector
 #'@param IC Initial Conditions
 #'@param input_function Right Hand Side function of ODEs
+#'@param Parameters Parameters input to ODEs
 #'@param reltolerance Relative Tolerance (a scalar)
 #'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
 #'@example /inst/examples/cv_Roberts_dns.r
-cvode <- function(time_vector, IC, input_function, reltolerance, abstolerance) {
-    .Call('_sundialr_cvode', PACKAGE = 'sundialr', time_vector, IC, input_function, reltolerance, abstolerance)
+cvode <- function(time_vector, IC, input_function, Parameters, reltolerance, abstolerance) {
+    .Call('_sundialr_cvode', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance)
 }
 

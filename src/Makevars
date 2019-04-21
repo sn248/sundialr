@@ -5,7 +5,6 @@ LIBS=-L./ -L../inst/
 
 .PHONY: all ../inst/libsundials_all.a
 
-
 SOURCES= cvode.cpp RcppExports.cpp
 OBJECTS= $(SOURCES:.cpp=.o)
 
