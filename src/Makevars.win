@@ -5,16 +5,23 @@ LIBS=-L./ -L../inst/
 
 .PHONY: all ../inst/libsundials_all.a
 
-SOURCES= cvode.cpp RcppExports.cpp
+SOURCES= check_retval.cpp cvode.cpp cvodes.cpp RcppExports.cpp
 OBJECTS= $(SOURCES:.cpp=.o)
 
-SOURCES_CVODE= ./sundials/cvode/cvode.c ./sundials/cvode/cvode_bandpre.c \
-./sundials/cvode/cvode_bbdpre.c \
-./sundials/cvode/cvode_diag.c \
-./sundials/cvode/cvode_io.c \
-./sundials/cvode/cvode_ls.c \
-./sundials/cvode/cvode_nls.c
+#SOURCES_CVODE= ./sundials/cvode/cvode.c ./sundials/cvode/cvode_bandpre.c \
+#./sundials/cvode/cvode_bbdpre.c \
+#./sundials/cvode/cvode_diag.c \
+#./sundials/cvode/cvode_io.c \
+#./sundials/cvode/cvode_ls.c \
+#./sundials/cvode/cvode_nls.c
 
+SOURCES_CVODES = ./sundials/cvodes/cvodea.c ./sundials/cvodes/cvodea_io.c \
+./sundials/cvodes/cvodes.c \
+./sundials/cvodes/cvodes_bandpre.c ./sundials/cvodes/cvodes_bbdpre.c \
+./sundials/cvodes/cvodes_diag.c ./sundials/cvodes/cvodes_io.c \
+./sundials/cvodes/cvodes_ls.c ./sundials/cvodes/cvodes_nls.c \
+./sundials/cvodes/cvodes_nls_sim.c ./sundials/cvodes/cvodes_nls_stg.c \
+./sundials/cvodes/cvodes_nls_stg1.c
 
 SOURCES_NVECSERIAL= ./sundials/nvec_ser/fnvector_serial.c \
 ./sundials/nvec_ser/nvector_serial.c
@@ -50,7 +57,7 @@ SOURCES_SUNNONLINSOL = ./sundials/sunnonlinsol/newton/sunnonlinsol_newton.c \
 ./sundials/sunnonlinsol/fixedpoint/fsunnonlinsol_fixedpoint.c
 
 
-SOURCES_SUNDIALS_ALL= $(SOURCES_CVODE) $(SOURCES_NVECSERIAL) $(SOURCES_SUNDIALS) \
+SOURCES_SUNDIALS_ALL= $(SOURCES_CVODES) $(SOURCES_NVECSERIAL) $(SOURCES_SUNDIALS) \
 $(SOURCES_SUNLINSOL_DENSE) $(SOURCES_SUNLINSOL_BAND) \
 $(SOURCES_SUNMAT) $(SOURCES_SUNNONLINSOL)
 
@@ -67,6 +74,7 @@ $(SHLIB): ../inst/libsundials_all.a
 
 clean:
 	(cd ./sundials/cvode;rm -f *.o)
+	(cd ./sundials/cvodes;rm -f *.o)
 	(cd ./sundials/nvec_ser;rm -f *.o)
 	(cd ./sundials/sundials;rm -f *.o)
 	(cd ./sundials/sunlinsol_dense;rm -f *.o)
@@ -78,4 +86,3 @@ clean:
 	rm -f *.dll
 	rm -f *.exe
 	(cd ../inst;rm -f *.a)
-
