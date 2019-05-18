@@ -10,7 +10,9 @@
 #include <sunlinsol/sunlinsol_dense.h>
 
 #include <check_retval.h>
-#include "check_retval.cpp"
+// #include "check_retval.cpp"
+
+#define Ith(v,i)    NV_Ith_S(v,i-1)         /* i-th vector component i=1..NEQ */
 
 using namespace Rcpp;
 
@@ -85,9 +87,9 @@ int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
   int y_len = NV_LENGTH_S(y);
 
   NumericVector y1(y_len);    // filled with zeros
-  realtype *y_ptr = N_VGetArrayPointer(y);
+  // realtype *y_ptr = N_VGetArrayPointer(y);
   for (int i = 0; i < y_len; i++){
-    y1[i] = y_ptr[i];
+    y1[i] = Ith(y,i+1); // y_ptr[i];
   }
 
   NumericVector ydot1(y_len);    // filled with zeros
