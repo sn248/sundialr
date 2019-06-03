@@ -203,28 +203,28 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
 
     // setting the user_data in rhs function
     flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
-    if (check_retval(&flag, "CVodeSetUserData", 1)) { stop("Stopping cvode!"); }
+    if (check_retval(&flag, "CVodeSetUserData", 1)) { stop("Stopping cvode, something went wrong in setting user data!"); }
 
     flag = CVodeInit(cvode_mem, rhs_function, T0, y0);
-    if (check_retval(&flag, "CVodeInit", 1)) { stop("Stopping cvode!"); }
+    if (check_retval(&flag, "CVodeInit", 1)) { stop("Stopping cvode, something went wrong in initializing CVODE!"); }
 
     // Call CVodeSVtolerances to specify the scalar relative tolerance and vector absolute tol
     flag = CVodeSVtolerances(cvode_mem, reltol, abstol);
-    if (check_retval(&flag, "CVodeSVtolerances", 1)) { stop("Stopping cvode!"); }
+    if (check_retval(&flag, "CVodeSVtolerances", 1)) { stop("Stopping cvode, something went wrong in setting solver tolerances!"); }
 
     //--required in the new version ----------------------------------------------
     // Create dense SUNMatrix for use in linear solves
     sunindextype y_len_M = y_len;
     SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M);
-    if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping cvode!"); }
+    if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping cvode, something went wrong in setting the dense matrix!"); }
 
     // Create dense SUNLinearSolver object for use by CVode
     SUNLinearSolver LS = SUNLinSol_Dense(y0, SM);
-    if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping cvode!"); }
+    if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping cvode, something went wrong in setting the linear solver!"); }
 
     // Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode
     flag = CVodeSetLinearSolver(cvode_mem, LS, SM);
-    if(check_retval(&flag, "CVDlsSetLinearSolver", 1)) { stop("Stopping cvode!"); }
+    if(check_retval(&flag, "CVDlsSetLinearSolver", 1)) { stop("Stopping cvode, something went wrong in setting the linear solver!"); }
     // NumericMatrix to store results - filled with 0.0
 
     // First row for initial conditions, First column is for time
@@ -248,7 +248,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
 
       flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
 
-      if (check_retval(&flag, "CVode", 1)) { break; } // Something went wrong in solving it!
+      if (check_retval(&flag, "CVode", 1)) { stop("Stopping CVODE, something went wrong in solving the system of ODEs!"); break; } // Something went wrong in solving it!
       if (flag == CV_SUCCESS) {
 
         // store results in soln matrix
