@@ -41,7 +41,7 @@ parameter (REALTYPE=8)
 !          8  (64BIT)
 !
 integer SUNINDEXTYPE
-parameter (SUNINDEXTYPE=4)
+parameter (SUNINDEXTYPE=8)
 
 !     If building with MPI enabled, define the logical flag 
 !     "SUNDIALS_MPI_COMM_F2C" indicating whether the user can specify
@@ -50,7 +50,5 @@ parameter (SUNINDEXTYPE=4)
 !          .true.   (communicator can differ from MPI_COMM_WORLD)
 !          .false.  (communicator must be MPI_COMM_WORLD)
 !
-!      logical SUNDIALS_MPI_COMM_F2C
-!      parameter (SUNDIALS_MPI_COMM_F2C=)
-
-
+logical SUNDIALS_MPI_COMM_F2C
+parameter (SUNDIALS_MPI_COMM_F2C=.false.)

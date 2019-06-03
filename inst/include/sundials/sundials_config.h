@@ -10,9 +10,9 @@
  * -----------------------------------------------------------------*/
 
 /* Define SUNDIALS version numbers */
-#define SUNDIALS_VERSION "3.1.1"
-#define SUNDIALS_VERSION_MAJOR 3
-#define SUNDIALS_VERSION_MINOR 1
+#define SUNDIALS_VERSION "4.0.1"
+#define SUNDIALS_VERSION_MAJOR 4
+#define SUNDIALS_VERSION_MINOR 0
 #define SUNDIALS_VERSION_PATCH 1
 #define SUNDIALS_VERSION_LABEL ""
 
@@ -48,7 +48,12 @@
  *     #define SUNDIALS_INT64_T 1
  *     #define SUNDIALS_INT32_T 1
  */
-#define SUNDIALS_INT32_T 1
+#define SUNDIALS_INT64_T 1
+
+/* Define the type of vector indices in SUNDIALS 'sunindextype'.
+ * The macro will be defined with a type of the appropriate size.
+ */
+#define SUNDIALS_INDEX_TYPE int64_t
 
 /* Use generic math functions 
  * If it was decided that generic math functions can be used, then
@@ -80,13 +85,18 @@
  */
 /* #undef SUNDIALS_KLU */
 
+/* Set if SUNDIALS is built with MPI support.
+ * 
+ */
+
+
 /* FNVECTOR: Allow user to specify different MPI communicator
  * If it was found that the MPI implementation supports MPI_Comm_f2c, then
  *      #define SUNDIALS_MPI_COMM_F2C 1
  * otherwise
  *      #define SUNDIALS_MPI_COMM_F2C 0
  */
-
+#define SUNDIALS_MPI_COMM_F2C 0
 
 /* Mark SUNDIALS API functions for export/import
  * When building shared SUNDIALS libraries under Windows, use
