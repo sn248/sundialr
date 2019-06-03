@@ -20,9 +20,10 @@ cvodes(time_vector, IC, input_function, Parameters, reltolerance,
 
 \item{abstolerance}{Absolute Tolerance (a vector with length equal to ydot)}
 
-\item{SensType}{Sensitivity Type - allowed values are Staggered (default)", "Staggered1" or "Simulated"}
+\item{SensType}{Sensitivity Type - allowed values are Staggered (default)", "STG" (for Staggered) or "SIM" (for Simultaneous)}
 
-\item{ErrCon}{Error Control - allowed values are TRUE or FALSE (default)}
+\item{ErrCon}{Error Control - allowed values are TRUE or FALSE (default)
+//'@example /inst/examples/cvs_Roberts_dns.r}
 }
 \description{
 CVODES solver to solve ODEs and calculate sensitivities

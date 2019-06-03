@@ -24,8 +24,9 @@ cvode <- function(time_vector, IC, input_function, Parameters, reltolerance, abs
 #'@param Parameters Parameters input to ODEs
 #'@param reltolerance Relative Tolerance (a scalar)
 #'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
-#'@param SensType Sensitivity Type - allowed values are Staggered (default)", "Staggered1" or "Simulated"
+#'@param SensType Sensitivity Type - allowed values are Staggered (default)", "STG" (for Staggered) or "SIM" (for Simultaneous)
 #'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
+#'//'@example /inst/examples/cvs_Roberts_dns.r
 cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType = "STG", ErrCon = 'F') {
     .Call('_sundialr_cvodes', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType, ErrCon)
 }
