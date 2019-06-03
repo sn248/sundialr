@@ -6,4 +6,7 @@ A wrapper around the SUNDIALS ODE solving C library.
 
 # What's new?
 
-The branch works with the version 4.0.1 of SUNDIALS (released in Dec 2018)
+## Release 0.1.4 
++ The branch works with the version 4.0.1 of SUNDIALS (released in Dec 2018)
++ An interface to `CVODES` is added. It calculates forward sensitivities w.r.t all parameters of the ODE system.
++ Parameters can now be defined as an input parameter to the ODE function. This will allow performing parameter optimization via numerical optimizers.
