@@ -22,7 +22,7 @@ Authors@R: c(
 Maintainer: Satyaprakash Nayak <sn248@cornell.edu>
 URL: https://github.com/sn248/sundialr
 BugReports: https://github.com/sn248/sundialr/issues
-Description: Provides a way to call the functions in 'SUNDIALS' C ODE solving library (<https://computation.llnl.gov/projects/sundials>). Currently the serial version of ODE solver, 'CVODE' and sensitivity calculator `CVODES` from the library can be accessed. The package requires ODE to be written as an 'R' or 'Rcpp' function and does not require the 'SUNDIALS' library to be installed on the local machine.
+Description: Provides a way to call the functions in 'SUNDIALS' C ODE solving library (<https://computation.llnl.gov/projects/sundials>). Currently the serial version of ODE solver, 'CVODE' and sensitivity calculator 'CVODES' from the 'SUNDIALS' library are implemented. The package requires ODE to be written as an 'R' or 'Rcpp' function and does not require the 'SUNDIALS' library to be installed on the local machine.
 License: GPL (>=2)
 LazyData: TRUE
 Imports:
