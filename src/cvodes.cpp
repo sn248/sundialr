@@ -120,7 +120,7 @@ int ewt(N_Vector y, N_Vector w, void *user_data)
 //'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
 //'@param SensType Sensitivity Type - allowed values are Staggered (default)", "STG" (for Staggered) or "SIM" (for Simultaneous)
 //'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
-//'//'@example /inst/examples/cvs_Roberts_dns.r
+//'@example /inst/examples/cvs_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_function,
                      NumericVector Parameters, double reltolerance, NumericVector abstolerance,
@@ -267,12 +267,20 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
 
     // First row for initial conditions, First column is for time
     int y_len_1 = y_len + 1;
-    NumericMatrix soln(Dimension(time_vec_len,y_len_1 + NS));
+    NumericMatrix soln(Dimension(time_vec_len,y_len_1));
 
     // fill the first row of soln matrix with Initial Conditions
     soln(0,0) = time_vector[0];   // get the first time value
     for(int i = 0; i<y_len; i++){
       soln(0,i+1) = IC[i];
+    }
+
+    NumericMatrix sens(Dimension(time_vec_len, (NS * y_len) + 1));
+    // Store the Sensitivity Results
+    // Sensitivity of each entitiy w.r.t. parameters is zero at initial time
+    sens(0,0) = time_vector[0];           // get the first time value
+    for(int i = 0; i<y_len; i++){
+      sens(0,i+1) = 0.0;
     }
 
     realtype tout;  // For output times
@@ -293,7 +301,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
         }
       }
 
-      flag = CVodeGetSens(cvode_mem, &tout, yS);
+      flag = CVodeGetSens(cvode_mem, &time, yS);
       if (check_retval(&flag, "CVodeGetSens", 1)) { stop("Stopping cvodes, something went wrong in calculating Sensitivities!"); break; }
 
       if (flag == CV_SUCCESS) {
@@ -301,8 +309,8 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
           yS_ptr = N_VGetArrayPointer(yS[i]);
           for(int j = 0; j < y_len; j++){
             // store results in soln matrix
-            // soln(iout+1, 0) = tout;           // first column is for time
-            soln(iout+1, y_len+j+1) = yS_ptr[j];
+            sens(iout+1, 0) = time;           // first column is for time
+            sens(iout+1, (NS*i)+j+1) = yS_ptr[j];
           }
         }
       }
@@ -316,7 +324,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
     SUNLinSolFree(LS);                       /* Free the linear solver memory */
     SUNMatDestroy(SM);                       /* Free the matrix memory */
 
-    return soln;
+    return sens;
     break;
 
   }
@@ -328,4 +336,3 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   }
 
 }
-

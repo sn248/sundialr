@@ -23,12 +23,12 @@ Currently, this package provides an interface to the `CVODE` and `CVODES` functi
 
 The two exported functions from the package are:
 
-+ `CVODE` - 
-+ `CVODES` - 
++ `CVODE` - An interface to the `CVODE` function in `SUNDIALS` to solve a system of ODEs.
++ `CVODES` - An interface to the `CVODES` function in `SUNDIALS` to calculate forward sensitivites with respect to parameters of the ODE system.
 
 In future, we plan to provide interface for the other solvers (i.e., `IDA/IDAS` and `ARCODE` in the library also. Right now, this package serves as a test case for providing an interface to the `SUNDIALS` library for `R` users.
 
-_One of the advantage of using this package is that all the source code of the `SUNDIALS` library is bundled with the package itself, so it does not require the `SUNDIALS` library to be installed on the machine separately (which is sometimes not trivial for Windows)._
+_One of the advantage of using this package is that all the source code of the `SUNDIALS` library is bundled with the package itself, so it does not require the `SUNDIALS` library to be installed on the machine separately (which is sometimes non trivial on a Windows machine)._
 
 ## System of ODEs 
 As described in the link above,  the problem is from chemical kinetics, and consists of the following three rate equations:         
@@ -42,12 +42,7 @@ $$
 $$
 
 
-on the interval from time 
-
-$$ t = 0.0$$ 
-to 
-$$ t = 4 \times 10^{10} $$ 
-with initial conditions: 
+with time interval from  $t = 0.0$ to $t = 4 \times 10^{10}$ and initial conditions: 
 $$ y_1  = 1.0 , ~y_2 = y_3 = 0 $$ 
 
 **The problem is stiff.**
@@ -57,11 +52,7 @@ The original example , While integrating the system, also uses the rootfinding f
 $$ y_1 = 1 \times 10^{-4} $$
 or at which 
 $$ y_3 = 0.01 $$
-but currently root-finding is not supported in this version. As, in the original example this package also solves the problem with the BDF method, Newton iteration with the SUNDENSE dense linear solver, however, without a user-supplied Jacobian routine (unlike the original example). It uses a scalar relative tolerance and a vector absolute
-tolerance (which can be provided as an input). Output is printed in decades from 
-$$ t = 0.4 $$ 
-to 
-$$ t = 4 \times 10^{10} $$
+but currently root-finding is not supported in this version. As in the original example, this package also solves the problem with the `BDF` method, Newton iteration with the `SUNDENSE` dense linear solver, however, without a user-supplied Jacobian routine (unlike the original example). The future versions may include an ability to provide Jacobian calculated analytically or via automatic differentiation. `CVODE` uses a scalar relative tolerance and a vector absolute tolerance (which can be provided as an input). Output is printed in decades from $t = 0.4$ to $t = 4 \times 10^{10}$ in this example.
 
 
 ## Writing the Differential Equations
@@ -71,9 +62,10 @@ Differential equations can be written as an `R` function or as an `Rcpp` functio
 ```r
 function(t, y, p){
   # code to write differential equations
-  # using prameter vector (p) and state/entity vector (y)
+  # using parameter vector (p) and state/entity vector (y)
   # should return `ydot`, the vector representing
   # rate of change of entities in `y`
+  # length of `ydot` must be equal to `y1
 }
 ```
 where `t` represents time, `y` is the vector describing the values of states/entities of the ODE system at time `t` and `p` is the vector of parameters used to define the ODEs. The output of this function is a vector of rate of change of entities of `y`.
@@ -86,7 +78,7 @@ ODE_R <- function(t, y, p){
    ## initialize the derivative vector
    ydot <- vector(mode = "numeric", length = length(y))
    
-   ## p (parameter vector) is  [-0.04 1e04 3e07]
+   ## p (parameter vector input) is  [-0.04 1e04 3e07]
    
    ydot[1] = p[1]*y[1] + p[2]*y[2]*y[3]
    ydot[2] = -p[1]*y[1] - p[2]*y[2]*y[3] - p[3]*y[2]*y[2]
@@ -120,7 +112,7 @@ NumericVector ODE_Rcpp (double t, NumericVector y){
 
 }
 ```
-The above is a re-write of the `cvRoberts_dns` example in the documentation of `CVODE`. The original example can be found the document [here](https://computation.llnl.gov/sites/default/files/public/cv_examples.pdf).
+The above is a re-write of the `cvRoberts_dns.c` example in the documentation of `CVODE`. The original example can be found the document [here](https://computation.llnl.gov/sites/default/files/public/cv_examples.pdf).
 
 ## Putting everything together
 The entire `R` file to create right hand side of ODE function (which calculates rates of change) is as follows (also found in `/inst/examples/cv_Roberts_dns.r`):
@@ -212,7 +204,7 @@ $$
 \end{aligned}
 $$
 with the same initial conditions as above (i.e., $y_1 = 0, y_2 = y_3 = 0$) and 
-$p_1 = 0.04, \quad p_2 = 10^4, \quad p_3 = 3\times10^7$. The Sensitivity equation
+$p_1 = 0.04, \quad p_2 = 10^4, \quad p_3 = 3\times10^7$. The system of Sensitivity equations
 (taken from `cvs_guide.pdf`) that is solved can be given by
 $$
 \begin{aligned}
@@ -241,9 +233,9 @@ currently the user cannot specify the sensitivity equations. However, in the fut
 versions I will provide an ability to specify user-defined Jacobian as well as 
 user-defined sensitivity equations. 
 
-Also, currently, sensitivities are calculated with respect to all parameters of the
+Also, currently, forward sensitivities are calculated with respect to all parameters of the
 system. I plan to provide in future, an ability to specify specific particular 
-parameters for which sensitivity is desired. Currently, `SIMULATEOUS` and `STAGGERED`
+parameters for which sensitivity is desired. Currently, `SIMULATENOUS` and `STAGGERED`
 methods of sensitivity calculations from the `SUNDIALS` library are supported in this
 package.
 
@@ -261,32 +253,35 @@ to be used (`STG` for `STAGGERED` or `SIM` for `SIMULATENOUS`) and flag for erro
 (either `T` or `F`).
 
 The output of `cvodes` is a matrix with number of rows equal to the length of
-`time_vec` and the number of columns being equal to length of (`y` + `p`). The 
-first columns is for time, the next `length(y)` columns are for the solution of 
-the ODE system (i.e, same as the output of `cvode`) and the final `length(p)`
-columns are for sensitivity values. For example the output of calling `cvodes`
-above gives the following matrix:
+the time vector (`time_vec`) and the number of columns being equal to length of (`y` $\times$ `p` + 1). The first columns is for time. Currently, the sensitiviy of every enitity is calculated with respect to every parameter in model. For example, for the current model with `3` entities (ODEs) and `3` parameters, a total of `9` sensitivities are calculated at each
+output time, i.e. `y1` w.r.t `p1`, `p2`, `p3`, `y2` w.r.t. `p1`, `p2`, `p3` and so on.
+The first 3 (`length(y)`) columns give sensitivity w.r.t the first parameter, the next
+3 (`length(y)`) columns give sensitivity w.r.t the second parameter and so on.
+
+In the Sensitivity Matrix output for the systems of equations described above, the first column
+gives output time, the next `3` columns provide sensitivity of `y1`, `y2` and `y3` w.r.t
+first parameter (say `p1`), the next three columns provide sensitivity of `y1`, `y2` and `y3`
+w.r.t. the second parameter (`p2`) and so on. The output Sensitivity Matrix is given below. The
+sensitivity values match with the values provided in the `CVODES` documentation.
 ```r
 > df1
-       [,1]         [,2]         [,3]       [,4]          [,5]          [,6]         [,7]
- [1,] 0e+00 1.000000e+00 0.000000e+00 0.00000000  0.000000e+00  0.000000e+00 0.000000e+00
- [2,] 4e-01 9.851693e-01 3.386341e-05 0.01479681 -1.573297e-11 -5.289692e-13 1.626194e-11
- [3,] 4e+00 9.055161e-01 2.240400e-05 0.09446146 -4.932970e-10 -2.762408e-13 4.935732e-10
- [4,] 4e+01 7.158367e-01 9.185415e-06 0.28415410 -2.288274e-09 -1.138015e-13 2.288387e-09
- [5,] 4e+02 4.505277e-01 3.222987e-06 0.54946907 -3.789554e-09 -4.994795e-14 3.789604e-09
- [6,] 4e+03 1.832276e-01 8.943693e-07 0.81677155 -3.134824e-09 -1.875976e-14 3.134843e-09
- [7,] 4e+04 3.898309e-02 1.621755e-07 0.96101675 -1.047876e-09 -4.536508e-15 1.047881e-09
- [8,] 4e+05 4.937661e-03 1.984756e-08 0.99506232 -1.574929e-10 -6.362045e-16 1.574935e-10
- [9,] 4e+06 5.167720e-04 2.068142e-09 0.99948323 -1.711080e-11 -6.851356e-17 1.711087e-11
-[10,] 4e+07 5.201894e-05 2.080864e-10 0.99994798 -1.732552e-12 -6.930923e-18 1.732559e-12
-[11,] 4e+08 5.208807e-06 2.083534e-11 0.99999479 -1.737821e-13 -6.951356e-19 1.737828e-13
-[12,] 4e+09 4.975680e-07 1.990273e-12 0.99999950 -1.804535e-14 -7.218146e-20 1.804542e-14
-[13,] 4e+10 3.837583e-08 1.535033e-13 0.99999996 -1.727574e-15 -6.910296e-21 1.727581e-15
+       [,1]          [,2]          [,3]         [,4]         [,5]          [,6]          [,7]          [,8]          [,9]        [,10]
+ [1,] 0e+00  0.000000e+00  0.000000e+00 0.000000e+00 0.000000e+00  0.000000e+00  0.000000e+00  0.000000e+00  0.000000e+00 0.000000e+00
+ [2,] 4e-01 -3.561085e-01  3.902252e-04 3.557183e-01 9.483149e-08 -2.132509e-10 -9.461823e-08 -1.573297e-11 -5.289692e-13 1.626194e-11
+ [3,] 4e+00 -1.876130e+00  1.792229e-04 1.875951e+00 2.961233e-06 -5.830758e-10 -2.960650e-06 -4.932970e-10 -2.762408e-13 4.935732e-10
+ [4,] 4e+01 -4.247395e+00  4.592812e-05 4.247349e+00 1.372964e-05 -2.357270e-10 -1.372941e-05 -2.288274e-09 -1.138015e-13 2.288387e-09
+ [5,] 4e+02 -5.958192e+00  3.545986e-06 5.958189e+00 2.273754e-05 -2.260807e-11 -2.273752e-05 -3.789554e-09 -4.994795e-14 3.789604e-09
+ [6,] 4e+03 -4.750132e+00 -5.991971e-06 4.750138e+00 1.880937e-05  2.312156e-11 -1.880939e-05 -3.134824e-09 -1.875976e-14 3.134843e-09
+ [7,] 4e+04 -1.574902e+00 -2.761679e-06 1.574905e+00 6.288404e-06  1.100645e-11 -6.288415e-06 -1.047876e-09 -4.536508e-15 1.047881e-09
+ [8,] 4e+05 -2.363168e-01 -4.584043e-07 2.363173e-01 9.450741e-07  1.832930e-12 -9.450760e-07 -1.574929e-10 -6.362045e-16 1.574935e-10
+ [9,] 4e+06 -2.566355e-02 -5.105587e-08 2.566361e-02 1.026491e-07  2.042044e-13 -1.026493e-07 -1.711080e-11 -6.851356e-17 1.711087e-11
+[10,] 4e+07 -2.597859e-03 -5.190342e-09 2.597864e-03 1.039134e-08  2.076100e-14 -1.039136e-08 -1.732552e-12 -6.930923e-18 1.732559e-12
+[11,] 4e+08 -2.601996e-04 -5.199259e-10 2.602002e-04 1.040802e-09  2.079717e-15 -1.040804e-09 -1.737821e-13 -6.951356e-19 1.737828e-13
+[12,] 4e+09 -2.648142e-05 -5.616896e-11 2.648147e-05 1.059193e-10  2.246502e-16 -1.059195e-10 -1.804535e-14 -7.218146e-20 1.804542e-14
+[13,] 4e+10 -2.899376e-06 -7.759920e-12 2.899383e-06 1.159764e-11  3.104024e-17 -1.159768e-11 -1.727574e-15 -6.910296e-21 1.727581e-15
 ```
-In the output `df1` above, the first column is for time, the next three (length of `y` is 3) columns are the solution of the ODE system (i.e., the first column in the value of $y_1$ at different times and so on). Thus, the first four columns are exactly same as the output of `CVODE` function. The values from column 4 onwards are the sensitivity values, i.e. the values in the fifth column are the values for sensitivity with respect to the first parameter $p_1$ and so on.
-
+In future, I intend to provide options to select specific entities and parameters with respect to which sensitivities are to be computed as the sensitivity matrix can get very large for  medium to large models.
 
 ## Summary
-The package `sundialr` provides a way to interface with the famous 'SUNDIALS' C library 
-to solver initial value problems. The package allows differential equation to be written 
-in `R` or using `Rcpp`. Currently only a single initialization is supported, but we plan to add repeated initializations (e.g., repeated dosing) in near future. In addition, other solvers from the C library such as`IDA/IDAS` and `ARKODE` will be added soon.
+The package `sundialr` provides a way to interface with the famous `SUNDIALS` C library 
+to solver initial value problems. The package allows the system of differential equations to be written in `R` or using `Rcpp`. Currently only a single initialization of the ODE is supported, but we plan to add repeated initializations (e.g., repeated dosing) in near future for `CVODE`. For sensitivities, currently, calculation of forward sensitivities for all entities with respect to all the parameters in the model is implemented. However the ability to select specific entities and parameters for which sensitivities is to be calculated will be added soon. As a note, since this package is under active development, the interfaces of both `CVODE` and `CVODES` (i.e., the function signatures) may change in the future versions. Please keep this mind if you intend to use `sundialr` in your applications. In near future, interface for other solvers from the `C` library such as`IDA/IDAS` and `ARKODE` will also be added.
