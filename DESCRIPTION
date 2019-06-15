@@ -28,7 +28,7 @@ LazyData: TRUE
 Imports:
     Rcpp (>= 0.12.5)
 LinkingTo:
-    Rcpp
+    Rcpp, RcppArmadillo
 RoxygenNote: 6.1.1
 Suggests: knitr,
     rmarkdown
