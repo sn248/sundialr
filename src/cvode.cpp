@@ -16,69 +16,11 @@
 
 using namespace Rcpp;
 
-//-- typedefs for RHS function pointer input in from R -------------------------
-// typedef NumericVector (*funcPtr) (double t, NumericVector y);
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-//-- user data is passed to CVODE in a struct, one component is the pointer to
-//-- RHS function---------------------------------------------------------------
-// struct to use is pointer to Rcpp is input as RHS function
-// struct rhs_xptr{
-//   SEXP rhs_eqn;
-// };
-
 // struct to use if R or Rcpp function is input as RHS function
 struct rhs_func{
   Function rhs_eqn;
   NumericVector params;
 };
-//------------------------------------------------------------------------------
-
-//---RHS function that is an input to CVODE, takes user input of RHS in user_data
-
-// function called by CVodeInit if user inputs Rcpp function pointer
-// int rhs_pointer(realtype t, N_Vector y, N_Vector ydot, void* user_data){
-//
-//   // convert y to NumericVector y1
-//   int y_len = NV_LENGTH_S(y);
-//
-//   NumericVector y1(y_len);    // filled with zeros
-//   realtype *y_ptr = N_VGetArrayPointer(y);
-//   for (int i = 0; i < y_len; i++){
-//     y1[i] = y_ptr[i];
-//   }
-//
-//   // convert ydot to NumericVector ydot1
-//   int ydot_len = NV_LENGTH_S(ydot);
-//
-//   NumericVector ydot1(ydot_len);    // filled with zeros
-//
-//   // cast void pointer to pointer to struct and assign rhs to a SEXP
-//   Rprintf("Reached in function\n");
-//   struct rhs_xptr *my_rhs_ptr = NULL;
-//   my_rhs_ptr = (struct rhs_xptr*)user_data;
-//   SEXP rhs_fun_sexp = (*my_rhs_ptr).rhs_eqn;
-//
-//   Rprintf("type of rhs_fun_sexp is %d\n", TYPEOF(rhs_fun_sexp));
-//
-//   // use function pointer to get the derivatives
-//   XPtr<funcPtr> rhs_fun_xptr(rhs_fun_sexp);
-//   funcPtr rhs_fun = *rhs_fun_xptr;
-//
-//   // Rprintf("type of rhs_fun is %d\n", TYPEOF(rhs_fun));
-//   // use the function to calculate value of RHS ----
-//   ydot1 = rhs_fun(t, y1);
-//
-//   // convert NumericVector ydot1 to N_Vector ydot
-//   realtype *ydot_ptr = N_VGetArrayPointer(ydot);
-//   for (int i = 0; i<ydot1.length(); i++){
-//     ydot_ptr[i] = ydot1[i];
-//   }
-//
-//   // everything went smoothly
-//   return(0);
-// }
 
 // function called by CVodeInit if user inputs R function
 int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
@@ -141,7 +83,8 @@ int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
 //'@example /inst/examples/cv_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_function,
-                    NumericVector Parameters, double reltolerance, NumericVector abstolerance){
+                    NumericVector Parameters, NumericMatrix Events = R_NilValue,
+                    double reltolerance = 1e-04, NumericVector abstolerance = 1e-04){
 
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
@@ -227,37 +170,73 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     if(check_retval(&flag, "CVDlsSetLinearSolver", 1)) { stop("Stopping cvode, something went wrong in setting the linear solver!"); }
     // NumericMatrix to store results - filled with 0.0
 
-    // First row for initial conditions, First column is for time
-    int y_len_1 = y_len + 1;
-    NumericMatrix soln(Dimension(time_vec_len,y_len_1));
 
-    // fill the first row of soln matrix with Initial Conditions
-    soln(0,0) = time_vector[0];   // get the first time value
-    for(int i = 0; i<y_len; i++){
-      soln(0,i+1) = IC[i];
-    }
 
     // Call CVodeInit to initialize the integrator memory and specify the
     // user's right hand side function in y'=f(time,y),
     // // the inital time T0, and the initial dependent variable vector y.
     realtype tout;  // For output times
-    for(int iout = 0; iout < NOUT-1; iout++) {
 
-      // output times start from the index after initial time
-      tout = time_vector[iout+1];
+    int y_len_1 = y_len + 1; // remove later
+    NumericMatrix soln(Dimension(time_vec_len,y_len_1));  // remove later
 
-      flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
+    if(Events == R_NilValue){
 
-      if (check_retval(&flag, "CVode", 1)) { stop("Stopping CVODE, something went wrong in solving the system of ODEs!"); break; } // Something went wrong in solving it!
-      if (flag == CV_SUCCESS) {
+      // nothing to do with Events - single initialization of the ODE system
+      // First row for initial conditions, First column is for time
+      // int y_len_1 = y_len + 1;
+      // NumericMatrix soln(Dimension(time_vec_len,y_len_1));
 
-        // store results in soln matrix
-        soln(iout+1, 0) = time;           // first column is for time
-        for (int i = 0; i<y_len; i++){
-          soln(iout+1, i+1) = y0_ptr[i];
+      // fill the first row of soln matrix with Initial Conditions
+      soln(0,0) = time_vector[0];   // get the first time value
+      for(int i = 0; i<y_len; i++){
+        soln(0,i+1) = IC[i];
+      }
+
+      for(int iout = 0; iout < NOUT-1; iout++) {
+
+        // output times start from the index after initial time
+        tout = time_vector[iout+1];
+
+        flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
+
+        if (check_retval(&flag, "CVode", 1)) { stop("Stopping CVODE, something went wrong in solving the system of ODEs!"); break; } // Something went wrong in solving it!
+        if (flag == CV_SUCCESS) {
+
+          // store results in soln matrix
+          soln(iout+1, 0) = time;           // first column is for time
+          for (int i = 0; i<y_len; i++){
+            soln(iout+1, i+1) = y0_ptr[i];
+          }
         }
       }
+    } else {                                 // When Events is not R_NilValue
+
+      double T1 = 4.0;
+      double T2 = 8.0;
+
+      Rcout << "\nDiscontinuity in solution\n\n";
+
+      // for(int iout = 0; iout < NOUT-1; iout++) {
+      //
+      //
+      // }
+      //
+      // /* set TSTOP (max time solution proceeds to) - this is not required */
+      // flag = CVodeSetStopTime(cvode_mem, T1);
+      // if (check_retval((void *)&flag, "CVodeSetStopTime", 1)) {stop("Stopping CVODE, something went wrong!");};
+      //
+      // while(time < T1){
+      //
+      //   /* set TSTOP (max time solution proceeds to) - this is not required */
+      //   flag = CVodeSetStopTime(cvode_mem, t1);
+      //   if (check_retval((void *)&ret, "CVodeSetStopTime", 1)) {stop("Stopping CVODE, something went wrong!");};
+      // }
+
+
+
     }
+
 
     // free the vectors
     N_VDestroy(y0);
@@ -276,19 +255,6 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     break;
   }
 
-    // case EXTPTRSXP: {
-    //   Rprintf("Reached in EXTPTRSXP\n");
-    //   Rprintf("Type of input_function is %d\n", TYPEOF(input_function));
-    //   struct rhs_xptr my_rhs_xptr = {input_function};
-    //   // setting the user_data in rhs function
-    //   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_xptr);
-    //   if (check_flag(&flag, "CVodeSetUserData", 1)) { stop("Stopping cvode!"); }
-    //
-    //   flag = CVodeInit(cvode_mem, rhs_pointer, T0, y0);
-    //   if (check_flag(&flag, "CVodeInit", 1)) { stop("Stopping cvode!"); }
-    //
-    //   break;
-    // }
 
   default: {
     stop("Incorrect input function type - input function can be an R or Rcpp function");

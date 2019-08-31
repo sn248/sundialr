@@ -4,8 +4,8 @@
 \alias{cvode}
 \title{cvode}
 \usage{
-cvode(time_vector, IC, input_function, Parameters, reltolerance,
-  abstolerance)
+cvode(time_vector, IC, input_function, Parameters, Events = NULL,
+  reltolerance = 1e-04, abstolerance = 1e-04)
 }
 \arguments{
 \item{time_vector}{time vector}
