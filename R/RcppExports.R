@@ -11,8 +11,8 @@
 #'@param reltolerance Relative Tolerance (a scalar)
 #'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
 #'@example /inst/examples/cv_Roberts_dns.r
-cvode <- function(time_vector, IC, input_function, Parameters, reltolerance, abstolerance) {
-    .Call('_sundialr_cvode', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance)
+cvode <- function(time_vector, IC, input_function, Parameters, Events = NULL, reltolerance = 1e-04, abstolerance = 1e-04L) {
+    .Call('_sundialr_cvode', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, Events, reltolerance, abstolerance)
 }
 
 #' cvodes
@@ -29,5 +29,21 @@ cvode <- function(time_vector, IC, input_function, Parameters, reltolerance, abs
 #'@example /inst/examples/cvs_Roberts_dns.r
 cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType = "STG", ErrCon = 'F') {
     .Call('_sundialr_cvodes', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType, ErrCon)
+}
+
+#'ida
+#'
+#' IDA solver to solve stiff DAEs
+#'@param time_vector time vector
+#'@param IC Initial Value of y
+#'@param IRes Inital Value of ydot
+#'@param input_function Right Hand Side function of DAEs
+#'@param Parameters Parameters input to ODEs
+#'@param reltolerance Relative Tolerance (a scalar)
+#'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
+NULL
+
+ida <- function(time_vector, IC, IRes, input_function, Parameters, reltolerance = 1e-04, abstolerance = 1e-04L) {
+    .Call('_sundialr_ida', PACKAGE = 'sundialr', time_vector, IC, IRes, input_function, Parameters, reltolerance, abstolerance)
 }
 

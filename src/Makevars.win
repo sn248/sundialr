@@ -5,7 +5,7 @@ LIBS=-L./ -L../inst/
 
 .PHONY: all ../inst/libsundials_all.a
 
-SOURCES= check_retval.cpp cvode.cpp cvodes.cpp RcppExports.cpp
+SOURCES= check_retval.cpp cvode.cpp cvodes.cpp ida.cpp RcppExports.cpp
 OBJECTS= $(SOURCES:.cpp=.o)
 
 #SOURCES_CVODE= ./sundials/cvode/cvode.c ./sundials/cvode/cvode_bandpre.c \
@@ -22,6 +22,11 @@ SOURCES_CVODES = ./sundials/cvodes/cvodea.c ./sundials/cvodes/cvodea_io.c \
 ./sundials/cvodes/cvodes_ls.c ./sundials/cvodes/cvodes_nls.c \
 ./sundials/cvodes/cvodes_nls_sim.c ./sundials/cvodes/cvodes_nls_stg.c \
 ./sundials/cvodes/cvodes_nls_stg1.c
+
+SOURCES_IDA = ./sundials/ida/ida.c \
+./sundials/ida/ida_bbdpre.c ./sundials/ida/ida_ic.c \
+./sundials/ida/ida_io.c ./sundials/ida/ida_ls.c \
+./sundials/ida/ida_nls.c
 
 SOURCES_NVECSERIAL= ./sundials/nvec_ser/fnvector_serial.c \
 ./sundials/nvec_ser/nvector_serial.c
@@ -57,7 +62,7 @@ SOURCES_SUNNONLINSOL = ./sundials/sunnonlinsol/newton/sunnonlinsol_newton.c \
 ./sundials/sunnonlinsol/fixedpoint/fsunnonlinsol_fixedpoint.c
 
 
-SOURCES_SUNDIALS_ALL= $(SOURCES_CVODES) $(SOURCES_NVECSERIAL) $(SOURCES_SUNDIALS) \
+SOURCES_SUNDIALS_ALL= $(SOURCES_CVODES) $(SOURCES_IDA) $(SOURCES_NVECSERIAL) $(SOURCES_SUNDIALS) \
 $(SOURCES_SUNLINSOL_DENSE) $(SOURCES_SUNLINSOL_BAND) \
 $(SOURCES_SUNMAT) $(SOURCES_SUNNONLINSOL)
 
@@ -75,6 +80,7 @@ $(SHLIB): ../inst/libsundials_all.a
 clean:
 	(cd ./sundials/cvode;rm -f *.o)
 	(cd ./sundials/cvodes;rm -f *.o)
+	(cd ./sundials/ida;rm -f *.o)
 	(cd ./sundials/nvec_ser;rm -f *.o)
 	(cd ./sundials/sundials;rm -f *.o)
 	(cd ./sundials/sunlinsol_dense;rm -f *.o)
