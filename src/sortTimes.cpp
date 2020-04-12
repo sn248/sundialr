@@ -1,8 +1,43 @@
+/* This function sorts the dosing and sampling times
+ * in the increasing order of sampling times with
+ * dosing records inserted in between in the order of
+ * increasing times, e.g.,
+ * > TDOSE - first column is time, second column is 1
+ * indicating dose times
+ *      [,1] [,2]
+ * [1,]    5    1
+ * [2,]    2    1
+ * [3,]    9    1
+ * [4,]    7    1
+ * [5,]    1    1
+ * > TSAMP - first column is time, second column is 0
+ * indicating sampling times
+ *       [,1] [,2]
+ * [1,]    2    0
+ * [2,]    6    0
+ * [3,]    4    0
+ * [4,]   10    0
+ * [5,]    8    0
+ * The output is
+ * sorted_mat(TDOSE,TSAMP)
+ *       [,1] [,2]
+ * [2,]    2    1
+ * [3,]    2    0
+ * [4,]    4    0
+ * [1,]    1    1
+ * [5,]    5    1
+ * [6,]    6    0
+ * [7,]    7    1
+ * [8,]    8    0
+ * [9,]    9    1
+ * [10,]   10   0
+ */
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 
 using namespace arma;
 
+////[[Rcpp::export]] - not exported
 Rcpp::NumericMatrix sorted_mat(Rcpp::NumericMatrix TDOSE1, Rcpp::NumericMatrix TSAMP1){
 
   arma::mat TDOSE(TDOSE1.begin(), TDOSE1.nrow(), TDOSE1.ncol(), false);
@@ -13,7 +48,7 @@ Rcpp::NumericMatrix sorted_mat(Rcpp::NumericMatrix TDOSE1, Rcpp::NumericMatrix T
   // TOUT.col(1) = -1;
 
   if(sum(TSAMP.col(1)) != 0){
-    Rcpp::stop("Something wrong in T Sample!");
+    Rcpp::stop("Something wrong in Sampling Time Matrix \nAll elements in second column should be 0!");
   }
 
   if(sum(TDOSE.col(1)) != TDOSE.n_rows){
@@ -39,6 +74,9 @@ Rcpp::NumericMatrix sorted_mat(Rcpp::NumericMatrix TDOSE1, Rcpp::NumericMatrix T
 /*** R
 TDOSE <- matrix(c(5,2,9,7,1,1,1,1,1,1), ncol = 2)
 TSAMP <- matrix(c(2,6,4,10,8,0,0,0,0,0), ncol = 2)
+TDOSE
+TSAMP
 sorted_mat(TDOSE,TSAMP)
 */
+
 
