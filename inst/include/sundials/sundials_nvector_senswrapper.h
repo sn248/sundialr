@@ -1,15 +1,15 @@
 /* -----------------------------------------------------------------------------
  * Programmer(s): David J. Gardner @ LLNL
  * -----------------------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2014, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Lawrence Livermore National Laboratory in part under
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------------------
  * This is the header file for the implementation of the NVECTOR SensWrapper.
  *
@@ -71,25 +71,31 @@ SUNDIALS_EXPORT N_Vector N_VClone_SensWrapper(N_Vector w);
 SUNDIALS_EXPORT void N_VDestroy_SensWrapper(N_Vector v);
 
 /* standard vector operations */
-SUNDIALS_EXPORT void N_VLinearSum_SensWrapper(realtype a, N_Vector x, realtype b, N_Vector y, N_Vector z);
+SUNDIALS_EXPORT void N_VLinearSum_SensWrapper(realtype a, N_Vector x,
+                                              realtype b, N_Vector y,
+                                              N_Vector z);
 SUNDIALS_EXPORT void N_VConst_SensWrapper(realtype c, N_Vector z);
 SUNDIALS_EXPORT void N_VProd_SensWrapper(N_Vector x, N_Vector y, N_Vector z);
 SUNDIALS_EXPORT void N_VDiv_SensWrapper(N_Vector x, N_Vector y, N_Vector z);
 SUNDIALS_EXPORT void N_VScale_SensWrapper(realtype c, N_Vector x, N_Vector z);
 SUNDIALS_EXPORT void N_VAbs_SensWrapper(N_Vector x, N_Vector z);
 SUNDIALS_EXPORT void N_VInv_SensWrapper(N_Vector x, N_Vector z);
-SUNDIALS_EXPORT void N_VAddConst_SensWrapper(N_Vector x, realtype b, N_Vector z);
+SUNDIALS_EXPORT void N_VAddConst_SensWrapper(N_Vector x, realtype b,
+                                             N_Vector z);
 SUNDIALS_EXPORT realtype N_VDotProd_SensWrapper(N_Vector x, N_Vector y);
 SUNDIALS_EXPORT realtype N_VMaxNorm_SensWrapper(N_Vector x);
 SUNDIALS_EXPORT realtype N_VWrmsNorm_SensWrapper(N_Vector x, N_Vector w);
-SUNDIALS_EXPORT realtype N_VWrmsNormMask_SensWrapper(N_Vector x, N_Vector w, N_Vector id);
+SUNDIALS_EXPORT realtype N_VWrmsNormMask_SensWrapper(N_Vector x, N_Vector w,
+                                                     N_Vector id);
 SUNDIALS_EXPORT realtype N_VMin_SensWrapper(N_Vector x);
 SUNDIALS_EXPORT realtype N_VWL2Norm_SensWrapper(N_Vector x, N_Vector w);
 SUNDIALS_EXPORT realtype N_VL1Norm_SensWrapper(N_Vector x);
 SUNDIALS_EXPORT void N_VCompare_SensWrapper(realtype c, N_Vector x, N_Vector z);
 SUNDIALS_EXPORT booleantype N_VInvTest_SensWrapper(N_Vector x, N_Vector z);
-SUNDIALS_EXPORT booleantype N_VConstrMask_SensWrapper(N_Vector c, N_Vector x, N_Vector m);
-SUNDIALS_EXPORT realtype N_VMinQuotient_SensWrapper(N_Vector num, N_Vector denom);
+SUNDIALS_EXPORT booleantype N_VConstrMask_SensWrapper(N_Vector c, N_Vector x,
+                                                      N_Vector m);
+SUNDIALS_EXPORT realtype N_VMinQuotient_SensWrapper(N_Vector num,
+                                                    N_Vector denom);
 
 #ifdef __cplusplus
 }

@@ -1,19 +1,15 @@
 # ------------------------------------------------------------------------------
 # Programmer(s): Daniel R. Reynolds @ SMU
 # ------------------------------------------------------------------------------
-# LLNS/SMU Copyright Start
-# Copyright (c) 2018, Southern Methodist University and
-# Lawrence Livermore National Security
-#
-# This work was performed under the auspices of the U.S. Department
-# of Energy by Southern Methodist University and Lawrence Livermore
-# National Laboratory under Contract DE-AC52-07NA27344.
-# Produced at Southern Methodist University and the Lawrence
-# Livermore National Laboratory.
-#
+# SUNDIALS Copyright Start
+# Copyright (c) 2002-2020, Lawrence Livermore National Security
+# and Southern Methodist University.
 # All rights reserved.
-# For details, see the LICENSE file.
-# LLNS/SMU Copyright End
+#
+# See the top-level LICENSE and NOTICE files for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# SUNDIALS Copyright End
 # ------------------------------------------------------------------------------
 # CMakeLists.txt file for the fixed-point SUNNonlinearSolver library
 # ------------------------------------------------------------------------------
@@ -21,9 +17,9 @@
 install(CODE "MESSAGE(\"\nInstall SUNNONLINSOL_FIXEDPOINT\n\")")
 
 # Add F90 module if F2003 interface is enabled
-if(F90_FOUND AND F2003_INTERFACE_ENABLE)
-  add_subdirectory(F90)
-endif(F90_FOUND AND F2003_INTERFACE_ENABLE)
+if(F2003_FOUND AND F2003_INTERFACE_ENABLE)
+  add_subdirectory(fmod)
+endif(F2003_FOUND AND F2003_INTERFACE_ENABLE)
 
 # Add variable with the sources for the library
 set(lib_SOURCES sunnonlinsol_fixedpoint.c)
@@ -78,7 +74,7 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 # Install the header files
-INSTALL(FILES ${lib_HEADERS} DESTINATION include/sunnonlinsol)
+install(FILES ${lib_HEADERS} DESTINATION include/sunnonlinsol)
 
 # If FCMIX is enabled, build and install the F library
 if(F77_INTERFACE_ENABLE AND F77_FOUND)

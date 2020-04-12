@@ -4,8 +4,16 @@
 \alias{cvodes}
 \title{cvodes}
 \usage{
-cvodes(time_vector, IC, input_function, Parameters, reltolerance, abstolerance,
-  SensType = "STG", ErrCon = "F")
+cvodes(
+  time_vector,
+  IC,
+  input_function,
+  Parameters,
+  reltolerance = 1e-04,
+  abstolerance = 1e-04,
+  SensType = "STG",
+  ErrCon = "F"
+)
 }
 \arguments{
 \item{time_vector}{time vector}
@@ -16,9 +24,9 @@ cvodes(time_vector, IC, input_function, Parameters, reltolerance, abstolerance,
 
 \item{Parameters}{Parameters input to ODEs}
 
-\item{reltolerance}{Relative Tolerance (a scalar)}
+\item{reltolerance}{Relative Tolerance (a scalar, default value  = 1e-04)}
 
-\item{abstolerance}{Absolute Tolerance (a vector with length equal to ydot)}
+\item{abstolerance}{Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)}
 
 \item{SensType}{Sensitivity Type - allowed values are Staggered (default)", "STG" (for Staggered) or "SIM" (for Simultaneous)}
 
@@ -28,6 +36,21 @@ cvodes(time_vector, IC, input_function, Parameters, reltolerance, abstolerance,
 CVODES solver to solve ODEs and calculate sensitivities
 }
 \examples{
+# sundialr is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# any later version.
+#
+# sundialr is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with sundialr.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Example of solving a set sensitivity equations for ODEs with cvodes function
 # ODEs described by an R function
 ODE_R <- function(t, y, p){
 

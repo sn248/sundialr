@@ -1,16 +1,26 @@
+// sundialr is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 2 of the License, or
+// any later version.
+//
+// sundialr is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with sundialr.  If not, see <http://www.gnu.org/licenses/>.
+
 
 #include <Rcpp.h>
 
 #include <cvode/cvode.h>               /* prototypes for CVODE fcts., consts. */
 #include <nvector/nvector_serial.h>    /* serial N_Vector types, fcts., macros */
-// #include <cvode/cvode_direct.h>         /* prototype for CVDense */
-// #include <sundials/sundials_dense.h>   /* definitions DlsMat DENSE_ELEM */
 #include <sundials/sundials_types.h>   /* definition of type realtype */
 #include <sunmatrix/sunmatrix_dense.h>
 #include <sunlinsol/sunlinsol_dense.h>
 
 #include <check_retval.h>
-// #include "check_retval.cpp"
 
 #define Ith(v,i)    NV_Ith_S(v,i-1)         /* i-th vector component i=1..NEQ */
 
@@ -78,13 +88,13 @@ int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
 //'@param IC Initial Conditions
 //'@param input_function Right Hand Side function of ODEs
 //'@param Parameters Parameters input to ODEs
-//'@param reltolerance Relative Tolerance (a scalar)
-//'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
+//'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
+//'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 //'@example /inst/examples/cv_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_function,
-                    NumericVector Parameters, NumericMatrix Events = R_NilValue,
-                    double reltolerance = 1e-04, NumericVector abstolerance = 1e-04){
+                    NumericVector Parameters,
+                    double reltolerance = 0.0001, NumericVector abstolerance = 0.0001){
 
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
@@ -134,7 +144,6 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
   if (check_retval((void *) cvode_mem, "CVodeCreate", 0)) { stop("Stopping cvode!"); }
 
   //-- assign user input to the struct based on SEXP type of input_function
-
   if (!input_function){
     stop("Something is wrong with input function, stopping!");
   }
@@ -170,8 +179,6 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     if(check_retval(&flag, "CVDlsSetLinearSolver", 1)) { stop("Stopping cvode, something went wrong in setting the linear solver!"); }
     // NumericMatrix to store results - filled with 0.0
 
-
-
     // Call CVodeInit to initialize the integrator memory and specify the
     // user's right hand side function in y'=f(time,y),
     // // the inital time T0, and the initial dependent variable vector y.
@@ -180,63 +187,33 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     int y_len_1 = y_len + 1; // remove later
     NumericMatrix soln(Dimension(time_vec_len,y_len_1));  // remove later
 
-    if(Events == R_NilValue){
-
-      // nothing to do with Events - single initialization of the ODE system
-      // First row for initial conditions, First column is for time
-      // int y_len_1 = y_len + 1;
-      // NumericMatrix soln(Dimension(time_vec_len,y_len_1));
-
-      // fill the first row of soln matrix with Initial Conditions
-      soln(0,0) = time_vector[0];   // get the first time value
-      for(int i = 0; i<y_len; i++){
-        soln(0,i+1) = IC[i];
-      }
-
-      for(int iout = 0; iout < NOUT-1; iout++) {
-
-        // output times start from the index after initial time
-        tout = time_vector[iout+1];
-
-        flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
-
-        if (check_retval(&flag, "CVode", 1)) { stop("Stopping CVODE, something went wrong in solving the system of ODEs!"); break; } // Something went wrong in solving it!
-        if (flag == CV_SUCCESS) {
-
-          // store results in soln matrix
-          soln(iout+1, 0) = time;           // first column is for time
-          for (int i = 0; i<y_len; i++){
-            soln(iout+1, i+1) = y0_ptr[i];
-          }
-        }
-      }
-    } else {                                 // When Events is not R_NilValue
-
-      double T1 = 4.0;
-      double T2 = 8.0;
-
-      Rcout << "\nDiscontinuity in solution\n\n";
-
-      // for(int iout = 0; iout < NOUT-1; iout++) {
-      //
-      //
-      // }
-      //
-      // /* set TSTOP (max time solution proceeds to) - this is not required */
-      // flag = CVodeSetStopTime(cvode_mem, T1);
-      // if (check_retval((void *)&flag, "CVodeSetStopTime", 1)) {stop("Stopping CVODE, something went wrong!");};
-      //
-      // while(time < T1){
-      //
-      //   /* set TSTOP (max time solution proceeds to) - this is not required */
-      //   flag = CVodeSetStopTime(cvode_mem, t1);
-      //   if (check_retval((void *)&ret, "CVodeSetStopTime", 1)) {stop("Stopping CVODE, something went wrong!");};
-      // }
 
 
 
+
+    // fill the first row of soln matrix with Initial Conditions
+    soln(0,0) = time_vector[0];   // get the first time value
+    for(int i = 0; i<y_len; i++){
+      soln(0,i+1) = IC[i];
     }
 
+    for(int iout = 0; iout < NOUT-1; iout++) {
+
+      // output times start from the index after initial time
+      tout = time_vector[iout+1];
+
+      flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
+
+      if (check_retval(&flag, "CVode", 1)) { stop("Stopping CVODE, something went wrong in solving the system of ODEs!"); break; } // Something went wrong in solving it!
+      if (flag == CV_SUCCESS) {
+
+        // store results in soln matrix
+        soln(iout+1, 0) = time;           // first column is for time
+        for (int i = 0; i<y_len; i++){
+          soln(iout+1, i+1) = y0_ptr[i];
+        }
+      }
+    }
 
     // free the vectors
     N_VDestroy(y0);
@@ -255,15 +232,11 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     break;
   }
 
-
   default: {
     stop("Incorrect input function type - input function can be an R or Rcpp function");
   }
 
   }
 
-
-
 }
-
 // //--- CVODE definition ends ----------------------------------------------------
