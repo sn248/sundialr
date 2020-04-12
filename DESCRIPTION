@@ -29,7 +29,7 @@ Imports:
     Rcpp (>= 0.12.5)
 LinkingTo:
     Rcpp, RcppArmadillo
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr

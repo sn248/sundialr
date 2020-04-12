@@ -4,8 +4,14 @@
 \alias{cvode}
 \title{cvode}
 \usage{
-cvode(time_vector, IC, input_function, Parameters, Events = NULL,
-  reltolerance = 1e-04, abstolerance = 1e-04)
+cvode(
+  time_vector,
+  IC,
+  input_function,
+  Parameters,
+  reltolerance = 1e-04,
+  abstolerance = 1e-04
+)
 }
 \arguments{
 \item{time_vector}{time vector}
@@ -16,14 +22,28 @@ cvode(time_vector, IC, input_function, Parameters, Events = NULL,
 
 \item{Parameters}{Parameters input to ODEs}
 
-\item{reltolerance}{Relative Tolerance (a scalar)}
+\item{reltolerance}{Relative Tolerance (a scalar, default value  = 1e-04)}
 
-\item{abstolerance}{Absolute Tolerance (a vector with length equal to ydot)}
+\item{abstolerance}{Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)}
 }
 \description{
 CVODE solver to solve stiff ODEs
 }
 \examples{
+# sundialr is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# any later version.
+#
+# sundialr is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with sundialr.  If not, see <http://www.gnu.org/licenses/>.
+
+# Example of solving a set of ODEs with cvode function
 # ODEs described by an R function
 ODE_R <- function(t, y, p){
 

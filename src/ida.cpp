@@ -1,3 +1,17 @@
+// sundialr is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 2 of the License, or
+// any later version.
+//
+// sundialr is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with sundialr.  If not, see <http://www.gnu.org/licenses/>.
+
+
 #include <Rcpp.h>
 
 #include <ida/ida.h>                          /* prototypes for IDA fcts., consts.    */
@@ -88,13 +102,12 @@ int res_function(realtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* user_d
 //'@param IRes Inital Value of ydot
 //'@param input_function Right Hand Side function of DAEs
 //'@param Parameters Parameters input to ODEs
-//'@param reltolerance Relative Tolerance (a scalar)
-//'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
-// //'@example /inst/examples/cv_Roberts_dns.r
+//'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
+//'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 // [[Rcpp::export]]
 NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRes, SEXP input_function,
-                  NumericVector Parameters, // NumericMatrix Events = R_NilValue,
-                  double reltolerance = 1e-04, NumericVector abstolerance = 1e-04){
+                  NumericVector Parameters,
+                  double reltolerance = 0.0001, NumericVector abstolerance = 0.0001){
 
 
   int time_vec_len = time_vector.length();

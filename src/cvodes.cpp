@@ -1,5 +1,18 @@
-#include <Rcpp.h>
+// sundialr is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 2 of the License, or
+// any later version.
+//
+// sundialr is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with sundialr.  If not, see <http://www.gnu.org/licenses/>.
 
+
+#include <Rcpp.h>
 #include <algorithm>                   // to convert SensType to upper case - input cleaning
 #include <iostream>                    // to compare SensType strings
 
@@ -116,14 +129,15 @@ int ewt(N_Vector y, N_Vector w, void *user_data)
 //'@param IC Initial Conditions
 //'@param input_function Right Hand Side function of ODEs
 //'@param Parameters Parameters input to ODEs
-//'@param reltolerance Relative Tolerance (a scalar)
-//'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
+//'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
+//'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 //'@param SensType Sensitivity Type - allowed values are Staggered (default)", "STG" (for Staggered) or "SIM" (for Simultaneous)
 //'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
 //'@example /inst/examples/cvs_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_function,
-                     NumericVector Parameters, double reltolerance, NumericVector abstolerance,
+                     NumericVector Parameters,
+                     double reltolerance = 0.0001, NumericVector abstolerance = 0.0001,
                      std::string SensType = "STG", bool ErrCon = 'F'){
 
   int time_vec_len = time_vector.length();
