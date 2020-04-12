@@ -253,7 +253,7 @@ to be used (`STG` for `STAGGERED` or `SIM` for `SIMULATENOUS`) and flag for erro
 (either `T` or `F`).
 
 The output of `cvodes` is a matrix with number of rows equal to the length of
-the time vector (`time_vec`) and the number of columns being equal to length of (`y` $\times$ `p` + 1). The first columns is for time. Currently, the sensitiviy of every enitity is calculated with respect to every parameter in model. For example, for the current model with `3` entities (ODEs) and `3` parameters, a total of `9` sensitivities are calculated at each
+the time vector (`time_vec`) and the number of columns being equal to length of (`y` $\times$ `p` + 1). The first columns is for time. Currently, the sensitivity of every enitity is calculated with respect to every parameter in model. For example, for the current model with `3` entities (ODEs) and `3` parameters, a total of `9` sensitivities are calculated at each
 output time, i.e. `y1` w.r.t `p1`, `p2`, `p3`, `y2` w.r.t. `p1`, `p2`, `p3` and so on.
 The first 3 (`length(y)`) columns give sensitivity w.r.t the first parameter, the next
 3 (`length(y)`) columns give sensitivity w.r.t the second parameter and so on.
