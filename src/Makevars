@@ -5,7 +5,9 @@ LIBS=-L./ -L../inst/
 
 .PHONY: all ../inst/libsundials_all.a
 
-SOURCES= check_retval.cpp cvode.cpp cvodes.cpp ida.cpp RcppExports.cpp
+SOURCES= check_retval.cpp cvode.cpp cvodes.cpp \
+ida.cpp cvsolve.cpp rhs_func.cpp RcppExports.cpp
+
 OBJECTS= $(SOURCES:.cpp=.o)
 
 #SOURCES_CVODE= ./sundials/cvode/cvode.c ./sundials/cvode/cvode_bandpre.c \
