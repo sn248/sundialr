@@ -145,7 +145,6 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   int abstol_len = abstolerance.length();
 
   int flag;
-  // realtype reltol = reltolerance;
 
   realtype T0 = RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
 
@@ -205,7 +204,6 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
   cvode_mem = CVodeCreate(CV_BDF);
   if (check_retval((void *) cvode_mem, "CVodeCreate", 0)) { stop("Stopping cvodes, cannot allocate memory for CVODES!"); }
-
 
   //-- assign user input to the struct based on SEXP type of input_function
   if (!input_function){
@@ -272,7 +270,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
 
     /* Call CVodeSetSensParams to specify problem parameter information for
      sensitivity calculations */
-    struct rhs_func_sens *ptr = &my_rhs_function;        // struct UserData storing my data
+    // struct rhs_func_sens *ptr = &my_rhs_function;        // struct UserData storing my data
     // p = (my_rhs_function.params).begin();
     // Rcout << (my_rhs_function.params).begin() << "\n";
     // Rcout << &(ptr->params[0]);
