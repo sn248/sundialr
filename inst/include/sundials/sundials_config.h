@@ -19,9 +19,9 @@
  * -----------------------------------------------------------------*/
 
 /* Define SUNDIALS version numbers */
-#define SUNDIALS_VERSION "5.1.0"
+#define SUNDIALS_VERSION "5.2.0"
 #define SUNDIALS_VERSION_MAJOR 5
-#define SUNDIALS_VERSION_MINOR 1
+#define SUNDIALS_VERSION_MINOR 2
 #define SUNDIALS_VERSION_PATCH 0
 #define SUNDIALS_VERSION_LABEL ""
 
