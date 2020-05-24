@@ -44,8 +44,8 @@ cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance = 0
 #'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 #'@param constraints By default all the solution values are constrained to be non-negative
 #'@example /inst/examples/cv_Roberts_dns.r
-cvsolve <- function(time_vector, IC, input_function, Parameters, events = NULL, Jacobian = NULL, reltolerance = 0.0001, abstolerance = 0.0001) {
-    .Call('_sundialr_cvsolve', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, events, Jacobian, reltolerance, abstolerance)
+cvsolve <- function(time_vector, IC, input_function, Parameters, Events = NULL, Jacobian = NULL, reltolerance = 0.0001, abstolerance = 0.0001) {
+    .Call('_sundialr_cvsolve', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, Events, Jacobian, reltolerance, abstolerance)
 }
 
 #'ida

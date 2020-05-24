@@ -9,7 +9,7 @@ cvsolve(
   IC,
   input_function,
   Parameters,
-  events = NULL,
+  Events = NULL,
   Jacobian = NULL,
   reltolerance = 1e-04,
   abstolerance = 1e-04
@@ -24,13 +24,13 @@ cvsolve(
 
 \item{Parameters}{Parameters input to ODEs}
 
-\item{events}{Discontinuities in the solution (a DataFrame, default value is NULL)}
-
 \item{Jacobian}{User-supplied Jacobian(a matrix, default value is NULL)}
 
 \item{reltolerance}{Relative Tolerance (a scalar, default value  = 1e-04)}
 
 \item{abstolerance}{Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)}
+
+\item{events}{Discontinuities in the solution (a DataFrame, default value is NULL)}
 
 \item{constraints}{By default all the solution values are constrained to be non-negative}
 }

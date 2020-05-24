@@ -27,6 +27,7 @@
 #include <check_retval.h>
 // #include "check_retval.cpp"
 
+
 // #define Ith(v,i)    NV_Ith_S(v,i-1)         /* i-th vector component i=1..NEQ */
 
 using namespace Rcpp;
