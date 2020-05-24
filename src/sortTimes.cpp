@@ -30,7 +30,7 @@ Rcpp::NumericMatrix sorted_times(Rcpp::DataFrame TDOSE, Rcpp::NumericVector TSAM
   // add another column (4th column) of all ones to indicate dosing
   Rcpp::NumericMatrix TDOSE1 = Rcpp::internal::convert_using_rfunction(TDOSE, "as.matrix");
   arma::mat TDOSE2(TDOSE1.begin(), TDOSE1.nrow(), TDOSE1.ncol(), false);
-  TDOSE2.insert_cols(3, 1);  // add 1 column at column 4
+  TDOSE2.insert_cols(3, 1);  // add 1 column at column position 4
   TDOSE2.col(3).ones();      // set column 4 to all ones T0 INDICATE DOSING
 
   // convert Sampling vector to an arma matrix

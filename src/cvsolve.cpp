@@ -12,7 +12,8 @@
 // along with sundialr.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include <Rcpp.h>
+#include <RcppArmadillo.h>
+// [[Rcpp::depends(RcppArmadillo)]]
 
 #include <cvode/cvode.h>               /* prototypes for CVODE fcts., consts. */
 #include <nvector/nvector_serial.h>    /* serial N_Vector types, fcts., macros */
@@ -22,8 +23,10 @@
 
 #include <check_retval.h>
 #include <rhs_func.h>
+#include "sortTimes.cpp"
 
 using namespace Rcpp;
+using namespace arma;
 
 //------------------------------------------------------------------------------
 //'cvsolve
@@ -42,8 +45,8 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_function,
                     NumericVector Parameters,
-                    NumericMatrix events = R_NilValue,
-                    NumericMatrix Jacobian = R_NilValue,
+                    Nullable<DataFrame> Events = R_NilValue,
+                    Nullable<NumericMatrix> Jacobian = R_NilValue,
                     double reltolerance = 0.0001,
                     NumericVector abstolerance = 0.0001){
 
@@ -57,7 +60,6 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_fu
   realtype T0 = RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
 
   double time;
-  int NOUT = time_vec_len;
 
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
@@ -84,6 +86,41 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_fu
   for (int i = 0; i<y_len; i++){
     y0_ptr[i] = IC[i]; // NV_Ith_S(y0, i)
   }
+
+  // If Events is not NULL, change IC and generate a combined dataset-----------
+  // Combine the time vector and Events vector into a single dataframe
+  // If Events is null, then TCOMB is same as time_vec (i.e, is a vector)
+  // If Events is not null, then TCOMB is a matrix with 4 columns
+  // Column 1 - cpp index of state with discontinuity
+  // Column 2 - Time of discontinuity
+  // Column 3 - Value at the time of discontinuity
+  // Column 4 - 0 for sampling and 1 for discontinuity time point
+  // If IC of a state is specified by both IC and Events, then the IC value is
+  // overwritten by the Events value
+  NumericMatrix TCOMB(time_vector.length(),1);  // a matrix with 1 column
+  NumericMatrix::Column col = TCOMB(_,0);       // reference to second column
+  col = time_vector;                            // set to be equal to initial time vector
+
+  if(Events.isNotNull()){
+    DataFrame Events_DF(Events);
+    TCOMB = sorted_times(Events_DF, time_vector);  // get the sorted  Combined time matrix
+    // Decrease Species index by 1 to convert R Species index to internal cpp index
+    for(int i = 0; i < TCOMB.nrow(); i++){
+      if(TCOMB(i,0) != 0){
+        TCOMB(i,0) = TCOMB(i,0) - 1;              // Decrease Species index by 1 to get cpp index from R
+      }
+    }
+    // Change y0 such that IC at time = 0 are overwritten by values in TCOMB at t = 0
+    for(int i = 0; i < TCOMB.nrow();  i++){
+      if(TCOMB(i,1) == 0 && TCOMB(i,3) == 1){
+        IC(TCOMB(i,0)) = TCOMB(i,2);
+      }
+    }
+  }
+
+  int NOUT = time_vec_len;
+  // Rcout << TCOMB << std::endl;
+  Rcout << IC << std::endl;
 
   // Set constraints to all 1's for nonnegative solution values.----------------
   N_Vector constraints = N_VNew_Serial(y_len);
@@ -152,31 +189,48 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_fu
     // // the inital time T0, and the initial dependent variable vector y.
     realtype tout;  // For output times
 
-    int y_len_1 = y_len + 1; // remove later
-    NumericMatrix soln(Dimension(time_vec_len,y_len_1));  // remove later
+    // Solution vector has length equal to number of rows in TCOMB
+    // Solution vector has width equal to number of IC + 1 (first column for time)
+    int soln_rows = TCOMB.nrow();
+    NumericMatrix soln(Dimension(soln_rows,y_len + 1));
 
-   // fill the first row of soln matrix with Initial Conditions
-    soln(0,0) = time_vector[0];   // get the first time value
+    // fill the first row of soln matrix with Initial Conditions
+    soln(0,0) = TCOMB(0, 1);   // get the first time value
     for(int i = 0; i<y_len; i++){
       soln(0,i+1) = IC[i];
     }
-
-    // use the events matrix to get discontinuities in solution
-    // if(events != R_NilValue){
-    //   if(ncol(events) != 3) { stop("events should have 3 columns, first column is for ID of the discontinuous species, second column for Time\nand third column is for value of solution at the discontinuity"); }
-    //
-    //   // Combine the sampling and dosing times
-    // }
-
 
     for(int iout = 0; iout < NOUT-1; iout++) {
 
       // output times start from the index after initial time
       tout = time_vector[iout+1];
 
+      // integrate upto the next time point (whether a sampling time or a discontinuity)
       flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
-
       if (check_retval(&flag, "CVode", 1)) { stop("Stopping cvsolve, something went wrong in solving the system of ODEs!"); break; } // Something went wrong in solving it!
+
+      // check whether the this records is sampling or discontinuity using the
+      // fourth column of the TCOMB matrix to confirm discontinuity
+      if(TCOMB(tout,3) == 1){
+
+      // advance solver just one internal step
+      flag = CVode(cvode_mem, tout, y0, &time, CV_ONE_STEP);
+      if (check_retval((void *)&flag, "CVode", 1)) { stop("Stopping cvsolve, something went wrong in solving the system of ODEs!"); break; }
+
+      // include the discontinuity, i.e. add to the solution
+      // Change y0 such that IC at time = 0 are overwritten by values in TCOMB at t = 0
+      for(int i = 0; i < TCOMB.nrow();  i++){
+        if(TCOMB(i,1) == tout && TCOMB(i,3) == 1){
+          int disc_index = std::lroundf(TCOMB(i,0));
+          y0_ptr[disc_index] = y0_ptr[disc_index] + TCOMB(i,2);
+        }
+      }
+
+      // re-initialize the solver
+      flag = CVodeReInit(cvode_mem, tout, y0);
+      if (check_retval((void *)&flag, "CVodeReInit", 1)) { stop("Stopping cvsolve, something went wrong in reinitializing the ODE system!"); break; }
+      }
+
       if (flag == CV_SUCCESS) {
 
         // store results in soln matrix
@@ -208,5 +262,9 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_fu
 
   }
 
+  // return TCOMB;
+
 }
 // cvsolve definition ends ----------------------------------------------------
+
+

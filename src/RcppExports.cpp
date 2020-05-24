@@ -41,8 +41,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // cvsolve
-NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, NumericMatrix events, NumericMatrix Jacobian, double reltolerance, NumericVector abstolerance);
-RcppExport SEXP _sundialr_cvsolve(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP eventsSEXP, SEXP JacobianSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
+NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, Nullable<DataFrame> Events, Nullable<NumericMatrix> Jacobian, double reltolerance, NumericVector abstolerance);
+RcppExport SEXP _sundialr_cvsolve(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP EventsSEXP, SEXP JacobianSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -50,11 +50,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type IC(ICSEXP);
     Rcpp::traits::input_parameter< SEXP >::type input_function(input_functionSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type Parameters(ParametersSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type events(eventsSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type Jacobian(JacobianSEXP);
+    Rcpp::traits::input_parameter< Nullable<DataFrame> >::type Events(EventsSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericMatrix> >::type Jacobian(JacobianSEXP);
     Rcpp::traits::input_parameter< double >::type reltolerance(reltoleranceSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type abstolerance(abstoleranceSEXP);
-    rcpp_result_gen = Rcpp::wrap(cvsolve(time_vector, IC, input_function, Parameters, events, Jacobian, reltolerance, abstolerance));
+    rcpp_result_gen = Rcpp::wrap(cvsolve(time_vector, IC, input_function, Parameters, Events, Jacobian, reltolerance, abstolerance));
     return rcpp_result_gen;
 END_RCPP
 }

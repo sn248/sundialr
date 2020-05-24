@@ -133,10 +133,6 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     int y_len_1 = y_len + 1; // remove later
     NumericMatrix soln(Dimension(time_vec_len,y_len_1));  // remove later
 
-
-
-
-
     // fill the first row of soln matrix with Initial Conditions
     soln(0,0) = time_vector[0];   // get the first time value
     for(int i = 0; i<y_len; i++){
