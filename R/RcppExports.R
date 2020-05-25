@@ -33,17 +33,16 @@ cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance = 0
 
 #'cvsolve
 #'
-#'solver to solve stiff ODEs with discontinuties
+#'CVSOLVE solver to solve stiff ODEs with discontinuties
 #'@param time_vector time vector
 #'@param IC Initial Conditions
 #'@param input_function Right Hand Side function of ODEs
 #'@param Parameters Parameters input to ODEs
-#'@param events Discontinuities in the solution (a DataFrame, default value is NULL)
+#'@param Events Discontinuities in the solution (a DataFrame, default value is NULL)
 #'@param Jacobian User-supplied Jacobian(a matrix, default value is NULL)
 #'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 #'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
-#'@param constraints By default all the solution values are constrained to be non-negative
-#'@example /inst/examples/cv_Roberts_dns.r
+#'@example /inst/examples/cvsolve_1D.r
 cvsolve <- function(time_vector, IC, input_function, Parameters, Events = NULL, Jacobian = NULL, reltolerance = 0.0001, abstolerance = 0.0001) {
     .Call('_sundialr_cvsolve', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, Events, Jacobian, reltolerance, abstolerance)
 }

@@ -1,15 +1,24 @@
-// sundialr is free software: you can redistribute it and/or modify it
-// under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 2 of the License, or
-// any later version.
-//
-// sundialr is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with sundialr.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2020 Satyaprakash Nayak
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// 1.Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+// 2.Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in
+//   the documentation and/or other materials provided with the distribution.
+// 3.Neither the name of the copyright holder nor the names of its contributors
+//   may be used to endorse or promote products derived
+//   from this software without specific prior written permission.
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+//AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+//IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+//FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+//DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+//SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+//CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+//OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+//OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include <RcppArmadillo.h>
@@ -31,27 +40,26 @@ using namespace arma;
 //------------------------------------------------------------------------------
 //'cvsolve
 //'
-//'solver to solve stiff ODEs with discontinuties
+//'CVSOLVE solver to solve stiff ODEs with discontinuties
 //'@param time_vector time vector
 //'@param IC Initial Conditions
 //'@param input_function Right Hand Side function of ODEs
 //'@param Parameters Parameters input to ODEs
-//'@param events Discontinuities in the solution (a DataFrame, default value is NULL)
+//'@param Events Discontinuities in the solution (a DataFrame, default value is NULL)
 //'@param Jacobian User-supplied Jacobian(a matrix, default value is NULL)
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
-//'@param constraints By default all the solution values are constrained to be non-negative
-//'@example /inst/examples/cv_Roberts_dns.r
+//'@example /inst/examples/cvsolve_1D.r
 // [[Rcpp::export]]
 NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_function,
-                    NumericVector Parameters,
-                    Nullable<DataFrame> Events = R_NilValue,
-                    Nullable<NumericMatrix> Jacobian = R_NilValue,
-                    double reltolerance = 0.0001,
-                    NumericVector abstolerance = 0.0001){
+                      NumericVector Parameters,
+                      Nullable<DataFrame> Events = R_NilValue,
+                      Nullable<NumericMatrix> Jacobian = R_NilValue,
+                      double reltolerance = 0.0001,
+                      NumericVector abstolerance = 0.0001){
 
-  int time_vec_len = time_vector.length();
   int y_len = IC.length();
+  int NSTATES = IC.length();
   int abstol_len = abstolerance.length();
 
   int flag;
@@ -80,49 +88,54 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_fu
     stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
 
-  // Set the initial conditions-------------------------------------------------
-  N_Vector y0 = N_VNew_Serial(y_len);
-  realtype *y0_ptr = N_VGetArrayPointer(y0);
-  for (int i = 0; i<y_len; i++){
-    y0_ptr[i] = IC[i]; // NV_Ith_S(y0, i)
-  }
-
   // If Events is not NULL, change IC and generate a combined dataset-----------
   // Combine the time vector and Events vector into a single dataframe
   // If Events is null, then TCOMB is same as time_vec (i.e, is a vector)
   // If Events is not null, then TCOMB is a matrix with 4 columns
-  // Column 1 - cpp index of state with discontinuity
-  // Column 2 - Time of discontinuity
-  // Column 3 - Value at the time of discontinuity
+  // Column 1 - cpp index of state with discontinuity, -1 for all sampling time points
+  // Column 2 - Time of discontinuity or sampling
+  // Column 3 - Value at the time of discontinuity, 0 for sampling
   // Column 4 - 0 for sampling and 1 for discontinuity time point
   // If IC of a state is specified by both IC and Events, then the IC value is
   // overwritten by the Events value
-  NumericMatrix TCOMB(time_vector.length(),1);  // a matrix with 1 column
-  NumericMatrix::Column col = TCOMB(_,0);       // reference to second column
-  col = time_vector;                            // set to be equal to initial time vector
+  NumericMatrix TCOMB(time_vector.length(), 4); // a matrix with 1 column
+  NumericMatrix::Column col1 = TCOMB(_, 1);     /// reference to the second column (containing time points)
+  col1 = time_vector;                           // set to be equal to initial time vector
+  NumericMatrix::Column col0 = TCOMB(_,0);      // set state index to -1
+  NumericVector stateSamplingTimes(TCOMB.nrow(), -1.0);
+  col0 = stateSamplingTimes;
+
+  NumericVector ICchanged(NSTATES);              // ICchanged created to store updated IC - if changed by Events
+  for (int i = 0; i < NSTATES; i++){
+    ICchanged[i] = IC[i];
+  }
 
   if(Events.isNotNull()){
+
     DataFrame Events_DF(Events);
-    TCOMB = sorted_times(Events_DF, time_vector);  // get the sorted  Combined time matrix
-    // Decrease Species index by 1 to convert R Species index to internal cpp index
+    TCOMB = sorted_times(Events_DF, time_vector, NSTATES);  // get the sorted  Combined time matrix
+    // Decrease State index by 1 to convert R state index to internal cpp index, all sampling times get state index of -1
     for(int i = 0; i < TCOMB.nrow(); i++){
-      if(TCOMB(i,0) != 0){
-        TCOMB(i,0) = TCOMB(i,0) - 1;              // Decrease Species index by 1 to get cpp index from R
-      }
+      TCOMB(i,0) = TCOMB(i,0) - 1;
     }
-    // Change y0 such that IC at time = 0 are overwritten by values in TCOMB at t = 0
+    // Change IC such that IC at time = 0 are overwritten by values in TCOMB at t = 0
     for(int i = 0; i < TCOMB.nrow();  i++){
       if(TCOMB(i,1) == 0 && TCOMB(i,3) == 1){
-        IC(TCOMB(i,0)) = TCOMB(i,2);
+        ICchanged(TCOMB(i,0)) = TCOMB(i,2);
       }
     }
   }
 
-  int NOUT = time_vec_len;
-  // Rcout << TCOMB << std::endl;
-  Rcout << IC << std::endl;
+  int NOUT = TCOMB.nrow();
 
-  // Set constraints to all 1's for nonnegative solution values.----------------
+  // Set the initial conditions-------------------------------------------------
+  N_Vector y0 = N_VNew_Serial(y_len);
+  realtype *y0_ptr = N_VGetArrayPointer(y0);
+  for (int i = 0; i<y_len; i++){
+    y0_ptr[i] = ICchanged[i];
+  }
+
+  // Set constraints to all 1's for non-negative solution values.----------------
   N_Vector constraints = N_VNew_Serial(y_len);
   N_VConst(1, constraints);
 
@@ -183,10 +196,6 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_fu
     flag = CVodeSetConstraints(cvode_mem, constraints);
     if(check_retval(&flag, "CVodeSetConstraints", 1)) { stop("Stopping cvsolve, something went wrong in setting constraints!"); }
 
-    // NumericMatrix to store results - filled with 0.0
-    // Call CVodeInit to initialize the integrator memory and specify the
-    // user's right hand side function in y'=f(time,y),
-    // // the inital time T0, and the initial dependent variable vector y.
     realtype tout;  // For output times
 
     // Solution vector has length equal to number of rows in TCOMB
@@ -197,48 +206,67 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_fu
     // fill the first row of soln matrix with Initial Conditions
     soln(0,0) = TCOMB(0, 1);   // get the first time value
     for(int i = 0; i<y_len; i++){
-      soln(0,i+1) = IC[i];
+      soln(0,i+1) = ICchanged[i];
     }
 
     for(int iout = 0; iout < NOUT-1; iout++) {
 
+      realtype tprev = TCOMB(iout, 1);
       // output times start from the index after initial time
-      tout = time_vector[iout+1];
+      tout = TCOMB(iout + 1, 1);
 
-      // integrate upto the next time point (whether a sampling time or a discontinuity)
-      flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
-      if (check_retval(&flag, "CVode", 1)) { stop("Stopping cvsolve, something went wrong in solving the system of ODEs!"); break; } // Something went wrong in solving it!
+      // tout 0 is taken care of by initial conditions, if tout equal to previous time
+      // then is taken care by the dosing record at the same time point
+      if (tout == 0.0 || tout == tprev){
+        continue;
 
-      // check whether the this records is sampling or discontinuity using the
-      // fourth column of the TCOMB matrix to confirm discontinuity
-      if(TCOMB(tout,3) == 1){
+      } else {
 
-      // advance solver just one internal step
-      flag = CVode(cvode_mem, tout, y0, &time, CV_ONE_STEP);
-      if (check_retval((void *)&flag, "CVode", 1)) { stop("Stopping cvsolve, something went wrong in solving the system of ODEs!"); break; }
+        // integrate upto the next time point (whether a sampling time or a discontinuity)
+        flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
+        if (check_retval(&flag, "CVode", 1)) { stop("Stopping cvsolve, something went wrong in solving the system of ODEs!"); break; }
 
-      // include the discontinuity, i.e. add to the solution
-      // Change y0 such that IC at time = 0 are overwritten by values in TCOMB at t = 0
-      for(int i = 0; i < TCOMB.nrow();  i++){
-        if(TCOMB(i,1) == tout && TCOMB(i,3) == 1){
-          int disc_index = std::lroundf(TCOMB(i,0));
-          y0_ptr[disc_index] = y0_ptr[disc_index] + TCOMB(i,2);
+        // check whether the this records is sampling or discontinuity using the
+        // fourth column of the TCOMB matrix to confirm discontinuity
+        if(TCOMB(iout+1,3) == 1){
+
+          // include the discontinuity, i.e. ADD to the solution
+          // Change y0 such that IC at time = 0 are overwritten by values in TCOMB at t = 0
+          for(int i = 0; i < TCOMB.nrow();  i++){
+
+            if(TCOMB(i,1) == tout && TCOMB(i,3) == 1){
+
+              // update y0 - index for y0 needs to be an integer
+              int disc_index = std::lroundf(TCOMB(i,0));
+              y0_ptr[disc_index] = y0_ptr[disc_index] + TCOMB(i,2);
+            }
+          }
+
+          if (flag == CV_SUCCESS) {
+            // store results in soln matrix
+            soln(iout+1, 0) = time;           // first column is for time
+            for (int i = 0; i<y_len; i++){
+              soln(iout+1, i+1) = y0_ptr[i];
+            }
+          }
+
+          // re-initialize the solver
+          flag = CVodeReInit(cvode_mem, tout, y0);
+          if (check_retval((void *)&flag, "CVodeReInit", 1)) { stop("Stopping cvsolve, something went wrong in reinitializing the ODE system!"); break; }
+
+        } else {                                     // store results for the sampling record
+
+          if (flag == CV_SUCCESS) {
+            // store results in soln matrix
+            soln(iout+1, 0) = time;           // first column is for time
+            for (int i = 0; i<y_len; i++){
+              soln(iout+1, i+1) = y0_ptr[i];
+            }
+          }
         }
       }
 
-      // re-initialize the solver
-      flag = CVodeReInit(cvode_mem, tout, y0);
-      if (check_retval((void *)&flag, "CVodeReInit", 1)) { stop("Stopping cvsolve, something went wrong in reinitializing the ODE system!"); break; }
-      }
 
-      if (flag == CV_SUCCESS) {
-
-        // store results in soln matrix
-        soln(iout+1, 0) = time;           // first column is for time
-        for (int i = 0; i<y_len; i++){
-          soln(iout+1, i+1) = y0_ptr[i];
-        }
-      }
     }
 
     // free the vectors

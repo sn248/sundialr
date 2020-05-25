@@ -21,7 +21,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Example of solving a set of ODEs with cvode function
+# Example of solving a set of ODEs with multiple discontinuities using cvsolve
+# A simple One dimensional equation, y = -0.1 * y
 # ODEs described by an R function
 ODE_R <- function(t, y, p){
 
@@ -29,51 +30,21 @@ ODE_R <- function(t, y, p){
   ydot = vector(mode = "numeric", length = length(y))
 
   # R indices start from 1
-  ydot[1] = -p[1]*y[1] + p[2]*y[2]*y[3]
-  ydot[2] = p[1]*y[1] - p[2]*y[2]*y[3] - p[3]*y[2]*y[2]
-  ydot[3] = p[3]*y[2]*y[2]
-
-  # ydot[1] = -0.04 * y[1] + 10000 * y[2] * y[3]
-  # ydot[3] = 30000000 * y[2] * y[2]
-  # ydot[2] = -ydot[1] - ydot[3]
+  ydot[1] = -p[1]*y[1]
 
   ydot
 
 }
 
-# ODEs can also be described using Rcpp
-Rcpp::sourceCpp(code = '
+# R code to generate time vector, IC and solve the equations
+TSAMP <- seq(from = 0, to = 100, by = 0.1)      # sampling time points
+IC <- c(1)
+params <- c(0.1)
 
-                #include <Rcpp.h>
-                using namespace Rcpp;
-
-                // ODE functions defined using Rcpp
-                // [[Rcpp::export]]
-                NumericVector ODE_Rcpp (double t, NumericVector y, NumericVector p){
-
-                // Initialize ydot filled with zeros
-                NumericVector ydot(y.length());
-
-                ydot[0] = -p[0]*y[0] + p[1]*y[1]*y[2];
-                ydot[1] = p[0]*y[0] - p[1]*y[1]*y[2] - p[2]*y[1]*y[1];
-                ydot[2] = p[2]*y[1]*y[1];
-
-                return ydot;
-
-                }')
-
-
-
-# R code to genrate time vector, IC and solve the equations
-time_vec <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
-IC <- c(1,0,0)
-params <- c(0.04, 10000, 30000000)
-reltol <- 1e-04
-abstol <- c(1e-8,1e-14,1e-6)
-
-## Solving the ODEs using cvode function
-df1 <- cvode(time_vec, IC, ODE_R , params, reltol, abstol)           ## using R
-df2 <- cvode(time_vec, IC, ODE_Rcpp , params, reltol, abstol)        ## using Rcpp
-
-## Check that both solutions are identical
-# identical(df1, df2)
+# a dataset describing the dosing
+# times at which additions to y[1] are to be done
+# names of the columns don't matter, but they must be in the order of state index,
+# times and Values at discontinuity.
+TDOSE <- data.frame(ID = 1, TIMES = c(0, 10, 20, 30, 40, 50), VAL = 100)
+df1 <- cvsolve(TSAMP, c(1), ODE_R, params)         # solving without any discontinuity
+df2 <- cvsolve(TSAMP, c(1), ODE_R, params, TDOSE)  # solving with discontinuity

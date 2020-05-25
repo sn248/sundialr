@@ -1,3 +1,19 @@
+// Copyright 2020 Satyaprakash Nayak
+// Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+// 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in
+//  the documentation and/or other materials provided with the distribution.
+// 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+//    from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
+// BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+// IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+// OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+// OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
 /* This function sorts the dosing dataframe and sampling times
  * in the increasing order of sampling times with
  * dosing records inserted in between in the order of
@@ -20,7 +36,7 @@
 using namespace arma;
 // not exported
 ////[[Rcpp::export]]
-Rcpp::NumericMatrix sorted_times(Rcpp::DataFrame TDOSE, Rcpp::NumericVector TSAMP){
+Rcpp::NumericMatrix sorted_times(Rcpp::DataFrame TDOSE, Rcpp::NumericVector TSAMP, int NSTATES){
 
   // Dosing dataframe - 1st column - index of species being dosed + 1
   // Dosing dataframe - 2nd column - time of dosing
@@ -29,6 +45,11 @@ Rcpp::NumericMatrix sorted_times(Rcpp::DataFrame TDOSE, Rcpp::NumericVector TSAM
   // convert Dosing dataframe to matrix first and then an arma matrix
   // add another column (4th column) of all ones to indicate dosing
   Rcpp::NumericMatrix TDOSE1 = Rcpp::internal::convert_using_rfunction(TDOSE, "as.matrix");
+
+  // check that the dosed state is not greater than the size of the system
+  Rcpp::NumericVector doseIndices = TDOSE1(Rcpp::_, 0);
+  if(max(doseIndices) > NSTATES){ Rcpp::stop("The dose species number cannot be greater thatn the number of states in the system\n"); }
+
   arma::mat TDOSE2(TDOSE1.begin(), TDOSE1.nrow(), TDOSE1.ncol(), false);
   TDOSE2.insert_cols(3, 1);  // add 1 column at column position 4
   TDOSE2.col(3).ones();      // set column 4 to all ones T0 INDICATE DOSING
@@ -64,7 +85,22 @@ Rcpp::NumericMatrix sorted_times(Rcpp::DataFrame TDOSE, Rcpp::NumericVector TSAM
     TOUT(index,3) = TCOMB(sorted_index(index),3);
   }
 
+  // remove the row with sampling time equal to dosing time
+  // rows with the same sampling time as dosing is immediately after the dosing time
+  arma::uvec removeRows(TOUT.n_rows, fill::zeros);
+  for (unsigned int i = 1; i < TOUT.n_rows; i++){
+    double tprev = TOUT(i-1,1);
+    if (TOUT(i,1) == tprev && TOUT(i,3) == 0){
+      removeRows.at(i) = i;
+    }
+  }
+
+  // we need to remove only the non-zero row indices
+  removeRows = nonzeros(removeRows);
+  TOUT.shed_rows(removeRows);
+
   Rcpp::NumericMatrix TOUT1(TOUT.n_rows, TOUT.n_cols, TOUT.begin());
+
   return TOUT1;
 
 }
