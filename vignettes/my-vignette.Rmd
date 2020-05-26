@@ -115,7 +115,7 @@ NumericVector ODE_Rcpp (double t, NumericVector y){
 The above is a re-write of the `cvRoberts_dns.c` example in the documentation of `CVODE`. The original example can be found the document [here](https://computation.llnl.gov/sites/default/files/public/cv_examples.pdf).
 
 ## Putting everything together
-The entire `R` file to create right hand side of ODE function (which calculates rates of change) is as follows (also found in `/inst/examples/cv_Roberts_dns.r`):
+The entire `R` file to create right hand side of ODE function (which calculates rates of change) is as follows (also found [here](https://github.com/sn248/sundialr/blob/master/inst/examples/cv_Roberts_dns.r)):
 
 ```r
 # ODEs described by an R function
@@ -242,11 +242,11 @@ package.
 ## Calculation of Sensitivities using `CVODES`
 Once, the system of ODEs has been defined using the instructions provided above, 
 sensitivities can be easily calculated using the `cvodes` function using the 
-function call below:
+function call below (the entire code can be found at this [link](https://github.com/sn248/sundialr/blob/master/inst/examples/cvs_Roberts_dns.r))
 
 ```r
 df1 <- cvodes(time_vec, IC, ODE_R , params, reltol, abstol,"STG",F)  ## using R
-df2 <- cvodes(time_vec, IC, ODE_Rcpp , params, reltol, abstol,"STG",F)  ## using R
+df2 <- cvodes(time_vec, IC, ODE_Rcpp , params, reltol, abstol,"STG",F)  ## using Rcpp
 ```
 The additional arguments in `cvodes` specify the senstivity calculation method
 to be used (`STG` for `STAGGERED` or `SIM` for `SIMULATENOUS`) and flag for error control
@@ -283,5 +283,5 @@ sensitivity values match with the values provided in the `CVODES` documentation.
 In future, I intend to provide options to select specific entities and parameters with respect to which sensitivities are to be computed as the sensitivity matrix can get very large for  medium to large models.
 
 ## Summary
-The package `sundialr` provides a way to interface with the famous `SUNDIALS` C library 
-to solver initial value problems. The package allows the system of differential equations to be written in `R` or using `Rcpp`. Currently only a single initialization of the ODE is supported, but we plan to add repeated initializations (e.g., repeated dosing) in near future for `CVODE`. For sensitivities, currently, calculation of forward sensitivities for all entities with respect to all the parameters in the model is implemented. However the ability to select specific entities and parameters for which sensitivities is to be calculated will be added soon. As a note, since this package is under active development, the interfaces of both `CVODE` and `CVODES` (i.e., the function signatures) may change in the future versions. Please keep this mind if you intend to use `sundialr` in your applications. In near future, interface for other solvers from the `C` library such as`IDA/IDAS` and `ARKODE` will also be added.
+The package `sundialr` provides a way to interface with the famous `SUNDIALS` C library (provided by Lawerence Livermore National Security)
+to solver initial value problems. The package allows the system of differential equations to be written in `R` or using `Rcpp`. Function `cvode` is used to solve initial value problems with a single initialization, but problems with multiple discontinuities in the solution can be solved using the `cvsolve` interface. For sensitivities, currently, calculation of forward sensitivities for all entities with respect to all the parameters in the model is implemented in the `cvodes` function. An ability to select specific entities and parameters for which sensitivities is to be calculated will be added soon. To solve a system of differential algebraic systems, the `ida` function is provided which is an interface to the `IDA` function in `SUNDIALS`. As a note, since this package is under active development, the interfaces of both `CVODE` and `CVODES` (i.e., the function signatures) may change in the future versions. Please keep this mind if you intend to use `sundialr` in your applications. In near future, interface for other solvers from the `C` library such as`IDAS` and `ARKODE` may also be added.

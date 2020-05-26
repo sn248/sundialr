@@ -47,4 +47,4 @@ abstol <- c(1e-8,1e-14,1e-6)
 
 ## Solving the DAEs using the ida function
 df1 <- ida(time_vec, IC, IRes, DAE_R , params, reltol, abstol)           ## using R
-df2 <- ida(time_vec, IC, IRes, DAE_Rcpp , params, reltol, abstol)            ## using Rcpp
+df2 <- ida(time_vec, IC, IRes, DAE_Rcpp , params, reltol, abstol)        ## using Rcpp
