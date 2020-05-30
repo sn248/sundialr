@@ -1,35 +1,26 @@
 Package: sundialr
 Type: Package
 Title: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers 
-Version: 0.1.3
+Version: 0.1.4
 Authors@R: c(
-    person("Satyaprakash", "Nayak", "", "sn248@cornell.edu", c("aut", "cre")),
-    person("Scott D", "Cohen", "", "", c("ctb")),
-    person("Alan C", "Hindmarsh", "", "", c("ctb")),
-    person("Radu", "Serban", "", "", c("ctb")),
-    person("Dan", "Shumaker", "", "", c("ctb")),
-    person("Daniel R", "Reynolds", "", "", c("ctb")),
-    person("Aaron", "Collier", "", "", c("ctb")),
-    person("David", "Gardner", "", "", c("ctb")),
-    person("Carol", "Woodward", "", "", c("ctb")),
-    person("Slaven", "Peles", "", "", c("ctb")),
-    person("Peter", "Brown", "", "", c("ctb")),
-    person("Hilari C", "Tiedeman", "", "", c("ctb")),
-    person("Ting", "Yan", "", "", c("ctb")),
+    person("Satyaprakash", "Nayak", "", "sn248@cornell.edu", c("aut", "cre","cph"), comment = c(ORCID = "0000-0001-7225-1317")),
     person("Lawrence Livermore National Security", role =  c("cph")),
     person("Southern Methodist University", role =  c("cph"))
     )
 Maintainer: Satyaprakash Nayak <sn248@cornell.edu>
 URL: https://github.com/sn248/sundialr
 BugReports: https://github.com/sn248/sundialr/issues
-Description: Provides a way to call the functions in 'SUNDIALS' C ODE solving library (<https://computation.llnl.gov/projects/sundials>). Currently the serial version of ODE solver, 'CVODE' and sensitivity calculator 'CVODES' from the 'SUNDIALS' library are implemented. The package requires ODE to be written as an 'R' or 'Rcpp' function and does not require the 'SUNDIALS' library to be installed on the local machine.
-License: GPL (>=2)
+Description: Provides a way to call the functions in 'SUNDIALS' C ODE solving library (<https://computation.llnl.gov/projects/sundials>). Currently the serial version of ODE solver, 'CVODE', sensitivity calculator 'CVODES' and differential algebraic solver 'IDA' from the 'SUNDIALS' library are implemented. The package requires ODE to be written as an 'R' or 'Rcpp' function and does not require the 'SUNDIALS' library to be installed on the local machine.
+License: BSD_3_clause + file LICENSE
+Copyright: file COPYRIGHTS
 LazyData: TRUE
 Imports:
     Rcpp (>= 0.12.5)
 LinkingTo:
-    Rcpp
-RoxygenNote: 6.1.1
-Suggests: knitr,
-    rmarkdown
+    Rcpp, RcppArmadillo
+RoxygenNote: 7.1.0
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat
 VignetteBuilder: knitr

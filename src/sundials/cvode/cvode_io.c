@@ -5,15 +5,15 @@
  * -----------------------------------------------------------------
  * Programmer(s): Alan C. Hindmarsh and Radu Serban @ LLNL
  * -----------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2014, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Lawrence Livermore National Laboratory in part under
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * This is the implementation file for the optional input and output
  * functions for the CVODE solver.
@@ -702,6 +702,29 @@ int CVodeGetCurrentOrder(void *cvode_mem, int *qcur)
 }
 
 /*
+ * CVodeGetCurrentGamma
+ *
+ * Returns the value of gamma for the current step.
+ */
+
+int CVodeGetCurrentGamma(void *cvode_mem, realtype *gamma)
+{
+  CVodeMem cv_mem;
+
+  if (cvode_mem==NULL) {
+    cvProcessError(NULL, CV_MEM_NULL, "CVODE", "CVodeGetCurrentGamma", MSGCV_NO_MEM);
+    return(CV_MEM_NULL);
+  }
+
+  cv_mem = (CVodeMem) cvode_mem;
+
+  *gamma = cv_mem->cv_gamma;
+
+  return(CV_SUCCESS);
+}
+
+
+/*
  * CVodeGetNumStabLimOrderReds
  *
  * Returns the number of order reductions triggered by the stability
@@ -789,6 +812,28 @@ int CVodeGetCurrentStep(void *cvode_mem, realtype *hcur)
   cv_mem = (CVodeMem) cvode_mem;
 
   *hcur = cv_mem->cv_next_h;
+
+  return(CV_SUCCESS);
+}
+
+/*
+ * CVodeGetCurrentState
+ *
+ * Returns the current state vector
+ */
+
+int CVodeGetCurrentState(void *cvode_mem, N_Vector *y)
+{
+  CVodeMem cv_mem;
+
+  if (cvode_mem==NULL) {
+    cvProcessError(NULL, CV_MEM_NULL, "CVODE", "CVodeGetCurrentState", MSGCV_NO_MEM);
+    return(CV_MEM_NULL);
+  }
+
+  cv_mem = (CVodeMem) cvode_mem;
+
+  *y = cv_mem->cv_y;
 
   return(CV_SUCCESS);
 }
@@ -1146,6 +1191,9 @@ char *CVodeGetReturnFlagName(long int flag)
     break;
   case CV_NLS_SETUP_FAIL:
     sprintf(name,"CV_NLS_SETUPT_FAIL");
+    break;
+  case CV_NLS_FAIL:
+    sprintf(name,"CV_NLS_FAIL");
     break;
   default:
     sprintf(name,"NONE");

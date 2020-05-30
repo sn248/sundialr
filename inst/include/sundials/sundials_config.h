@@ -1,19 +1,28 @@
 /* ----------------------------------------------------------------- 
  * Programmer(s): Aaron Collier and Radu Serban @ LLNL
  * -----------------------------------------------------------------
- * Copyright (c) 2005, The Regents of the University of California.
- * Produced at the Lawrence Livermore National Laboratory.
+ * LLNS/SMU Copyright Start
+ * Copyright (c) 2002-2018, Southern Methodist University and
+ * Lawrence Livermore National Security
+ *
+ * This work was performed under the auspices of the U.S. Department
+ * of Energy by Southern Methodist University and Lawrence Livermore
+ * National Laboratory under Contract DE-AC52-07NA27344.
+ * Produced at Southern Methodist University and the Lawrence
+ * Livermore National Laboratory.
+ *
  * All rights reserved.
  * For details, see the LICENSE file.
+ * LLNS/SMU Copyright End
  * -----------------------------------------------------------------
  * SUNDIALS configuration header file
  * -----------------------------------------------------------------*/
 
 /* Define SUNDIALS version numbers */
-#define SUNDIALS_VERSION "4.0.1"
-#define SUNDIALS_VERSION_MAJOR 4
-#define SUNDIALS_VERSION_MINOR 0
-#define SUNDIALS_VERSION_PATCH 1
+#define SUNDIALS_VERSION "5.2.0"
+#define SUNDIALS_VERSION_MAJOR 5
+#define SUNDIALS_VERSION_MINOR 2
+#define SUNDIALS_VERSION_PATCH 0
 #define SUNDIALS_VERSION_LABEL ""
 
 /* FCMIX: Define Fortran name-mangling macro for C identifiers.
@@ -79,11 +88,28 @@
 /* #undef SUNDIALS_SUPERLUMT */
 /* #undef SUNDIALS_SUPERLUMT_THREAD_TYPE */
 
+/* SUPERLUDIST available
+ * If working libraries for SUPERLUDIST support were found, then
+ *    #define SUNDIALS_SUPERLUDIST
+ */
+/* #undef SUNDIALS_SUPERLUDIST */
+
 /* KLU available
  * If working libraries for KLU support were found, then
  *     #define SUNDIALS_KLU 
  */
 /* #undef SUNDIALS_KLU */
+
+/* Trilinos available
+ * If working libraries for Trilinos support were found, then
+ *     #define SUNDIALS_TRILINOS
+ */
+/* #undef SUNDIALS_TRILINOS */
+
+ /* Trilinos with MPI is available, then
+  *    #define SUNDIALS_TRILINOS_HAVE_MPI
+  */
+/* #undef SUNDIALS_TRILINOS_HAVE_MPI */
 
 /* Set if SUNDIALS is built with MPI support.
  * 

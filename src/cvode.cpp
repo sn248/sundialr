@@ -1,132 +1,48 @@
+//   Copyright (c) 2020, Satyaprakash Nayak
+//
+//   Redistribution and use in source and binary forms, with or without
+//   modification, are permitted provided that the following conditions are
+//   met:
+//
+//   Redistributions of source code must retain the above copyright
+//   notice, this list of conditions and the following disclaimer.
+//
+//   Redistributions in binary form must reproduce the above copyright
+//   notice, this list of conditions and the following disclaimer in
+//   the documentation and/or other materials provided with the
+//   distribution.
+//
+//   Neither the name of the <ORGANIZATION> nor the names of its
+//   contributors may be used to endorse or promote products derived
+//   from this software without specific prior written permission.
+//
+//   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+//   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+//   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+//   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+//   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+//   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+//   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+//   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+//   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+//   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Rcpp.h>
 
 #include <cvode/cvode.h>               /* prototypes for CVODE fcts., consts. */
 #include <nvector/nvector_serial.h>    /* serial N_Vector types, fcts., macros */
-// #include <cvode/cvode_direct.h>         /* prototype for CVDense */
-// #include <sundials/sundials_dense.h>   /* definitions DlsMat DENSE_ELEM */
 #include <sundials/sundials_types.h>   /* definition of type realtype */
 #include <sunmatrix/sunmatrix_dense.h>
 #include <sunlinsol/sunlinsol_dense.h>
 
 #include <check_retval.h>
-// #include "check_retval.cpp"
+#include <rhs_func.h>
 
 #define Ith(v,i)    NV_Ith_S(v,i-1)         /* i-th vector component i=1..NEQ */
 
 using namespace Rcpp;
 
-//-- typedefs for RHS function pointer input in from R -------------------------
-// typedef NumericVector (*funcPtr) (double t, NumericVector y);
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-//-- user data is passed to CVODE in a struct, one component is the pointer to
-//-- RHS function---------------------------------------------------------------
-// struct to use is pointer to Rcpp is input as RHS function
-// struct rhs_xptr{
-//   SEXP rhs_eqn;
-// };
-
-// struct to use if R or Rcpp function is input as RHS function
-struct rhs_func{
-  Function rhs_eqn;
-  NumericVector params;
-};
-//------------------------------------------------------------------------------
-
-//---RHS function that is an input to CVODE, takes user input of RHS in user_data
-
-// function called by CVodeInit if user inputs Rcpp function pointer
-// int rhs_pointer(realtype t, N_Vector y, N_Vector ydot, void* user_data){
-//
-//   // convert y to NumericVector y1
-//   int y_len = NV_LENGTH_S(y);
-//
-//   NumericVector y1(y_len);    // filled with zeros
-//   realtype *y_ptr = N_VGetArrayPointer(y);
-//   for (int i = 0; i < y_len; i++){
-//     y1[i] = y_ptr[i];
-//   }
-//
-//   // convert ydot to NumericVector ydot1
-//   int ydot_len = NV_LENGTH_S(ydot);
-//
-//   NumericVector ydot1(ydot_len);    // filled with zeros
-//
-//   // cast void pointer to pointer to struct and assign rhs to a SEXP
-//   Rprintf("Reached in function\n");
-//   struct rhs_xptr *my_rhs_ptr = NULL;
-//   my_rhs_ptr = (struct rhs_xptr*)user_data;
-//   SEXP rhs_fun_sexp = (*my_rhs_ptr).rhs_eqn;
-//
-//   Rprintf("type of rhs_fun_sexp is %d\n", TYPEOF(rhs_fun_sexp));
-//
-//   // use function pointer to get the derivatives
-//   XPtr<funcPtr> rhs_fun_xptr(rhs_fun_sexp);
-//   funcPtr rhs_fun = *rhs_fun_xptr;
-//
-//   // Rprintf("type of rhs_fun is %d\n", TYPEOF(rhs_fun));
-//   // use the function to calculate value of RHS ----
-//   ydot1 = rhs_fun(t, y1);
-//
-//   // convert NumericVector ydot1 to N_Vector ydot
-//   realtype *ydot_ptr = N_VGetArrayPointer(ydot);
-//   for (int i = 0; i<ydot1.length(); i++){
-//     ydot_ptr[i] = ydot1[i];
-//   }
-//
-//   // everything went smoothly
-//   return(0);
-// }
-
-// function called by CVodeInit if user inputs R function
-int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
-
-  // convert y to NumericVector y1
-  int y_len = NV_LENGTH_S(y);
-
-  NumericVector y1(y_len);    // filled with zeros
-  // realtype *y_ptr = N_VGetArrayPointer(y);
-  for (int i = 0; i < y_len; i++){
-    y1[i] = Ith(y,i+1); // y_ptr[i];
-  }
-
-  NumericVector ydot1(y_len);    // filled with zeros
-
-  if(!user_data){
-    stop("Something went wrong, stopping!");
-  }
-
-  // cast void pointer to pointer to struct and assign rhs to a Function
-  struct rhs_func *my_rhs_fun = (struct rhs_func*)user_data;
-
-  if(my_rhs_fun){
-    Function rhs_fun = (*my_rhs_fun).rhs_eqn;           // function
-    NumericVector p_values = (*my_rhs_fun).params;      // rate parameters
-
-    if (rhs_fun && (TYPEOF(rhs_fun) == CLOSXP)){
-      // use the function to calculate value of RHS ----
-      ydot1 = rhs_fun(t, y1, p_values);
-    }
-    else{
-      stop("Something went wrong, stopping!");
-    }
-  }
-  else {
-    stop("Something went wrong, stopping!");
-  }
-
-  // convert NumericVector ydot1 to N_Vector ydot
-  realtype *ydot_ptr = N_VGetArrayPointer(ydot);
-  for (int i = 0; i<  y_len; i++){
-    ydot_ptr[i] = ydot1[i];
-  }
-
-  // everything went smoothly
-  return(0);
-}
-//---RHS function definition ends ----------------------------------------------
 
 //------------------------------------------------------------------------------
 //'cvode
@@ -136,12 +52,13 @@ int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
 //'@param IC Initial Conditions
 //'@param input_function Right Hand Side function of ODEs
 //'@param Parameters Parameters input to ODEs
-//'@param reltolerance Relative Tolerance (a scalar)
-//'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
+//'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
+//'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 //'@example /inst/examples/cv_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_function,
-                    NumericVector Parameters, double reltolerance, NumericVector abstolerance){
+                    NumericVector Parameters,
+                    double reltolerance = 0.0001, NumericVector abstolerance = 0.0001){
 
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
@@ -166,32 +83,30 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     }
   }
   else if (abstol_len == y_len){
-
     for (int i = 0; i<abstol_len; i++){
       abstol_ptr[i] = abstolerance[i];
     }
   }
   else if(abstol_len != 1 || abstol_len != y_len){
-
     stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
-  //----------------------------------------------------------------------------
-  // // Set the initial conditions-------------------------------------------------
+
+  // Set the initial conditions-------------------------------------------------
   N_Vector y0 = N_VNew_Serial(y_len);
   realtype *y0_ptr = N_VGetArrayPointer(y0);
   for (int i = 0; i<y_len; i++){
     y0_ptr[i] = IC[i]; // NV_Ith_S(y0, i)
   }
-  // //----------------------------------------------------------------------------
+
+  // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
   void *cvode_mem;
   cvode_mem = NULL;
 
-  // // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
+
   cvode_mem = CVodeCreate(CV_BDF);
   if (check_retval((void *) cvode_mem, "CVodeCreate", 0)) { stop("Stopping cvode!"); }
 
   //-- assign user input to the struct based on SEXP type of input_function
-
   if (!input_function){
     stop("Something is wrong with input function, stopping!");
   }
@@ -212,7 +127,6 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     flag = CVodeSVtolerances(cvode_mem, reltol, abstol);
     if (check_retval(&flag, "CVodeSVtolerances", 1)) { stop("Stopping cvode, something went wrong in setting solver tolerances!"); }
 
-    //--required in the new version ----------------------------------------------
     // Create dense SUNMatrix for use in linear solves
     sunindextype y_len_M = y_len;
     SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M);
@@ -227,9 +141,13 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     if(check_retval(&flag, "CVDlsSetLinearSolver", 1)) { stop("Stopping cvode, something went wrong in setting the linear solver!"); }
     // NumericMatrix to store results - filled with 0.0
 
-    // First row for initial conditions, First column is for time
-    int y_len_1 = y_len + 1;
-    NumericMatrix soln(Dimension(time_vec_len,y_len_1));
+    // Call CVodeInit to initialize the integrator memory and specify the
+    // user's right hand side function in y'=f(time,y),
+    // // the inital time T0, and the initial dependent variable vector y.
+    realtype tout;  // For output times
+
+    int y_len_1 = y_len + 1; // remove later
+    NumericMatrix soln(Dimension(time_vec_len,y_len_1));  // remove later
 
     // fill the first row of soln matrix with Initial Conditions
     soln(0,0) = time_vector[0];   // get the first time value
@@ -237,10 +155,6 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
       soln(0,i+1) = IC[i];
     }
 
-    // Call CVodeInit to initialize the integrator memory and specify the
-    // user's right hand side function in y'=f(time,y),
-    // // the inital time T0, and the initial dependent variable vector y.
-    realtype tout;  // For output times
     for(int iout = 0; iout < NOUT-1; iout++) {
 
       // output times start from the index after initial time
@@ -248,7 +162,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
 
       flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
 
-      if (check_retval(&flag, "CVode", 1)) { stop("Stopping CVODE, something went wrong in solving the system of ODEs!"); break; } // Something went wrong in solving it!
+      if (check_retval(&flag, "CVode", 1)) { stop("Stopping CVODE, something went wrong in solving the system of ODEs!"); } // Something went wrong in solving it!
       if (flag == CV_SUCCESS) {
 
         // store results in soln matrix
@@ -265,10 +179,8 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
 
     // free integrator memory
     CVodeFree(&cvode_mem);
-
     // free the linear solver memory
     SUNLinSolFree(LS);
-
     // Free the matrix memory
     SUNMatDestroy(SM);
 
@@ -276,28 +188,11 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     break;
   }
 
-    // case EXTPTRSXP: {
-    //   Rprintf("Reached in EXTPTRSXP\n");
-    //   Rprintf("Type of input_function is %d\n", TYPEOF(input_function));
-    //   struct rhs_xptr my_rhs_xptr = {input_function};
-    //   // setting the user_data in rhs function
-    //   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_xptr);
-    //   if (check_flag(&flag, "CVodeSetUserData", 1)) { stop("Stopping cvode!"); }
-    //
-    //   flag = CVodeInit(cvode_mem, rhs_pointer, T0, y0);
-    //   if (check_flag(&flag, "CVodeInit", 1)) { stop("Stopping cvode!"); }
-    //
-    //   break;
-    // }
-
   default: {
     stop("Incorrect input function type - input function can be an R or Rcpp function");
   }
 
   }
 
-
-
 }
-
-// //--- CVODE definition ends ----------------------------------------------------
+//--- cvode definition ends ----------------------------------------------------

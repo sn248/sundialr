@@ -5,7 +5,9 @@ LIBS=-L./ -L../inst/
 
 .PHONY: all ../inst/libsundials_all.a
 
-SOURCES= check_retval.cpp cvode.cpp cvodes.cpp RcppExports.cpp
+SOURCES= check_retval.cpp cvode.cpp cvodes.cpp \
+ida.cpp cvsolve.cpp rhs_func.cpp RcppExports.cpp
+
 OBJECTS= $(SOURCES:.cpp=.o)
 
 #SOURCES_CVODE= ./sundials/cvode/cvode.c ./sundials/cvode/cvode_bandpre.c \
@@ -21,45 +23,52 @@ SOURCES_CVODES = ./sundials/cvodes/cvodea.c ./sundials/cvodes/cvodea_io.c \
 ./sundials/cvodes/cvodes_diag.c ./sundials/cvodes/cvodes_io.c \
 ./sundials/cvodes/cvodes_ls.c ./sundials/cvodes/cvodes_nls.c \
 ./sundials/cvodes/cvodes_nls_sim.c ./sundials/cvodes/cvodes_nls_stg.c \
-./sundials/cvodes/cvodes_nls_stg1.c
+./sundials/cvodes/cvodes_nls_stg1.c ./sundials/cvodes/cvodes_spils.c
 
-SOURCES_NVECSERIAL= ./sundials/nvec_ser/fnvector_serial.c \
-./sundials/nvec_ser/nvector_serial.c
+SOURCES_IDA = ./sundials/ida/ida.c \
+./sundials/ida/ida_bbdpre.c ./sundials/ida/ida_ic.c \
+./sundials/ida/ida_io.c ./sundials/ida/ida_ls.c \
+./sundials/ida/ida_nls.c ./sundials/ida/ida_spils.c
+
+SOURCES_NVECSERIAL= ./sundials/nvector/serial/fnvector_serial.c \
+./sundials/nvector/serial/nvector_serial.c
 
 SOURCES_SUNDIALS= ./sundials/sundials/sundials_band.c ./sundials/sundials/sundials_dense.c \
-./sundials/sundials/sundials_direct.c ./sundials/sundials/sundials_iterative.c \
+./sundials/sundials/sundials_direct.c ./sundials/sundials/sundials_futils.c \
+./sundials/sundials/sundials_iterative.c \
 ./sundials/sundials/sundials_linearsolver.c \
 ./sundials/sundials/sundials_math.c ./sundials/sundials/sundials_matrix.c \
-./sundials/sundials/sundials_mpi.c ./sundials/sundials/sundials_nonlinearsolver.c \
+./sundials/sundials/sundials_nonlinearsolver.c \
 ./sundials/sundials/sundials_nvector.c ./sundials/sundials/sundials_nvector_senswrapper.c \
-./sundials/sundials/sundials_pcg.c \
-./sundials/sundials/sundials_sparse.c ./sundials/sundials/sundials_spbcgs.c \
-./sundials/sundials/sundials_sptfqmr.c \
 ./sundials/sundials/sundials_version.c
 
-#./sundials/sundials/sundials_spfgmr.c ./sundials/sundials/sundials_spgmr.c
+#./sundials/sundials/sundials_mpi.c \
+#./sundials/sundials/sundials_pcg.c \
+./sundials/sundials/sundials_sparse.c ./sundials/sundials/sundials_spbcgs.c \
+./sundials/sundials/sundials_sptfqmr.c
 
-SOURCES_SUNLINSOL_DENSE = ./sundials/sunlinsol_dense/fsunlinsol_dense.c \
-./sundials/sunlinsol_dense/sunlinsol_dense.c
+SOURCES_SUNLINSOL_BAND = ./sundials/sunlinsol/band/fsunlinsol_band.c \
+./sundials/sunlinsol/band/sunlinsol_band.c
 
-SOURCES_SUNLINSOL_BAND = ./sundials/sunlinsol_band/sunlinsol_band.c \
-./sundials/sunlinsol_band/fsunlinsol_band.c
+SOURCES_SUNLINSOL_DENSE = ./sundials/sunlinsol/dense/fsunlinsol_dense.c \
+./sundials/sunlinsol/dense/sunlinsol_dense.c
 
+SOURCES_SUNMAT_BAND = ./sundials/sunmatrix/band/fsunmatrix_band.c \
+./sundials/sunmatrix/band/sunmatrix_band.c
 
-SOURCES_SUNMAT = ./sundials/sunmat_dense/fsunmatrix_dense.c \
-./sundials/sunmat_dense/sunmatrix_dense.c \
-./sundials/sunmat_band/fsunmatrix_band.c \
-./sundials/sunmat_band/sunmatrix_band.c
+SOURCES_SUNMAT_DENSE = ./sundials/sunmatrix/dense/fsunmatrix_dense.c \
+./sundials/sunmatrix/dense/sunmatrix_dense.c
 
-SOURCES_SUNNONLINSOL = ./sundials/sunnonlinsol/newton/sunnonlinsol_newton.c \
-./sundials/sunnonlinsol/newton/fsunnonlinsol_newton.c \
-./sundials/sunnonlinsol/fixedpoint/sunnonlinsol_fixedpoint.c \
-./sundials/sunnonlinsol/fixedpoint/fsunnonlinsol_fixedpoint.c
+SOURCES_SUNNONLINSOL_FIXEDPOINT = ./sundials/sunnonlinsol/fixedpoint/fsunnonlinsol_fixedpoint.c \
+./sundials/sunnonlinsol/fixedpoint/sunnonlinsol_fixedpoint.c
 
+SOURCES_SUNNONLINSOL_NEWTON = ./sundials/sunnonlinsol/newton/fsunnonlinsol_newton.c \
+./sundials/sunnonlinsol/newton/sunnonlinsol_newton.c
 
-SOURCES_SUNDIALS_ALL= $(SOURCES_CVODES) $(SOURCES_NVECSERIAL) $(SOURCES_SUNDIALS) \
+SOURCES_SUNDIALS_ALL= $(SOURCES_CVODES) $(SOURCES_IDA) $(SOURCES_NVECSERIAL) $(SOURCES_SUNDIALS) \
 $(SOURCES_SUNLINSOL_DENSE) $(SOURCES_SUNLINSOL_BAND) \
-$(SOURCES_SUNMAT) $(SOURCES_SUNNONLINSOL)
+$(SOURCES_SUNMAT_BAND) $(SOURCES_SUNMAT_DENSE) \
+$(SOURCES_SUNNONLINSOL_FIXEDPOINT) $(SOURCES_SUNNONLINSOL_NEWTON)
 
 OBJECTS_SUNDIALS_ALL = $(SOURCES_SUNDIALS_ALL:.c=.o)
 
@@ -71,16 +80,16 @@ $(SHLIB): ../inst/libsundials_all.a
 	$(AR) -crvs ../inst/libsundials_all.a $(OBJECTS_SUNDIALS_ALL)
 	$(RANLIB) $@
 
-
 clean:
 	(cd ./sundials/cvode;rm -f *.o)
 	(cd ./sundials/cvodes;rm -f *.o)
-	(cd ./sundials/nvec_ser;rm -f *.o)
+	(cd ./sundials/ida;rm -f *.o)
+	(cd ./sundials/nvector/serial;rm -f *.o)
 	(cd ./sundials/sundials;rm -f *.o)
-	(cd ./sundials/sunlinsol_dense;rm -f *.o)
-	(cd ./sundials/sunmat_band;rm -f *.o)
-	(cd ./sundials/sunmat_dense;rm -f *.o)
-	(cd ./sundials/sunlinsol_band;rm -f *.o)
+	(cd ./sundials/sunlinsol/band;rm -f *.o)
+	(cd ./sundials/sunlinsol/dense;rm -f *.o)
+	(cd ./sundials/sunmatrix/band;rm -f *.o)
+	(cd ./sundials/sunmatrix/dense;rm -f *.o)
 	(cd ./sundials/sunnonlinsol/fixedpoint;rm -f *.o)
 	(cd ./sundials/sunnonlinsol/newton;rm -f *.o)
 	rm -f *.dll

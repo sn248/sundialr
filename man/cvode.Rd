@@ -4,8 +4,14 @@
 \alias{cvode}
 \title{cvode}
 \usage{
-cvode(time_vector, IC, input_function, Parameters, reltolerance,
-  abstolerance)
+cvode(
+  time_vector,
+  IC,
+  input_function,
+  Parameters,
+  reltolerance = 1e-04,
+  abstolerance = 1e-04
+)
 }
 \arguments{
 \item{time_vector}{time vector}
@@ -16,14 +22,15 @@ cvode(time_vector, IC, input_function, Parameters, reltolerance,
 
 \item{Parameters}{Parameters input to ODEs}
 
-\item{reltolerance}{Relative Tolerance (a scalar)}
+\item{reltolerance}{Relative Tolerance (a scalar, default value  = 1e-04)}
 
-\item{abstolerance}{Absolute Tolerance (a vector with length equal to ydot)}
+\item{abstolerance}{Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)}
 }
 \description{
 CVODE solver to solve stiff ODEs
 }
 \examples{
+# Example of solving a set of ODEs with cvode function
 # ODEs described by an R function
 ODE_R <- function(t, y, p){
 

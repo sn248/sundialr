@@ -8,10 +8,10 @@
 #'@param IC Initial Conditions
 #'@param input_function Right Hand Side function of ODEs
 #'@param Parameters Parameters input to ODEs
-#'@param reltolerance Relative Tolerance (a scalar)
-#'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
+#'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
+#'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 #'@example /inst/examples/cv_Roberts_dns.r
-cvode <- function(time_vector, IC, input_function, Parameters, reltolerance, abstolerance) {
+cvode <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001) {
     .Call('_sundialr_cvode', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance)
 }
 
@@ -22,12 +22,41 @@ cvode <- function(time_vector, IC, input_function, Parameters, reltolerance, abs
 #'@param IC Initial Conditions
 #'@param input_function Right Hand Side function of ODEs
 #'@param Parameters Parameters input to ODEs
-#'@param reltolerance Relative Tolerance (a scalar)
-#'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
+#'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
+#'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 #'@param SensType Sensitivity Type - allowed values are Staggered (default)", "STG" (for Staggered) or "SIM" (for Simultaneous)
 #'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
 #'@example /inst/examples/cvs_Roberts_dns.r
-cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType = "STG", ErrCon = 'F') {
+cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001, SensType = "STG", ErrCon = 'F') {
     .Call('_sundialr_cvodes', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType, ErrCon)
+}
+
+#'cvsolve
+#'
+#'CVSOLVE solver to solve stiff ODEs with discontinuties
+#'@param time_vector time vector
+#'@param IC Initial Conditions
+#'@param input_function Right Hand Side function of ODEs
+#'@param Parameters Parameters input to ODEs
+#'@param Events Discontinuities in the solution (a DataFrame, default value is NULL)
+#'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
+#'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
+#'@example /inst/examples/cvsolve_1D.r
+cvsolve <- function(time_vector, IC, input_function, Parameters, Events = NULL, reltolerance = 0.0001, abstolerance = 0.0001) {
+    .Call('_sundialr_cvsolve', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, Events, reltolerance, abstolerance)
+}
+
+#'ida
+#'
+#' IDA solver to solve stiff DAEs
+#'@param time_vector time vector
+#'@param IC Initial Value of y
+#'@param IRes Inital Value of ydot
+#'@param input_function Right Hand Side function of DAEs
+#'@param Parameters Parameters input to ODEs
+#'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
+#'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
+ida <- function(time_vector, IC, IRes, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001) {
+    .Call('_sundialr_ida', PACKAGE = 'sundialr', time_vector, IC, IRes, input_function, Parameters, reltolerance, abstolerance)
 }
 
