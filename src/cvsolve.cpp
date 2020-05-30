@@ -231,7 +231,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
             if(TCOMB(i,1) == tout && TCOMB(i,3) == 1){
 
               // update y0 - index for y0 needs to be an integer
-              int disc_index = std::lroundf(TCOMB(i,0));
+              int disc_index = static_cast<int>(TCOMB(i,0));
               y0_ptr[disc_index] = y0_ptr[disc_index] + TCOMB(i,2);
             }
           }

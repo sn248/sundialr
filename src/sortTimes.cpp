@@ -81,7 +81,7 @@ Rcpp::NumericMatrix sorted_times(Rcpp::DataFrame TDOSE, Rcpp::NumericVector TSAM
   }
 
   arma::mat TSAMP2(TSAMP1.begin(), TSAMP1.nrow(), TSAMP1.ncol(), false);
-  if(sum(TSAMP2.col(0)) != 0 & sum(TSAMP2.col(3)) != 0 ){
+  if(( sum(TSAMP2.col(0)) != 0 ) && ( sum(TSAMP2.col(3)) != 0 ) ){
     Rcpp::stop("Something wrong in Sampling Time Matrix \nAll elements in first and third columns should be 0!");
   }
 
