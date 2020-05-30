@@ -7,9 +7,8 @@ DAE_R <- function(t, y, ydot, p){
   res = vector(mode = "numeric", length = length(y))
 
   # R indices start from 1
-  res[1] <- -0.04 * y[1] + 10000 * y[2] * y[3]
+  res[1] <- -0.04 * y[1] + 10000 * y[2] * y[3] - ydot[1]
   res[2] <- -res[1] - 30000000 * y[2] * y[2] - ydot[2]
-  res[1] <- res[1] - ydot[1]
   res[3] <- y[1] + y[2] + y[3] - 1.0
 
   res

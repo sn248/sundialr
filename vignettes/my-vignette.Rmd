@@ -114,7 +114,7 @@ NumericVector ODE_Rcpp (double t, NumericVector y){
 ```
 The above is a re-write of the `cvRoberts_dns.c` example in the documentation of `CVODE`. The original example can be found the document [here](https://computation.llnl.gov/sites/default/files/public/cv_examples.pdf).
 
-## Putting everything together
+### Putting everything together
 The entire `R` file to create right hand side of ODE function (which calculates rates of change) is as follows (also found [here](https://github.com/sn248/sundialr/blob/master/inst/examples/cv_Roberts_dns.r)):
 
 ```r
@@ -190,6 +190,131 @@ and fourth column are the values of `y1`, `y2` and `y3` respectively.
 [12,] 4e+09 5.246212e-07 2.098486e-12 0.99999948
 [13,] 4e+10 6.043000e-08 2.417200e-13 0.99999994
 ```
+
+## Solving a system of Differential-Algebraic Equations
+An interface to the `IDA` solver is also provided to solve a system of Differential-Algebraic equations. A system of differential-algebraic equations is a system of equations containing both differential and algebraic equations and can be written as 
+$$
+F(\dot{x}(t), x(t), t) = 0
+$$
+The equations for such a system are written in terms of residuals and require both the value of $x_0$ and $\dot{x}_0$ as the initial conditions. Writing the previously solved equations as a system of DAEs, we have,
+$$
+\begin{aligned}
+\dot{y}_1 &= -p_1y_1 + p_2y_2y_3  \\ 
+\dot{y}_2 &= p_1y_1 - p_2y_2y_3 - p_3y_2^2 \\
+1 &= y_1 + y_2 + y_3
+\end{aligned}
+$$
+The above system of DAEs can be written in terms of residuals as
+
+$$
+\begin{aligned}
+res_1 &= -p_1y_1 + p_2y_2y_3 - \dot{y}_1 \\ 
+res_2 &= p_1y_1 - p_2y_2y_3 - p_3y_2^2 - \dot{y}_2\\
+res_3 &= y_1 + y_2 + y_3 - 1
+\end{aligned}
+$$
+Here is the complete code for solving this system of DAEs, 
+
+```{r}
+DAE_R <- function(t, y, ydot, p){
+
+  # vector containing the residuals
+  res = vector(mode = "numeric", length = length(y))
+
+  # R indices start from 1
+  res[1] <- -0.04 * y[1] + 10000 * y[2] * y[3] - ydot[1]
+  res[2] <- -res[1] - 30000000 * y[2] * y[2] - ydot[2]
+  res[3] <- y[1] + y[2] + y[3] - 1.0
+
+  res
+}
+
+# R code to genrate time vector, IC and solve the equations
+time_vec <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
+IC <- c(1,0,0)                  # Initial value of y
+IRes <- c(-0.4, 0.4, 0)         # Initial value of ydot
+params <- c(0.04, 10000, 30000000)
+reltol <- 1e-04
+abstol <- c(1e-8,1e-14,1e-6)
+
+## Solving the DAEs using the ida function
+df1 <- sundialr::ida(time_vec, IC, IRes, DAE_R , params, reltol, abstol) 
+```
+
+## Solving an ODE system with discontinuties in solution
+The `cvsolve` function defined in `sundialr` package provides a convenience interface to solve ODEs with one or more discontinuities in solution. An example of such a system of ODEs would be pharmacokinetics of a drug with repeated bolus administration. Let's look at a simple example of multiple doses of a drug with a first-order degradation administered intravenously. The ODE system for the drug is
+$$
+\frac{dC}{dt} = -k_{el} * C
+$$
+ where $C$ is the concentration of the drug and $k_{el}$ is the elimination rate of the drug. The $R$ code for such a system is
+
+```{r}
+ODErepeated_R <- function(t, y, p){
+
+  # vector containing the right hand side gradients
+  ydot = vector(mode = "numeric", length = length(y))
+
+  # R indices start from 1
+  ydot[1] = -p[1]*y[1]
+
+  ydot
+
+}
+```
+ 
+We also need to define when the multiple doses are given and the state to which they are to be applied (here to be applied to the only state in the model, $C$). This is provided via the $Events$ dataframe (here, $TDOSE$ or the dosing dataframe).
+
+```{r}
+TDOSE <- data.frame(ID = 1, TIMES = c(0, 10, 20, 30, 40, 50), VAL = 100)
+TDOSE
+```
+`TDOSE` is a data frame with the index of the state to which discontinuity is to be applied (represented by `ID`), the times at which the discontinuity is to be applied (represented by `TIMES`) at the value to be **added** to the value of the state at that time-point. A typical example would be addition of the dose amount to the value of the concentration at the specified times, e.g., the `TDOSE` data frame says that a value of `100` is to be added to the concentration of the 1st state (the only state in this system) at the times specified by the `TIMES` column. In summary, 
+
++ `ID` represents the index of the state with discontinuity
+
++ `TIMES` represents the times at which discontinutiy is applied
+
++ `VAL` represents the value **added** to the value of the state at specified times.
+
+The complete code for simulating such a system is
+
+```{r, fig.height=5, fig.width=7, fig.align="C"}
+# Example of solving a set of ODEs with multiple discontinuities using cvsolve
+# A simple One dimensional equation, y = -0.1 * y
+# ODEs described by an R function
+ODE_R <- function(t, y, p){
+
+  # vector containing the right hand side gradients
+  ydot = vector(mode = "numeric", length = length(y))
+
+  # R indices start from 1
+  ydot[1] = -p[1]*y[1]
+
+  ydot
+
+}
+
+# R code to generate time vector, IC and solve the equations
+TSAMP <- seq(from = 0, to = 100, by = 0.1)      # sampling time points
+IC <- c(1)
+params <- c(0.1)
+
+# A dataset describing the dosing at times at which additions to y[1] are to be done
+# Names of the columns don't matter, but they MUST be in the order of state index,
+# times and Values at discontinuity.
+TDOSE <- data.frame(ID = 1, TIMES = c(0, 10, 20, 30, 40, 50), VAL = 100)
+
+df1 <- sundialr::cvsolve(TSAMP, c(1), ODE_R, params)         # solving without any discontinuity
+df2 <- sundialr::cvsolve(TSAMP, c(1), ODE_R, params, TDOSE)  # solving with discontinuity
+
+## Plot the solution with discontinuities
+## first column is time, second column is the state
+time <- df2[,1]
+y1 <- df2[,2]
+plot(time, y1, type = "l", lty = 1, main = "An ODE system with discontinuties", frame.plot = F)   
+```
+
+Note that in the example above, `TSAMP` is the sampling time at which the solution is desired. Also, even though an Initial Value of $y_1$ of 1 is provided by the `IC` parameter, it is overwritten by the value of 100 provided in the `TDOSE` data frame. In general, the values in the initial conditions are overwritten by values in the `Events` input.
 
 ## System of ODEs for Parameter Sensitivities
 Sensitivity with respect to the parameters of the ODE system can be calculated
@@ -282,6 +407,15 @@ sensitivity values match with the values provided in the `CVODES` documentation.
 ```
 In future, I intend to provide options to select specific entities and parameters with respect to which sensitivities are to be computed as the sensitivity matrix can get very large for  medium to large models.
 
+
 ## Summary
-The package `sundialr` provides a way to interface with the famous `SUNDIALS` C library (provided by Lawerence Livermore National Security)
-to solver initial value problems. The package allows the system of differential equations to be written in `R` or using `Rcpp`. Function `cvode` is used to solve initial value problems with a single initialization, but problems with multiple discontinuities in the solution can be solved using the `cvsolve` interface. For sensitivities, currently, calculation of forward sensitivities for all entities with respect to all the parameters in the model is implemented in the `cvodes` function. An ability to select specific entities and parameters for which sensitivities is to be calculated will be added soon. To solve a system of differential algebraic systems, the `ida` function is provided which is an interface to the `IDA` function in `SUNDIALS`. As a note, since this package is under active development, the interfaces of both `CVODE` and `CVODES` (i.e., the function signatures) may change in the future versions. Please keep this mind if you intend to use `sundialr` in your applications. In near future, interface for other solvers from the `C` library such as`IDAS` and `ARKODE` may also be added.
++ The package `sundialr` provides a way to interface with the famous `SUNDIALS` C library (provided by Lawerence Livermore National Security)
+to solver initial value problems. 
+
++ The package allows the system of differential equations to be written in `R` or using `Rcpp`. Function `cvode` is used to solve initial value problems with a single initialization, but problems with multiple discontinuities in the solution can be solved using the `cvsolve` interface. 
+
++ For sensitivities, currently, calculation of forward sensitivities for all entities with respect to all the parameters in the model is implemented in the `cvodes` function. An ability to select specific entities and parameters for which sensitivities is to be calculated will be added soon. 
+
++ To solve a system of differential algebraic systems, the `ida` function is provided which is an interface to the `IDA` function in `SUNDIALS`. 
+
+As a note, since this package is under active development, the interfaces of both `CVODE` and `CVODES` (i.e., the function signatures) may change in the future versions. Please keep this mind if you intend to use `sundialr` in your applications. In near future, interface for other solvers from the `C` library such as`IDAS` and `ARKODE` may also be added.
