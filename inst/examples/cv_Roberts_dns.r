@@ -1,3 +1,4 @@
+# Example of solving a set of ODEs with cvode function
 # ODEs described by an R function
 ODE_R <- function(t, y, p){
 

@@ -1,5 +1,34 @@
-#include <Rcpp.h>
+//   Copyright (c) 2020, Satyaprakash Nayak
+//
+//   Redistribution and use in source and binary forms, with or without
+//   modification, are permitted provided that the following conditions are
+//   met:
+//
+//   Redistributions of source code must retain the above copyright
+//   notice, this list of conditions and the following disclaimer.
+//
+//   Redistributions in binary form must reproduce the above copyright
+//   notice, this list of conditions and the following disclaimer in
+//   the documentation and/or other materials provided with the
+//   distribution.
+//
+//   Neither Satyaprakash Nayak nor the names of other
+//   contributors may be used to endorse or promote products derived
+//   from this software without specific prior written permission.
+//
+//   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+//   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+//   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+//   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+//   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+//   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+//   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+//   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+//   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+//   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <Rcpp.h>
 #include <algorithm>                   // to convert SensType to upper case - input cleaning
 #include <iostream>                    // to compare SensType strings
 
@@ -13,6 +42,7 @@
 
 #include <check_retval.h>
 // #include "check_retval.cpp"
+
 
 // #define Ith(v,i)    NV_Ith_S(v,i-1)         /* i-th vector component i=1..NEQ */
 
@@ -116,14 +146,15 @@ int ewt(N_Vector y, N_Vector w, void *user_data)
 //'@param IC Initial Conditions
 //'@param input_function Right Hand Side function of ODEs
 //'@param Parameters Parameters input to ODEs
-//'@param reltolerance Relative Tolerance (a scalar)
-//'@param abstolerance Absolute Tolerance (a vector with length equal to ydot)
+//'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
+//'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 //'@param SensType Sensitivity Type - allowed values are Staggered (default)", "STG" (for Staggered) or "SIM" (for Simultaneous)
 //'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
 //'@example /inst/examples/cvs_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_function,
-                     NumericVector Parameters, double reltolerance, NumericVector abstolerance,
+                     NumericVector Parameters,
+                     double reltolerance = 0.0001, NumericVector abstolerance = 0.0001,
                      std::string SensType = "STG", bool ErrCon = 'F'){
 
   int time_vec_len = time_vector.length();
@@ -131,7 +162,6 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   int abstol_len = abstolerance.length();
 
   int flag;
-  // realtype reltol = reltolerance;
 
   realtype T0 = RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
 
@@ -191,7 +221,6 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
   cvode_mem = CVodeCreate(CV_BDF);
   if (check_retval((void *) cvode_mem, "CVodeCreate", 0)) { stop("Stopping cvodes, cannot allocate memory for CVODES!"); }
-
 
   //-- assign user input to the struct based on SEXP type of input_function
   if (!input_function){
@@ -258,7 +287,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
 
     /* Call CVodeSetSensParams to specify problem parameter information for
      sensitivity calculations */
-    struct rhs_func_sens *ptr = &my_rhs_function;        // struct UserData storing my data
+    // struct rhs_func_sens *ptr = &my_rhs_function;        // struct UserData storing my data
     // p = (my_rhs_function.params).begin();
     // Rcout << (my_rhs_function.params).begin() << "\n";
     // Rcout << &(ptr->params[0]);

@@ -1,3 +1,4 @@
+# Example of solving a set sensitivity equations for ODEs with cvodes function
 # ODEs described by an R function
 ODE_R <- function(t, y, p){
 
@@ -47,7 +48,7 @@ params <- c(0.04, 10000, 30000000)
 reltol <- 1e-04
 abstol <- c(1e-8,1e-14,1e-6)
 
-## Solving the ODEs using cvode function
+## Solving the ODEs and Sensitivities using cvodes function
 df1 <- cvodes(time_vec, IC, ODE_R , params, reltol, abstol,"STG",FALSE)           ## using R
 df2 <- cvodes(time_vec, IC, ODE_Rcpp , params, reltol, abstol,"STG",FALSE)        ## using Rcpp
 

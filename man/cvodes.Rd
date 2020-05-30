@@ -4,8 +4,16 @@
 \alias{cvodes}
 \title{cvodes}
 \usage{
-cvodes(time_vector, IC, input_function, Parameters, reltolerance,
-  abstolerance, SensType = "STG", ErrCon = "F")
+cvodes(
+  time_vector,
+  IC,
+  input_function,
+  Parameters,
+  reltolerance = 1e-04,
+  abstolerance = 1e-04,
+  SensType = "STG",
+  ErrCon = "F"
+)
 }
 \arguments{
 \item{time_vector}{time vector}
@@ -16,9 +24,9 @@ cvodes(time_vector, IC, input_function, Parameters, reltolerance,
 
 \item{Parameters}{Parameters input to ODEs}
 
-\item{reltolerance}{Relative Tolerance (a scalar)}
+\item{reltolerance}{Relative Tolerance (a scalar, default value  = 1e-04)}
 
-\item{abstolerance}{Absolute Tolerance (a vector with length equal to ydot)}
+\item{abstolerance}{Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)}
 
 \item{SensType}{Sensitivity Type - allowed values are Staggered (default)", "STG" (for Staggered) or "SIM" (for Simultaneous)}
 
@@ -28,6 +36,7 @@ cvodes(time_vector, IC, input_function, Parameters, reltolerance,
 CVODES solver to solve ODEs and calculate sensitivities
 }
 \examples{
+# Example of solving a set sensitivity equations for ODEs with cvodes function
 # ODEs described by an R function
 ODE_R <- function(t, y, p){
 
@@ -77,7 +86,7 @@ params <- c(0.04, 10000, 30000000)
 reltol <- 1e-04
 abstol <- c(1e-8,1e-14,1e-6)
 
-## Solving the ODEs using cvode function
+## Solving the ODEs and Sensitivities using cvodes function
 df1 <- cvodes(time_vec, IC, ODE_R , params, reltol, abstol,"STG",FALSE)           ## using R
 df2 <- cvodes(time_vec, IC, ODE_Rcpp , params, reltol, abstol,"STG",FALSE)        ## using Rcpp
 

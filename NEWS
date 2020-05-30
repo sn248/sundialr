@@ -1,0 +1,15 @@
+sundialr v0.1.4
+================
+
+New features:
+* added the `cvsolve` function to solve ODEs with multiple discontinuities
+
+Bug fixes:
+* None
+
+API change:
+* NONE is existing functions
+* A new function `cvsolve` is added
+
+Internal changes:
+* Now uses SUNDIALS version 5.2.0 (released March 2020) at the back end
