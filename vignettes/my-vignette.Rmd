@@ -21,10 +21,14 @@ Ordinary Differential Equations (ODEs) describe the rate of change of dependent 
 
 Currently, this package provides an interface to the `CVODE` and `CVODES` function (serial version) in the library which is used to solve ODEs (or Initial Value Problems) and calculate sensitivities.
 
-The two exported functions from the package are:
+The four exported functions from the package are:
 
-+ `CVODE` - An interface to the `CVODE` function in `SUNDIALS` to solve a system of ODEs.
-+ `CVODES` - An interface to the `CVODES` function in `SUNDIALS` to calculate forward sensitivites with respect to parameters of the ODE system.
++ `cvode` - An interface to the `CVODE` function in `SUNDIALS` to solve a system of ODEs.
++ `cvodes` - An interface to the `CVODES` function in `SUNDIALS` to calculate forward sensitivites with respect to parameters of the ODE system.
+
++ `ida` - An interface to the `IDA` function in `SUNDIALS` to solve a system of Differential-Algebraic Equations (DAEs).
+
++ `cvsolve` - A convenient interface to solve a system of ODEs with discontinuities in solution.
 
 In future, we plan to provide interface for the other solvers (i.e., `IDA/IDAS` and `ARCODE` in the library also. Right now, this package serves as a test case for providing an interface to the `SUNDIALS` library for `R` users.
 
