@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">sundialr</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.4</span>
       </span>
     </div>
 
@@ -82,7 +82,7 @@
       <h1 data-toc-skip>sundialr - An Interface to ‘SUNDIALS’ Ordinary Differential Equation (ODE) Solvers</h1>
                         <h4 class="author">Satyaprakash Nayak</h4>
             
-            <h4 class="date">2020-04-11</h4>
+            <h4 class="date">2020-05-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/sn248/sundialr/blob/master/vignettes/my-vignette.Rmd"><code>vignettes/my-vignette.Rmd</code></a></small>
       <div class="hidden name"><code>my-vignette.Rmd</code></div>
@@ -176,11 +176,10 @@
 <span id="cb3-17"><a href="#cb3-17"></a>}</span></code></pre></div>
 <p>The above is a re-write of the <code>cvRoberts_dns.c</code> example in the documentation of <code>CVODE</code>. The original example can be found the document <a href="https://computation.llnl.gov/sites/default/files/public/cv_examples.pdf">here</a>.</p>
 </div>
-</div>
-<div id="putting-everything-together" class="section level2">
-<h2 class="hasAnchor">
-<a href="#putting-everything-together" class="anchor"></a>Putting everything together</h2>
-<p>The entire <code>R</code> file to create right hand side of ODE function (which calculates rates of change) is as follows (also found in <code>/inst/examples/cv_Roberts_dns.r</code>):</p>
+<div id="putting-everything-together" class="section level3">
+<h3 class="hasAnchor">
+<a href="#putting-everything-together" class="anchor"></a>Putting everything together</h3>
+<p>The entire <code>R</code> file to create right hand side of ODE function (which calculates rates of change) is as follows (also found <a href="https://github.com/sn248/sundialr/blob/master/inst/examples/cv_Roberts_dns.r">here</a>):</p>
 <div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="co"># ODEs described by an R function</span>
 <span class="no">ODE_R</span> <span class="kw">&lt;-</span> <span class="kw">function</span>(<span class="no">t</span>, <span class="no">y</span>, <span class="no">p</span>){
 
@@ -248,6 +247,120 @@ NumericVector ODE_Rcpp (double t, NumericVector y){
 [12,] 4e+09 5.246212e-07 2.098486e-12 0.99999948
 [13,] 4e+10 6.043000e-08 2.417200e-13 0.99999994</pre></body></html></div>
 </div>
+</div>
+<div id="solving-a-system-of-differential-algebraic-equations" class="section level2">
+<h2 class="hasAnchor">
+<a href="#solving-a-system-of-differential-algebraic-equations" class="anchor"></a>Solving a system of Differential-Algebraic Equations</h2>
+<p>An interface to the <code>IDA</code> solver is also provided to solve a system of Differential-Algebraic equations. A system of differential-algebraic equations is a system of equations containing both differential and algebraic equations and can be written as <span class="math display">\[
+F(\dot{x}(t), x(t), t) = 0
+\]</span> The equations for such a system are written in terms of residuals and require both the value of <span class="math inline">\(x_0\)</span> and <span class="math inline">\(\dot{x}_0\)</span> as the initial conditions. Writing the previously solved equations as a system of DAEs, we have, <span class="math display">\[
+\begin{aligned}
+\dot{y}_1 &amp;= -p_1y_1 + p_2y_2y_3  \\ 
+\dot{y}_2 &amp;= p_1y_1 - p_2y_2y_3 - p_3y_2^2 \\
+1 &amp;= y_1 + y_2 + y_3
+\end{aligned}
+\]</span> The above system of DAEs can be written in terms of residuals as</p>
+<p><span class="math display">\[
+\begin{aligned}
+res_1 &amp;= -p_1y_1 + p_2y_2y_3 - \dot{y}_1 \\ 
+res_2 &amp;= p_1y_1 - p_2y_2y_3 - p_3y_2^2 - \dot{y}_2\\
+res_3 &amp;= y_1 + y_2 + y_3 - 1
+\end{aligned}
+\]</span> Here is the complete code for solving this system of DAEs,</p>
+<div class="sourceCode" id="cb6"><html><body><pre class="r"><span class="no">DAE_R</span> <span class="kw">&lt;-</span> <span class="kw">function</span>(<span class="no">t</span>, <span class="no">y</span>, <span class="no">ydot</span>, <span class="no">p</span>){
+
+  <span class="co"># vector containing the residuals</span>
+  <span class="no">res</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html">vector</a></span>(<span class="kw">mode</span> <span class="kw">=</span> <span class="st">"numeric"</span>, <span class="kw">length</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span>(<span class="no">y</span>))
+
+  <span class="co"># R indices start from 1</span>
+  <span class="no">res</span>[<span class="fl">1</span>] <span class="kw">&lt;-</span> -<span class="fl">0.04</span> * <span class="no">y</span>[<span class="fl">1</span>] + <span class="fl">10000</span> * <span class="no">y</span>[<span class="fl">2</span>] * <span class="no">y</span>[<span class="fl">3</span>] - <span class="no">ydot</span>[<span class="fl">1</span>]
+  <span class="no">res</span>[<span class="fl">2</span>] <span class="kw">&lt;-</span> -<span class="no">res</span>[<span class="fl">1</span>] - <span class="fl">30000000</span> * <span class="no">y</span>[<span class="fl">2</span>] * <span class="no">y</span>[<span class="fl">2</span>] - <span class="no">ydot</span>[<span class="fl">2</span>]
+  <span class="no">res</span>[<span class="fl">3</span>] <span class="kw">&lt;-</span> <span class="no">y</span>[<span class="fl">1</span>] + <span class="no">y</span>[<span class="fl">2</span>] + <span class="no">y</span>[<span class="fl">3</span>] - <span class="fl">1.0</span>
+
+  <span class="no">res</span>
+}
+
+<span class="co"># R code to genrate time vector, IC and solve the equations</span>
+<span class="no">time_vec</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0.0</span>, <span class="fl">0.4</span>, <span class="fl">4.0</span>, <span class="fl">40.0</span>, <span class="fl">4E2</span>, <span class="fl">4E3</span>, <span class="fl">4E4</span>, <span class="fl">4E5</span>, <span class="fl">4E6</span>, <span class="fl">4E7</span>, <span class="fl">4E8</span>, <span class="fl">4E9</span>, <span class="fl">4E10</span>)
+<span class="no">IC</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>,<span class="fl">0</span>,<span class="fl">0</span>)                  <span class="co"># Initial value of y</span>
+<span class="no">IRes</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(-<span class="fl">0.4</span>, <span class="fl">0.4</span>, <span class="fl">0</span>)         <span class="co"># Initial value of ydot</span>
+<span class="no">params</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0.04</span>, <span class="fl">10000</span>, <span class="fl">30000000</span>)
+<span class="no">reltol</span> <span class="kw">&lt;-</span> <span class="fl">1e-04</span>
+<span class="no">abstol</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1e-8</span>,<span class="fl">1e-14</span>,<span class="fl">1e-6</span>)
+
+<span class="co">## Solving the DAEs using the ida function</span>
+<span class="no">df1</span> <span class="kw">&lt;-</span> <span class="kw pkg">sundialr</span><span class="kw ns">::</span><span class="fu"><a href="../reference/ida.html">ida</a></span>(<span class="no">time_vec</span>, <span class="no">IC</span>, <span class="no">IRes</span>, <span class="no">DAE_R</span> , <span class="no">params</span>, <span class="no">reltol</span>, <span class="no">abstol</span>)</pre></body></html></div>
+</div>
+<div id="solving-an-ode-system-with-discontinuties-in-solution" class="section level2">
+<h2 class="hasAnchor">
+<a href="#solving-an-ode-system-with-discontinuties-in-solution" class="anchor"></a>Solving an ODE system with discontinuties in solution</h2>
+<p>The <code>cvsolve</code> function defined in <code>sundialr</code> package provides a convenience interface to solve ODEs with one or more discontinuities in solution. An example of such a system of ODEs would be pharmacokinetics of a drug with repeated bolus administration. Let’s look at a simple example of multiple doses of a drug with a first-order degradation administered intravenously. The ODE system for the drug is <span class="math display">\[
+\frac{dC}{dt} = -k_{el} * C
+\]</span> where <span class="math inline">\(C\)</span> is the concentration of the drug and <span class="math inline">\(k_{el}\)</span> is the elimination rate of the drug. The <span class="math inline">\(R\)</span> code for such a system is</p>
+<div class="sourceCode" id="cb7"><html><body><pre class="r"><span class="no">ODErepeated_R</span> <span class="kw">&lt;-</span> <span class="kw">function</span>(<span class="no">t</span>, <span class="no">y</span>, <span class="no">p</span>){
+
+  <span class="co"># vector containing the right hand side gradients</span>
+  <span class="no">ydot</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html">vector</a></span>(<span class="kw">mode</span> <span class="kw">=</span> <span class="st">"numeric"</span>, <span class="kw">length</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span>(<span class="no">y</span>))
+
+  <span class="co"># R indices start from 1</span>
+  <span class="no">ydot</span>[<span class="fl">1</span>] <span class="kw">=</span> -<span class="no">p</span>[<span class="fl">1</span>]*<span class="no">y</span>[<span class="fl">1</span>]
+
+  <span class="no">ydot</span>
+
+}</pre></body></html></div>
+<p>We also need to define when the multiple doses are given and the state to which they are to be applied (here to be applied to the only state in the model, <span class="math inline">\(C\)</span>). This is provided via the <span class="math inline">\(Events\)</span> dataframe (here, <span class="math inline">\(TDOSE\)</span> or the dosing dataframe).</p>
+<div class="sourceCode" id="cb8"><html><body><pre class="r"><span class="no">TDOSE</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="kw">ID</span> <span class="kw">=</span> <span class="fl">1</span>, <span class="kw">TIMES</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0</span>, <span class="fl">10</span>, <span class="fl">20</span>, <span class="fl">30</span>, <span class="fl">40</span>, <span class="fl">50</span>), <span class="kw">VAL</span> <span class="kw">=</span> <span class="fl">100</span>)
+<span class="no">TDOSE</span>
+<span class="co">#&gt;   ID TIMES VAL</span>
+<span class="co">#&gt; 1  1     0 100</span>
+<span class="co">#&gt; 2  1    10 100</span>
+<span class="co">#&gt; 3  1    20 100</span>
+<span class="co">#&gt; 4  1    30 100</span>
+<span class="co">#&gt; 5  1    40 100</span>
+<span class="co">#&gt; 6  1    50 100</span></pre></body></html></div>
+<p><code>TDOSE</code> is a data frame with the index of the state to which discontinuity is to be applied (represented by <code>ID</code>), the times at which the discontinuity is to be applied (represented by <code>TIMES</code>) at the value to be <strong>added</strong> to the value of the state at that time-point. A typical example would be addition of the dose amount to the value of the concentration at the specified times, e.g., the <code>TDOSE</code> data frame says that a value of <code>100</code> is to be added to the concentration of the 1st state (the only state in this system) at the times specified by the <code>TIMES</code> column. In summary,</p>
+<ul>
+<li><p><code>ID</code> represents the index of the state with discontinuity</p></li>
+<li><p><code>TIMES</code> represents the times at which discontinutiy is applied</p></li>
+<li><p><code>VAL</code> represents the value <strong>added</strong> to the value of the state at specified times.</p></li>
+</ul>
+<p>The complete code for simulating such a system is</p>
+<div class="sourceCode" id="cb9"><html><body><pre class="r"><span class="co"># Example of solving a set of ODEs with multiple discontinuities using cvsolve</span>
+<span class="co"># A simple One dimensional equation, y = -0.1 * y</span>
+<span class="co"># ODEs described by an R function</span>
+<span class="no">ODE_R</span> <span class="kw">&lt;-</span> <span class="kw">function</span>(<span class="no">t</span>, <span class="no">y</span>, <span class="no">p</span>){
+
+  <span class="co"># vector containing the right hand side gradients</span>
+  <span class="no">ydot</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html">vector</a></span>(<span class="kw">mode</span> <span class="kw">=</span> <span class="st">"numeric"</span>, <span class="kw">length</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span>(<span class="no">y</span>))
+
+  <span class="co"># R indices start from 1</span>
+  <span class="no">ydot</span>[<span class="fl">1</span>] <span class="kw">=</span> -<span class="no">p</span>[<span class="fl">1</span>]*<span class="no">y</span>[<span class="fl">1</span>]
+
+  <span class="no">ydot</span>
+
+}
+
+<span class="co"># R code to generate time vector, IC and solve the equations</span>
+<span class="no">TSAMP</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span>(<span class="kw">from</span> <span class="kw">=</span> <span class="fl">0</span>, <span class="kw">to</span> <span class="kw">=</span> <span class="fl">100</span>, <span class="kw">by</span> <span class="kw">=</span> <span class="fl">0.1</span>)      <span class="co"># sampling time points</span>
+<span class="no">IC</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>)
+<span class="no">params</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0.1</span>)
+
+<span class="co"># A dataset describing the dosing at times at which additions to y[1] are to be done</span>
+<span class="co"># Names of the columns don't matter, but they MUST be in the order of state index,</span>
+<span class="co"># times and Values at discontinuity.</span>
+<span class="no">TDOSE</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="kw">ID</span> <span class="kw">=</span> <span class="fl">1</span>, <span class="kw">TIMES</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0</span>, <span class="fl">10</span>, <span class="fl">20</span>, <span class="fl">30</span>, <span class="fl">40</span>, <span class="fl">50</span>), <span class="kw">VAL</span> <span class="kw">=</span> <span class="fl">100</span>)
+
+<span class="no">df1</span> <span class="kw">&lt;-</span> <span class="kw pkg">sundialr</span><span class="kw ns">::</span><span class="fu"><a href="../reference/cvsolve.html">cvsolve</a></span>(<span class="no">TSAMP</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>), <span class="no">ODE_R</span>, <span class="no">params</span>)         <span class="co"># solving without any discontinuity</span>
+<span class="no">df2</span> <span class="kw">&lt;-</span> <span class="kw pkg">sundialr</span><span class="kw ns">::</span><span class="fu"><a href="../reference/cvsolve.html">cvsolve</a></span>(<span class="no">TSAMP</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>), <span class="no">ODE_R</span>, <span class="no">params</span>, <span class="no">TDOSE</span>)  <span class="co"># solving with discontinuity</span>
+
+<span class="co">## Plot the solution with discontinuities</span>
+<span class="co">## first column is time, second column is the state</span>
+<span class="no">time</span> <span class="kw">&lt;-</span> <span class="no">df2</span>[,<span class="fl">1</span>]
+<span class="no">y1</span> <span class="kw">&lt;-</span> <span class="no">df2</span>[,<span class="fl">2</span>]
+<span class="fu"><a href="https://rdrr.io/r/base/plot.html">plot</a></span>(<span class="no">time</span>, <span class="no">y1</span>, <span class="kw">type</span> <span class="kw">=</span> <span class="st">"l"</span>, <span class="kw">lty</span> <span class="kw">=</span> <span class="fl">1</span>, <span class="kw">main</span> <span class="kw">=</span> <span class="st">"An ODE system with discontinuties"</span>, <span class="kw">frame.plot</span> <span class="kw">=</span> <span class="no">F</span>)</pre></body></html></div>
+<p><img src="my-vignette_files/figure-html/unnamed-chunk-4-1.png" width="672"></p>
+<p>Note that in the example above, <code>TSAMP</code> is the sampling time at which the solution is desired. Also, even though an Initial Value of <span class="math inline">\(y_1\)</span> of 1 is provided by the <code>IC</code> parameter, it is overwritten by the value of 100 provided in the <code>TDOSE</code> data frame. In general, the values in the initial conditions are overwritten by values in the <code>Events</code> input.</p>
+</div>
 <div id="system-of-odes-for-parameter-sensitivities" class="section level2">
 <h2 class="hasAnchor">
 <a href="#system-of-odes-for-parameter-sensitivities" class="anchor"></a>System of ODEs for Parameter Sensitivities</h2>
@@ -282,13 +395,13 @@ p_1 &amp; -p_2y_3-2p_3y_2 &amp; -p_2y_2 \\
 <h2 class="hasAnchor">
 <a href="#calculation-of-sensitivities-using-cvodes" class="anchor"></a>Calculation of Sensitivities using <code>CVODES</code>
 </h2>
-<p>Once, the system of ODEs has been defined using the instructions provided above, sensitivities can be easily calculated using the <code>cvodes</code> function using the function call below:</p>
-<div class="sourceCode" id="cb6"><html><body><pre class="r"><span class="no">df1</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/cvodes.html">cvodes</a></span>(<span class="no">time_vec</span>, <span class="no">IC</span>, <span class="no">ODE_R</span> , <span class="no">params</span>, <span class="no">reltol</span>, <span class="no">abstol</span>,<span class="st">"STG"</span>,<span class="no">F</span>)  <span class="co">## using R</span>
-<span class="no">df2</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/cvodes.html">cvodes</a></span>(<span class="no">time_vec</span>, <span class="no">IC</span>, <span class="no">ODE_Rcpp</span> , <span class="no">params</span>, <span class="no">reltol</span>, <span class="no">abstol</span>,<span class="st">"STG"</span>,<span class="no">F</span>)  <span class="co">## using R</span></pre></body></html></div>
+<p>Once, the system of ODEs has been defined using the instructions provided above, sensitivities can be easily calculated using the <code>cvodes</code> function using the function call below (the entire code can be found at this <a href="https://github.com/sn248/sundialr/blob/master/inst/examples/cvs_Roberts_dns.r">link</a>)</p>
+<div class="sourceCode" id="cb10"><html><body><pre class="r"><span class="no">df1</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/cvodes.html">cvodes</a></span>(<span class="no">time_vec</span>, <span class="no">IC</span>, <span class="no">ODE_R</span> , <span class="no">params</span>, <span class="no">reltol</span>, <span class="no">abstol</span>,<span class="st">"STG"</span>,<span class="no">F</span>)  <span class="co">## using R</span>
+<span class="no">df2</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/cvodes.html">cvodes</a></span>(<span class="no">time_vec</span>, <span class="no">IC</span>, <span class="no">ODE_Rcpp</span> , <span class="no">params</span>, <span class="no">reltol</span>, <span class="no">abstol</span>,<span class="st">"STG"</span>,<span class="no">F</span>)  <span class="co">## using Rcpp</span></pre></body></html></div>
 <p>The additional arguments in <code>cvodes</code> specify the senstivity calculation method to be used (<code>STG</code> for <code>STAGGERED</code> or <code>SIM</code> for <code>SIMULATENOUS</code>) and flag for error control (either <code>T</code> or <code>F</code>).</p>
-<p>The output of <code>cvodes</code> is a matrix with number of rows equal to the length of the time vector (<code>time_vec</code>) and the number of columns being equal to length of (<code>y</code> <span class="math inline">\(\times\)</span> <code>p</code> + 1). The first columns is for time. Currently, the sensitiviy of every enitity is calculated with respect to every parameter in model. For example, for the current model with <code>3</code> entities (ODEs) and <code>3</code> parameters, a total of <code>9</code> sensitivities are calculated at each output time, i.e. <code>y1</code> w.r.t <code>p1</code>, <code>p2</code>, <code>p3</code>, <code>y2</code> w.r.t. <code>p1</code>, <code>p2</code>, <code>p3</code> and so on. The first 3 (<code><a href="https://rdrr.io/r/base/length.html">length(y)</a></code>) columns give sensitivity w.r.t the first parameter, the next 3 (<code><a href="https://rdrr.io/r/base/length.html">length(y)</a></code>) columns give sensitivity w.r.t the second parameter and so on.</p>
+<p>The output of <code>cvodes</code> is a matrix with number of rows equal to the length of the time vector (<code>time_vec</code>) and the number of columns being equal to length of (<code>y</code> <span class="math inline">\(\times\)</span> <code>p</code> + 1). The first columns is for time. Currently, the sensitivity of every enitity is calculated with respect to every parameter in model. For example, for the current model with <code>3</code> entities (ODEs) and <code>3</code> parameters, a total of <code>9</code> sensitivities are calculated at each output time, i.e. <code>y1</code> w.r.t <code>p1</code>, <code>p2</code>, <code>p3</code>, <code>y2</code> w.r.t. <code>p1</code>, <code>p2</code>, <code>p3</code> and so on. The first 3 (<code><a href="https://rdrr.io/r/base/length.html">length(y)</a></code>) columns give sensitivity w.r.t the first parameter, the next 3 (<code><a href="https://rdrr.io/r/base/length.html">length(y)</a></code>) columns give sensitivity w.r.t the second parameter and so on.</p>
 <p>In the Sensitivity Matrix output for the systems of equations described above, the first column gives output time, the next <code>3</code> columns provide sensitivity of <code>y1</code>, <code>y2</code> and <code>y3</code> w.r.t first parameter (say <code>p1</code>), the next three columns provide sensitivity of <code>y1</code>, <code>y2</code> and <code>y3</code> w.r.t. the second parameter (<code>p2</code>) and so on. The output Sensitivity Matrix is given below. The sensitivity values match with the values provided in the <code>CVODES</code> documentation.</p>
-<div class="sourceCode" id="cb7"><html><body><pre class="r">&gt; df1
+<div class="sourceCode" id="cb11"><html><body><pre class="r">&gt; df1
        [,1]          [,2]          [,3]         [,4]         [,5]          [,6]          [,7]          [,8]          [,9]        [,10]
  [1,] 0e+00  0.000000e+00  0.000000e+00 0.000000e+00 0.000000e+00  0.000000e+00  0.000000e+00  0.000000e+00  0.000000e+00 0.000000e+00
  [2,] 4e-01 -3.561085e-01  3.902252e-04 3.557183e-01 9.483149e-08 -2.132509e-10 -9.461823e-08 -1.573297e-11 -5.289692e-13 1.626194e-11
@@ -308,7 +421,13 @@ p_1 &amp; -p_2y_3-2p_3y_2 &amp; -p_2y_2 \\
 <div id="summary" class="section level2">
 <h2 class="hasAnchor">
 <a href="#summary" class="anchor"></a>Summary</h2>
-<p>The package <code>sundialr</code> provides a way to interface with the famous <code>SUNDIALS</code> C library to solver initial value problems. The package allows the system of differential equations to be written in <code>R</code> or using <code>Rcpp</code>. Currently only a single initialization of the ODE is supported, but we plan to add repeated initializations (e.g., repeated dosing) in near future for <code>CVODE</code>. For sensitivities, currently, calculation of forward sensitivities for all entities with respect to all the parameters in the model is implemented. However the ability to select specific entities and parameters for which sensitivities is to be calculated will be added soon. As a note, since this package is under active development, the interfaces of both <code>CVODE</code> and <code>CVODES</code> (i.e., the function signatures) may change in the future versions. Please keep this mind if you intend to use <code>sundialr</code> in your applications. In near future, interface for other solvers from the <code>C</code> library such as<code>IDA/IDAS</code> and <code>ARKODE</code> will also be added.</p>
+<ul>
+<li><p>The package <code>sundialr</code> provides a way to interface with the famous <code>SUNDIALS</code> C library (provided by Lawerence Livermore National Security) to solver initial value problems.</p></li>
+<li><p>The package allows the system of differential equations to be written in <code>R</code> or using <code>Rcpp</code>. Function <code>cvode</code> is used to solve initial value problems with a single initialization, but problems with multiple discontinuities in the solution can be solved using the <code>cvsolve</code> interface.</p></li>
+<li><p>For sensitivities, currently, calculation of forward sensitivities for all entities with respect to all the parameters in the model is implemented in the <code>cvodes</code> function. An ability to select specific entities and parameters for which sensitivities is to be calculated will be added soon.</p></li>
+<li><p>To solve a system of differential algebraic systems, the <code>ida</code> function is provided which is an interface to the <code>IDA</code> function in <code>SUNDIALS</code>.</p></li>
+</ul>
+<p>As a note, since this package is under active development, the interfaces of both <code>CVODE</code> and <code>CVODES</code> (i.e., the function signatures) may change in the future versions. Please keep this mind if you intend to use <code>sundialr</code> in your applications. In near future, interface for other solvers from the <code>C</code> library such as<code>IDAS</code> and <code>ARKODE</code> may also be added.</p>
 </div>
   </div>
 
