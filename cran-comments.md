@@ -1,9 +1,10 @@
 ## Comments for version 0.1.4
 
 ## Test environments
-* local macOS install, R 3.6.0
-* ubuntu 14.04 (on travis-ci), R 3.6.0
+* local macOS install, R 4.0.0
+* ubuntu 16.04.6 LTS (on travis-ci), R 4.0.0
 * win-builder (R-release)
+* `rhub::check_on_cran()` 
 
 ## R win-builder check results
 There were no ERRORs or WARNINGs or NOTEs.
