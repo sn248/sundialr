@@ -82,7 +82,7 @@
       <h1 data-toc-skip>sundialr - An Interface to ‘SUNDIALS’ Ordinary Differential Equation (ODE) Solvers</h1>
                         <h4 class="author">Satyaprakash Nayak</h4>
             
-            <h4 class="date">2020-05-30</h4>
+            <h4 class="date">2020-05-31</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/sn248/sundialr/blob/master/vignettes/my-vignette.Rmd"><code>vignettes/my-vignette.Rmd</code></a></small>
       <div class="hidden name"><code>my-vignette.Rmd</code></div>
@@ -96,12 +96,12 @@
 <a href="#introduction" class="anchor"></a>Introduction</h2>
 <p>Ordinary Differential Equations (ODEs) describe the rate of change of dependent variables with respect to a single independent variable and are used in many fields to model behavior of the system. There are many good <code>C</code> libraries available to solve (i.e., integrate systems of ODEs) and <a href="https://computation.llnl.gov/projects/sundials/sundials-software">SUNDIALS</a> available from the Lawrence Livermore National Laboratory is a one of the most popular and well-respected <code>C</code> library for solving non-stiff and stiff systems of ODEs.</p>
 <p>Currently, this package provides an interface to the <code>CVODE</code> and <code>CVODES</code> function (serial version) in the library which is used to solve ODEs (or Initial Value Problems) and calculate sensitivities.</p>
-<p>The two exported functions from the package are:</p>
+<p>The four exported functions from the package are:</p>
 <ul>
-<li>
-<code>CVODE</code> - An interface to the <code>CVODE</code> function in <code>SUNDIALS</code> to solve a system of ODEs.</li>
-<li>
-<code>CVODES</code> - An interface to the <code>CVODES</code> function in <code>SUNDIALS</code> to calculate forward sensitivites with respect to parameters of the ODE system.</li>
+<li><p><code>cvode</code> - An interface to the <code>CVODE</code> function in <code>SUNDIALS</code> to solve a system of ODEs.</p></li>
+<li><p><code>cvodes</code> - An interface to the <code>CVODES</code> function in <code>SUNDIALS</code> to calculate forward sensitivites with respect to parameters of the ODE system.</p></li>
+<li><p><code>ida</code> - An interface to the <code>IDA</code> function in <code>SUNDIALS</code> to solve a system of Differential-Algebraic Equations (DAEs).</p></li>
+<li><p><code>cvsolve</code> - A convenient interface to solve a system of ODEs with discontinuities in solution.</p></li>
 </ul>
 <p>In future, we plan to provide interface for the other solvers (i.e., <code>IDA/IDAS</code> and <code>ARCODE</code> in the library also. Right now, this package serves as a test case for providing an interface to the <code>SUNDIALS</code> library for <code>R</code> users.</p>
 <p><em>One of the advantage of using this package is that all the source code of the <code>SUNDIALS</code> library is bundled with the package itself, so it does not require the <code>SUNDIALS</code> library to be installed on the machine separately (which is sometimes non trivial on a Windows machine).</em></p>
