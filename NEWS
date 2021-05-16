@@ -1,3 +1,8 @@
+sundialr v0.1.4.1
+================
+Bug fixex:
+* Fixed the linking problem due to multiple defined sybmols
+
 sundialr v0.1.4
 ================
 
