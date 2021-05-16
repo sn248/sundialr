@@ -4,7 +4,7 @@ author: "Satyaprakash Nayak"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{sundialr - A wrapper around CVODE, CVODES solvers from SUNDIALS}
+  %\VignetteIndexEntry{sundialr - An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 ```
 
 ## Introduction
-Ordinary Differential Equations (ODEs) describe the rate of change of dependent variables with respect to a single independent variable and are used in many fields to model behavior of the system. There are many good `C` libraries available to solve (i.e., integrate systems of ODEs) and [SUNDIALS](https://computation.llnl.gov/projects/sundials/sundials-software) available from the Lawrence Livermore National Laboratory is a one of the most popular and well-respected `C` library for solving non-stiff and stiff systems of ODEs.
+Ordinary Differential Equations (ODEs) describe the rate of change of dependent variables with respect to a single independent variable and are used in many fields to model behavior of the system. There are many good `C` libraries available to solve (i.e., integrate systems of ODEs) and [SUNDIALS](https://computing.llnl.gov/projects/sundials/sundials-software) available from the Lawrence Livermore National Laboratory is a one of the most popular and well-respected `C` library for solving non-stiff and stiff systems of ODEs.
 
 Currently, this package provides an interface to the `CVODE` and `CVODES` function (serial version) in the library which is used to solve ODEs (or Initial Value Problems) and calculate sensitivities.
 
@@ -116,7 +116,7 @@ NumericVector ODE_Rcpp (double t, NumericVector y){
 
 }
 ```
-The above is a re-write of the `cvRoberts_dns.c` example in the documentation of `CVODE`. The original example can be found the document [here](https://computation.llnl.gov/sites/default/files/public/cv_examples.pdf).
+The above is a re-write of the `cvRoberts_dns.c` example in the documentation of `CVODE`. 
 
 ### Putting everything together
 The entire `R` file to create right hand side of ODE function (which calculates rates of change) is as follows (also found [here](https://github.com/sn248/sundialr/blob/master/inst/examples/cv_Roberts_dns.r)):

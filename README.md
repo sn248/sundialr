@@ -21,6 +21,8 @@ to simulate the effect of multiple bolus doses of a drug in clinical pharmacokin
 vignette for more details.
 
 ## What's new?
+### Release 0.1.4.1
++ Fixed the linking bug due to multiple defined symbols. No other change.
 
 ### Release 0.1.4
 + This version has version 5.2.0 of `SUNDIALS` (released in March 2020) at the back end.

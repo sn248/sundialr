@@ -1,5 +1,6 @@
 CXX=clang++
-PKG_CPPFLAGS= -I../inst/include/ -I./inst/ -DHAVE_CONFIG_H
+PKG_CPPFLAGS= -I../inst/include/ -I./inst/ -DHAVE_CONFIG_H -DARMA_USE_CXX11
+CXX_STD = CXX11
 PKG_LIBS= $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -L../inst/ -lsundials_all
 LIBS=-L./ -L../inst/
 
@@ -30,12 +31,10 @@ SOURCES_IDA = ./sundials/ida/ida.c \
 ./sundials/ida/ida_io.c ./sundials/ida/ida_ls.c \
 ./sundials/ida/ida_nls.c ./sundials/ida/ida_spils.c
 
-SOURCES_NVECSERIAL= ./sundials/nvector/serial/fnvector_serial.c \
-./sundials/nvector/serial/nvector_serial.c
+SOURCES_NVECSERIAL= ./sundials/nvector/serial/nvector_serial.c
 
 SOURCES_SUNDIALS= ./sundials/sundials/sundials_band.c ./sundials/sundials/sundials_dense.c \
-./sundials/sundials/sundials_direct.c ./sundials/sundials/sundials_futils.c \
-./sundials/sundials/sundials_iterative.c \
+./sundials/sundials/sundials_direct.c ./sundials/sundials/sundials_iterative.c \
 ./sundials/sundials/sundials_linearsolver.c \
 ./sundials/sundials/sundials_math.c ./sundials/sundials/sundials_matrix.c \
 ./sundials/sundials/sundials_nonlinearsolver.c \
@@ -47,23 +46,17 @@ SOURCES_SUNDIALS= ./sundials/sundials/sundials_band.c ./sundials/sundials/sundia
 ./sundials/sundials/sundials_sparse.c ./sundials/sundials/sundials_spbcgs.c \
 ./sundials/sundials/sundials_sptfqmr.c
 
-SOURCES_SUNLINSOL_BAND = ./sundials/sunlinsol/band/fsunlinsol_band.c \
-./sundials/sunlinsol/band/sunlinsol_band.c
+SOURCES_SUNLINSOL_BAND = ./sundials/sunlinsol/band/sunlinsol_band.c
 
-SOURCES_SUNLINSOL_DENSE = ./sundials/sunlinsol/dense/fsunlinsol_dense.c \
-./sundials/sunlinsol/dense/sunlinsol_dense.c
+SOURCES_SUNLINSOL_DENSE = ./sundials/sunlinsol/dense/sunlinsol_dense.c
 
-SOURCES_SUNMAT_BAND = ./sundials/sunmatrix/band/fsunmatrix_band.c \
-./sundials/sunmatrix/band/sunmatrix_band.c
+SOURCES_SUNMAT_BAND = ./sundials/sunmatrix/band/sunmatrix_band.c
 
-SOURCES_SUNMAT_DENSE = ./sundials/sunmatrix/dense/fsunmatrix_dense.c \
-./sundials/sunmatrix/dense/sunmatrix_dense.c
+SOURCES_SUNMAT_DENSE = ./sundials/sunmatrix/dense/sunmatrix_dense.c
 
-SOURCES_SUNNONLINSOL_FIXEDPOINT = ./sundials/sunnonlinsol/fixedpoint/fsunnonlinsol_fixedpoint.c \
-./sundials/sunnonlinsol/fixedpoint/sunnonlinsol_fixedpoint.c
+SOURCES_SUNNONLINSOL_FIXEDPOINT = ./sundials/sunnonlinsol/fixedpoint/sunnonlinsol_fixedpoint.c
 
-SOURCES_SUNNONLINSOL_NEWTON = ./sundials/sunnonlinsol/newton/fsunnonlinsol_newton.c \
-./sundials/sunnonlinsol/newton/sunnonlinsol_newton.c
+SOURCES_SUNNONLINSOL_NEWTON = ./sundials/sunnonlinsol/newton/sunnonlinsol_newton.c
 
 SOURCES_SUNDIALS_ALL= $(SOURCES_CVODES) $(SOURCES_IDA) $(SOURCES_NVECSERIAL) $(SOURCES_SUNDIALS) \
 $(SOURCES_SUNLINSOL_DENSE) $(SOURCES_SUNLINSOL_BAND) \
