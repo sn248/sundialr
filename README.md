@@ -2,8 +2,9 @@
 
 <!-- badges: start -->
 
-[![Build status](https://ci.appveyor.com/api/projects/status/3mp1p26lpqp16t3d?svg=true)](https://ci.appveyor.com/project/sn248/sundialr)    [![Travis-CI Build Status](https://travis-ci.org/sn248/sundialr.svg?branch=master)](https://travis-ci.org/sn248/sundialr)   [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/sundialr)](https://cran.r-project.org/package=sundialr) [![](https://cranlogs.r-pkg.org/badges/sundialr)]( https://CRAN.R-project.org/package=sundialr)
+[![Build status](https://ci.appveyor.com/api/projects/status/3mp1p26lpqp16t3d?svg=true)](https://ci.appveyor.com/project/sn248/sundialr)    [![Travis-CI Build Status](https://travis-ci.org/sn248/sundialr.svg?branch=master)](https://travis-ci.org/sn248/sundialr)   [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/sundialr)](https://cran.r-project.org/package=sundialr) 
 [![](https://cranlogs.r-pkg.org/badges/grand-total/sundialr)]( https://CRAN.R-project.org/package=sundialr)
+[![DOI](https://zenodo.org/badge/60889710.svg)](https://zenodo.org/badge/latestdoi/60889710)
 
 <!-- badges: end -->
 
@@ -35,3 +36,35 @@ vignette for more details.
 + This version has version 4.0.1 of `SUNDIALS` (released in Dec 2018) at the back end.
 + An interface to `CVODES` is added. It calculates forward sensitivities w.r.t all parameters of the ODE system.
 + Parameters can now be defined as an input parameter to the ODE function. This will allow performing parameter optimization via numerical optimizers.
+
+## Citations help! 
+
+I will be much-obliged if you cite this package if you use it in your work. You can cite this package like this " we used the _sundialr_ R package (Satyaprakash Nayak, 2021)". Here is the full bibliographic reference to include in your reference list (don't forget to update the 'last accessed' date):
+
+> Satyaprakash Nayak. (2021). sundialr: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers (Version v1.4.1). Zenodo. https://doi.org/10.5281/zenodo.5501631. Last accessed 12 September 2021
+
+The full citation entry is provided below:
+
+    citEntry(
+      entry    = "Misc",
+      title    = "The sundialr package: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers",
+      author   = personList(as.person("Satyaprakash Nayak")),
+      year     = "2021",
+      doi      = "10.5281/zenodo.5501631",
+      url      = "https://github.com/sn248/sundialr",
+      textVersion =
+        paste("Satyaprakash Nayak(2019).",
+              "The sundialr package: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers",
+              "https://doi.org/10.5281/zenodo.5501631"
+        )
+    )
+
+A BibTeX entry for LaTeX users can be generated using `citation("sundialr")` or can be copied from below:
+
+    @Misc{,
+    title = {The sundialr package: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers},
+    author = {Satyaprakash Nayak},
+    year = {2021},
+    doi = {10.5281/zenodo.5501631},
+    url = {https://github.com/sn248/sundialr},
+    }
