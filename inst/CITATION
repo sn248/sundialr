@@ -1,0 +1,15 @@
+citHeader("To cite sundialr in publications use:")
+
+citEntry(
+  entry    = "Misc",
+  title    = "The sundialr package: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers",
+  author   = personList(as.person("Satyaprakash Nayak")),
+  year     = "2021",
+  doi      = "10.5281/zenodo.5501631",
+  url      = "https://github.com/sn248/sundialr",
+  textVersion =
+   paste("Satyaprakash Nayak(2019).",
+          "The sundialr package: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers",
+          "https://doi.org/10.5281/zenodo.5501631"
+  )
+)
