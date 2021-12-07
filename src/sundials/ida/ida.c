@@ -2,7 +2,7 @@
  * Programmer(s): Alan Hindmarsh, Radu Serban and Aaron Collier @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * Copyright (c) 2002-2021, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -285,28 +285,28 @@ void *IDACreate(void)
   IDA_mem->ida_uround = UNIT_ROUNDOFF;
 
   /* Set default values for integrator optional inputs */
-  IDA_mem->ida_res         = NULL;
-  IDA_mem->ida_user_data   = NULL;
-  IDA_mem->ida_itol        = IDA_NN;
-  IDA_mem->ida_atolmin0    = SUNTRUE;
-  IDA_mem->ida_user_efun   = SUNFALSE;
-  IDA_mem->ida_efun        = NULL;
-  IDA_mem->ida_edata       = NULL;
-  IDA_mem->ida_ehfun       = IDAErrHandler;
-  IDA_mem->ida_eh_data     = IDA_mem;
-  IDA_mem->ida_errfp       = stderr;
-  IDA_mem->ida_maxord      = MAXORD_DEFAULT;
-  IDA_mem->ida_mxstep      = MXSTEP_DEFAULT;
-  IDA_mem->ida_hmax_inv    = HMAX_INV_DEFAULT;
-  IDA_mem->ida_hin         = ZERO;
-  IDA_mem->ida_epcon       = EPCON;
-  IDA_mem->ida_maxnef      = MXNEF;
-  IDA_mem->ida_maxncf      = MXNCF;
-  IDA_mem->ida_suppressalg = SUNFALSE;
-  IDA_mem->ida_id          = NULL;
-  IDA_mem->ida_constraints = NULL;
+  IDA_mem->ida_res            = NULL;
+  IDA_mem->ida_user_data      = NULL;
+  IDA_mem->ida_itol           = IDA_NN;
+  IDA_mem->ida_atolmin0       = SUNTRUE;
+  IDA_mem->ida_user_efun      = SUNFALSE;
+  IDA_mem->ida_efun           = NULL;
+  IDA_mem->ida_edata          = NULL;
+  IDA_mem->ida_ehfun          = IDAErrHandler;
+  IDA_mem->ida_eh_data        = IDA_mem;
+  IDA_mem->ida_errfp          = stderr;
+  IDA_mem->ida_maxord         = MAXORD_DEFAULT;
+  IDA_mem->ida_mxstep         = MXSTEP_DEFAULT;
+  IDA_mem->ida_hmax_inv       = HMAX_INV_DEFAULT;
+  IDA_mem->ida_hin            = ZERO;
+  IDA_mem->ida_epcon          = EPCON;
+  IDA_mem->ida_maxnef         = MXNEF;
+  IDA_mem->ida_maxncf         = MXNCF;
+  IDA_mem->ida_suppressalg    = SUNFALSE;
+  IDA_mem->ida_id             = NULL;
+  IDA_mem->ida_constraints    = NULL;
   IDA_mem->ida_constraintsSet = SUNFALSE;
-  IDA_mem->ida_tstopset    = SUNFALSE;
+  IDA_mem->ida_tstopset       = SUNFALSE;
 
   /* set the saved value maxord_alloc */
   IDA_mem->ida_maxord_alloc = MAXORD_DEFAULT;
@@ -410,6 +410,16 @@ int IDAInit(void *ida_mem, IDAResFn res,
     return(IDA_MEM_FAIL);
   }
 
+  /* Input checks complete at this point and history array allocated */
+
+  /* Copy the input parameters into IDA memory block */
+  IDA_mem->ida_res = res;
+  IDA_mem->ida_tn  = t0;
+
+  /* Initialize the phi array */
+  N_VScale(ONE, yy0, IDA_mem->ida_phi[0]);
+  N_VScale(ONE, yp0, IDA_mem->ida_phi[1]);
+
   /* create a Newton nonlinear solver object by default */
   NLS = SUNNonlinSol_Newton(yy0);
 
@@ -437,11 +447,6 @@ int IDAInit(void *ida_mem, IDAResFn res,
 
   /* All error checking is complete at this point */
 
-  /* Copy the input parameters into IDA memory block */
-
-  IDA_mem->ida_res = res;
-  IDA_mem->ida_tn  = t0;
-
   /* Set the linear solver addresses to NULL */
 
   IDA_mem->ida_linit  = NULL;
@@ -450,11 +455,6 @@ int IDAInit(void *ida_mem, IDAResFn res,
   IDA_mem->ida_lperf  = NULL;
   IDA_mem->ida_lfree  = NULL;
   IDA_mem->ida_lmem   = NULL;
-
-  /* Initialize the phi array */
-
-  N_VScale(ONE, yy0, IDA_mem->ida_phi[0]);
-  N_VScale(ONE, yp0, IDA_mem->ida_phi[1]);
 
   /* Initialize all the counters and other optional output values */
 
@@ -1183,6 +1183,13 @@ int IDASolve(void *ida_mem, realtype tout, realtype *tret,
     }
 
     nstloc++;
+
+    /* If tstop is set and was reached, reset IDA_mem->ida_tn = tstop */
+    if (IDA_mem->ida_tstopset) {
+      troundoff = HUNDRED * IDA_mem->ida_uround * (SUNRabs(IDA_mem->ida_tn) + SUNRabs(IDA_mem->ida_hh));
+      if (SUNRabs(IDA_mem->ida_tn - IDA_mem->ida_tstop) <= troundoff)
+        IDA_mem->ida_tn = IDA_mem->ida_tstop;
+    }
 
     /* After successful step, check for stop conditions; continue or break. */
 
@@ -2367,6 +2374,7 @@ static int IDANls(IDAMem IDA_mem)
   booleantype constraintsPassed, callLSetup;
   realtype temp1, temp2, vnorm;
   N_Vector mm, tmp;
+  long int nni_inc;
 
   callLSetup = SUNFALSE;
 
@@ -2403,6 +2411,11 @@ static int IDANls(IDAMem IDA_mem)
                              IDA_mem->ida_yypredict, IDA_mem->ida_ee,
                              IDA_mem->ida_ewt, IDA_mem->ida_epsNewt,
                              callLSetup, IDA_mem);
+
+  /* increment counter */
+  nni_inc = 0;
+  (void) SUNNonlinSolGetNumIters(IDA_mem->NLS, &(nni_inc));
+  IDA_mem->ida_nni += nni_inc;
 
   /* update yy and yp based on the final correction from the nonlinear solver */
   N_VLinearSum(ONE, IDA_mem->ida_yypredict, ONE, IDA_mem->ida_ee, IDA_mem->ida_yy);
