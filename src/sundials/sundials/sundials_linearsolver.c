@@ -4,7 +4,7 @@
  *                Slaven Peles @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * Copyright (c) 2002-2021, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -46,6 +46,7 @@ SUNLinearSolver SUNLinSolNewEmpty()
   ops->setatimes         = NULL;
   ops->setpreconditioner = NULL;
   ops->setscalingvectors = NULL;
+  ops->setzeroguess      = NULL;
   ops->initialize        = NULL;
   ops->setup             = NULL;
   ops->solve             = NULL;
@@ -121,6 +122,14 @@ int SUNLinSolSetScalingVectors(SUNLinearSolver S,
 {
   if (S->ops->setscalingvectors)
     return ((int) S->ops->setscalingvectors(S, s1, s2));
+  else
+    return SUNLS_SUCCESS;
+}
+
+int SUNLinSolSetZeroGuess(SUNLinearSolver S, booleantype onoff)
+{
+  if (S->ops->setzeroguess)
+    return ((int) S->ops->setzeroguess(S, onoff));
   else
     return SUNLS_SUCCESS;
 }

@@ -4,7 +4,7 @@
  * Based on code sundials_sptfqmr.h by: Aaron Collier @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * Copyright (c) 2002-2021, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -45,6 +45,7 @@ extern "C" {
 struct _SUNLinearSolverContent_SPTFQMR {
   int maxl;
   int pretype;
+  booleantype zeroguess;
   int numiters;
   realtype resnorm;
   int last_flag;
@@ -67,6 +68,9 @@ struct _SUNLinearSolverContent_SPTFQMR {
   N_Vector vtemp1;
   N_Vector vtemp2;
   N_Vector vtemp3;
+
+  int print_level;
+  FILE* info_file;
 };
 
 typedef struct _SUNLinearSolverContent_SPTFQMR *SUNLinearSolverContent_SPTFQMR;
@@ -83,12 +87,9 @@ SUNDIALS_EXPORT int SUNLinSol_SPTFQMRSetPrecType(SUNLinearSolver S,
 SUNDIALS_EXPORT int SUNLinSol_SPTFQMRSetMaxl(SUNLinearSolver S,
                                              int maxl);
 
-/* deprecated */
-SUNDIALS_EXPORT SUNLinearSolver SUNSPTFQMR(N_Vector y, int pretype, int maxl);
-/* deprecated */
-SUNDIALS_EXPORT int SUNSPTFQMRSetPrecType(SUNLinearSolver S, int pretype);
-/* deprecated */
-SUNDIALS_EXPORT int SUNSPTFQMRSetMaxl(SUNLinearSolver S, int maxl);
+SUNDIALS_DEPRECATED_EXPORT SUNLinearSolver SUNSPTFQMR(N_Vector y, int pretype, int maxl);
+SUNDIALS_DEPRECATED_EXPORT int SUNSPTFQMRSetPrecType(SUNLinearSolver S, int pretype);
+SUNDIALS_DEPRECATED_EXPORT int SUNSPTFQMRSetMaxl(SUNLinearSolver S, int maxl);
 
 SUNDIALS_EXPORT SUNLinearSolver_Type SUNLinSolGetType_SPTFQMR(SUNLinearSolver S);
 SUNDIALS_EXPORT SUNLinearSolver_ID SUNLinSolGetID_SPTFQMR(SUNLinearSolver S);
@@ -102,6 +103,8 @@ SUNDIALS_EXPORT int SUNLinSolSetPreconditioner_SPTFQMR(SUNLinearSolver S,
 SUNDIALS_EXPORT int SUNLinSolSetScalingVectors_SPTFQMR(SUNLinearSolver S,
                                                        N_Vector s1,
                                                        N_Vector s2);
+SUNDIALS_EXPORT int SUNLinSolSetZeroGuess_SPTFQMR(SUNLinearSolver S,
+                                                  booleantype onoff);
 SUNDIALS_EXPORT int SUNLinSolSetup_SPTFQMR(SUNLinearSolver S, SUNMatrix A);
 SUNDIALS_EXPORT int SUNLinSolSolve_SPTFQMR(SUNLinearSolver S, SUNMatrix A,
                                            N_Vector x, N_Vector b, realtype tol);
@@ -113,6 +116,10 @@ SUNDIALS_EXPORT int SUNLinSolSpace_SPTFQMR(SUNLinearSolver S,
                                            long int *lenrwLS,
                                            long int *leniwLS);
 SUNDIALS_EXPORT int SUNLinSolFree_SPTFQMR(SUNLinearSolver S);
+SUNDIALS_EXPORT int SUNLinSolSetInfoFile_SPTFQMR(SUNLinearSolver LS,
+                                                 FILE* info_file);
+SUNDIALS_EXPORT int SUNLinSolSetPrintLevel_SPTFQMR(SUNLinearSolver LS,
+                                                   int print_level);
 
 
 #ifdef __cplusplus
