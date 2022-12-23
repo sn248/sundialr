@@ -4,7 +4,7 @@
  *                Radu Serban @ LLNL
  * ----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2021, Lawrence Livermore National Security
+ * Copyright (c) 2002-2022, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -134,11 +134,6 @@ SUNDIALS_EXPORT int CVodeGetLinSolveStats(void* cvode_mem,
 SUNDIALS_EXPORT int CVodeGetLastLinFlag(void *cvode_mem,
                                         long int *flag);
 SUNDIALS_EXPORT char *CVodeGetLinReturnFlagName(long int flag);
-
-
-/* Deprecated functions */
-SUNDIALS_DEPRECATED_EXPORT
-int CVodeSetMaxStepsBetweenJac(void *cvode_mem, long int msbj);
 
 #ifdef __cplusplus
 }

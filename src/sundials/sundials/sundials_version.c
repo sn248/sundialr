@@ -2,7 +2,7 @@
  * Programmer(s): David J. Gardner @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2021, Lawrence Livermore National Security
+ * Copyright (c) 2002-2022, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -18,6 +18,10 @@
 #include <string.h>
 
 #include <sundials/sundials_version.h>
+
+/* note strlen does not include terminating null character hence the
+   use of >= when checking len below and strncpy copies up to len
+   characters including the terminating null character */
 
 /* fill string with SUNDIALS version information */
 int SUNDIALSGetVersion(char *version, int len)
