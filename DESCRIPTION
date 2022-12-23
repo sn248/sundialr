@@ -17,7 +17,7 @@ Imports:
     Rcpp (>= 0.12.5)
 LinkingTo:
     Rcpp, RcppArmadillo
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3
 Suggests: 
     knitr,
     rmarkdown,

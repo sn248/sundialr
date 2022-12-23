@@ -128,6 +128,8 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
 
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
+  SUNContext sunctx;
+  SUNContext_Create(NULL, &sunctx);
 
   if(y_len != IRes.length()){
     stop("IC and IRes should be of same length");
@@ -145,7 +147,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
 
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
-  N_Vector abstol = N_VNew_Serial(abstol_len);
+  N_Vector abstol = N_VNew_Serial(abstol_len, sunctx);
   realtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
@@ -165,14 +167,14 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
   }
   //----------------------------------------------------------------------------
   // // Set the initial values of y -----------------------------------------------
-  N_Vector yy0 = N_VNew_Serial(y_len);          // declared as yy0 to be consistent with example C code
+  N_Vector yy0 = N_VNew_Serial(y_len, sunctx);          // declared as yy0 to be consistent with example C code
   realtype *yy0_ptr = N_VGetArrayPointer(yy0);
   for (int i = 0; i<y_len; i++){
     yy0_ptr[i] = IC[i];
   }
 
   // // Set the initial values of ydot --------------------------------------------
-  N_Vector yp0 = N_VNew_Serial(y_len);         // declared as yp0 to be consistent with example C code
+  N_Vector yp0 = N_VNew_Serial(y_len, sunctx);         // declared as yp0 to be consistent with example C code
   realtype *yp0_ptr = N_VGetArrayPointer(yp0);
   for (int i = 0; i<y_len; i++){
     yp0_ptr[i] = IRes[i];
@@ -183,7 +185,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
   ida_mem = NULL;
 
   /* Call IDACreate and IDAInit to initialize IDA memory */
-  ida_mem = IDACreate();
+  ida_mem = IDACreate(sunctx);
 
   if(check_retval((void *)ida_mem, "IDACreate", 0)) {
     stop("Stopping IDA, something went wrong in allocating memory!");
@@ -217,12 +219,12 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
 
     /* Create dense SUNMatrix for use in linear solves */
     sunindextype y_len_M = y_len;
-    SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M);
+    SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
     if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping IDA, something went wrong in setting the dense matrix!"); }
 
 
     // Create dense SUNLinearSolver object for use by IDA
-    SUNLinearSolver LS = SUNLinSol_Dense(yy0, SM);
+    SUNLinearSolver LS = SUNLinSol_Dense(yy0, SM, sunctx);
     if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping IDA, something went wrong in setting the linear solver!"); }
 
     /* Attach the matrix and linear solver */
@@ -236,7 +238,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
     /* Create Newton SUNNonlinearSolver object. IDA uses a
      * Newton SUNNonlinearSolver by default, so it is unecessary
      * to create it and attach it. */
-    SUNNonlinearSolver NLS = SUNNonlinSol_Newton(yy0);
+    SUNNonlinearSolver NLS = SUNNonlinSol_Newton(yy0, sunctx);
     if(check_retval((void *)NLS, "SUNNonlinSol_Newton", 0)) return(1);
 
     /* Attach the nonlinear solver */
@@ -292,6 +294,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
     N_VDestroy(abstol);
     N_VDestroy(yy0);
     N_VDestroy(yp0);
+    SUNContext_Free(&sunctx);
 
     return soln;
     break;
