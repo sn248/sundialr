@@ -1,6 +1,6 @@
 Package: sundialr
 Type: Package
-Title: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers 
+Title: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers
 Version: 0.1.4.1
 Authors@R: c(
     person("Satyaprakash", "Nayak", "", "sn248@cornell.edu", c("aut", "cre","cph"), comment = c(ORCID = "0000-0001-7225-1317")),
@@ -18,8 +18,10 @@ Imports:
 LinkingTo:
     Rcpp, RcppArmadillo
 RoxygenNote: 7.2.3
-Suggests: 
+Suggests:
     knitr,
     rmarkdown,
     testthat
+SystemRequirements: GNU make
+NeedsCompilation: yes
 VignetteBuilder: knitr
