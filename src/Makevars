@@ -20,7 +20,10 @@ OBJECTS= $(SOURCES:.cpp=.o)
 
 SOURCES_CVODES = $(wildcard ./sundials/cvodes/*.c)
 
-SOURCES_IDA = $(wildcard ./sundials/ida/*.c)
+#SOURCES_IDA = $(wildcard ./sundials/ida/*.c)
+SOURCES_IDAS = $(wildcard ./sundials/idas/*.c)
+
+SOURCES_KINSOL = $(wildcard ./sundials/kinsol/*.c)
 
 SOURCES_NVECSERIAL= ./sundials/nvector/serial/nvector_serial.c
 
@@ -43,10 +46,10 @@ SOURCES_SUNNONLINSOL_FIXEDPOINT = ./sundials/sunnonlinsol/fixedpoint/sunnonlinso
 
 SOURCES_SUNNONLINSOL_NEWTON = ./sundials/sunnonlinsol/newton/sunnonlinsol_newton.c
 
-SOURCES_SUNDIALS_ALL= $(SOURCES_CVODES) $(SOURCES_IDA) $(SOURCES_NVECSERIAL) $(SOURCES_SUNDIALS) \
+SOURCES_SUNDIALS_ALL= $(SOURCES_CVODES) $(SOURCES_IDAS) $(SOURCES_NVECSERIAL) $(SOURCES_SUNDIALS) \
 $(SOURCES_SUNLINSOL_DENSE) $(SOURCES_SUNLINSOL_BAND) \
 $(SOURCES_SUNMAT_BAND) $(SOURCES_SUNMAT_DENSE) \
-$(SOURCES_SUNNONLINSOL_FIXEDPOINT) $(SOURCES_SUNNONLINSOL_NEWTON)
+$(SOURCES_SUNNONLINSOL_FIXEDPOINT) $(SOURCES_SUNNONLINSOL_NEWTON) $(SOURCES_KINSOL)
 
 OBJECTS_SUNDIALS_ALL = $(SOURCES_SUNDIALS_ALL:.c=.o)
 
@@ -62,6 +65,8 @@ clean:
 	(cd ./sundials/cvode;rm -f *.o)
 	(cd ./sundials/cvodes;rm -f *.o)
 	(cd ./sundials/ida;rm -f *.o)
+	(cd ./sundials/idas;rm -f *.o)
+	(cd ./sundials/kinsol;rm -f *.o)
 	(cd ./sundials/nvector/serial;rm -f *.o)
 	(cd ./sundials/sundials;rm -f *.o)
 	(cd ./sundials/sunlinsol/band;rm -f *.o)
