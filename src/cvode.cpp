@@ -63,6 +63,8 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
   int abstol_len = abstolerance.length();
+  SUNContext sunctx;
+  SUNContext_Create(NULL, &sunctx);
 
   int flag;
   realtype reltol = reltolerance;
@@ -74,7 +76,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
 
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
-  N_Vector abstol = N_VNew_Serial(abstol_len);
+  N_Vector abstol = N_VNew_Serial(abstol_len, sunctx);
   realtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
@@ -92,7 +94,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
   }
 
   // Set the initial conditions-------------------------------------------------
-  N_Vector y0 = N_VNew_Serial(y_len);
+  N_Vector y0 = N_VNew_Serial(y_len, sunctx);
   realtype *y0_ptr = N_VGetArrayPointer(y0);
   for (int i = 0; i<y_len; i++){
     y0_ptr[i] = IC[i]; // NV_Ith_S(y0, i)
@@ -103,7 +105,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
   cvode_mem = NULL;
 
 
-  cvode_mem = CVodeCreate(CV_BDF);
+  cvode_mem = CVodeCreate(CV_BDF, sunctx);
   if (check_retval((void *) cvode_mem, "CVodeCreate", 0)) { stop("Stopping cvode!"); }
 
   //-- assign user input to the struct based on SEXP type of input_function
@@ -129,11 +131,11 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
 
     // Create dense SUNMatrix for use in linear solves
     sunindextype y_len_M = y_len;
-    SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M);
+    SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
     if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping cvode, something went wrong in setting the dense matrix!"); }
 
     // Create dense SUNLinearSolver object for use by CVode
-    SUNLinearSolver LS = SUNLinSol_Dense(y0, SM);
+    SUNLinearSolver LS = SUNLinSol_Dense(y0, SM, sunctx);
     if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping cvode, something went wrong in setting the linear solver!"); }
 
     // Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode
@@ -183,6 +185,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     SUNLinSolFree(LS);
     // Free the matrix memory
     SUNMatDestroy(SM);
+    SUNContext_Free(&sunctx);
 
     return soln;
     break;

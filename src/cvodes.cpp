@@ -160,6 +160,8 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
   int abstol_len = abstolerance.length();
+  SUNContext sunctx;
+  SUNContext_Create(NULL, &sunctx);
 
   int flag;
 
@@ -170,7 +172,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
 
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
-  N_Vector abstol = N_VNew_Serial(abstol_len);
+  N_Vector abstol = N_VNew_Serial(abstol_len, sunctx);
   realtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
@@ -190,7 +192,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   }
   //----------------------------------------------------------------------------
   // // Set the initial conditions-------------------------------------------------
-  N_Vector y0 = N_VNew_Serial(y_len);
+  N_Vector y0 = N_VNew_Serial(y_len, sunctx);
   realtype *y0_ptr = N_VGetArrayPointer(y0);
   for (int i = 0; i<y_len; i++){
     y0_ptr[i] = IC[i]; // NV_Ith_S(y0, i)
@@ -219,7 +221,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   yS = N_VCloneVectorArray(NS, y0);
 
   // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
-  cvode_mem = CVodeCreate(CV_BDF);
+  cvode_mem = CVodeCreate(CV_BDF, sunctx);
   if (check_retval((void *) cvode_mem, "CVodeCreate", 0)) { stop("Stopping cvodes, cannot allocate memory for CVODES!"); }
 
   //-- assign user input to the struct based on SEXP type of input_function
@@ -254,11 +256,11 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
 
     /* Create dense SUNMatrix */
     sunindextype y_len_M = y_len;
-    SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M);
+    SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
     if (check_retval((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping cvodes, something went wrong in setting SUNDenseMatrix!"); }
 
     /* Create dense SUNLinearSolver */
-    SUNLinearSolver LS = SUNLinSol_Dense(y0, SM);
+    SUNLinearSolver LS = SUNLinSol_Dense(y0, SM, sunctx);
     if (check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping cvodes, something went wrong in setting Linear Solver!"); }
 
     /* Attach the matrix and linear solver */
@@ -352,6 +354,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
     CVodeFree(&cvode_mem);                   /* Free CVODES memory */
     SUNLinSolFree(LS);                       /* Free the linear solver memory */
     SUNMatDestroy(SM);                       /* Free the matrix memory */
+    SUNContext_Free(&sunctx);
 
     return sens;
     break;
