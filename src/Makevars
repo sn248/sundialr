@@ -1,5 +1,5 @@
 CXX=clang++
-PKG_CPPFLAGS= -I../inst/include/ -I./inst/ -DHAVE_CONFIG_H -DARMA_USE_CXX11
+PKG_CPPFLAGS= -I../inst/include/ -I./inst/ -DHAVE_CONFIG_H -DARMA_USE_CXX11 -I./sundials/sundials
 CXX_STD = CXX11
 PKG_LIBS= $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -L../inst/ -lsundials_all
 LIBS=-L./ -L../inst/
@@ -18,28 +18,16 @@ OBJECTS= $(SOURCES:.cpp=.o)
 #./sundials/cvode/cvode_ls.c \
 #./sundials/cvode/cvode_nls.c
 
-SOURCES_CVODES = ./sundials/cvodes/cvodea.c ./sundials/cvodes/cvodea_io.c \
-./sundials/cvodes/cvodes.c \
-./sundials/cvodes/cvodes_bandpre.c ./sundials/cvodes/cvodes_bbdpre.c \
-./sundials/cvodes/cvodes_diag.c ./sundials/cvodes/cvodes_io.c \
-./sundials/cvodes/cvodes_ls.c ./sundials/cvodes/cvodes_nls.c \
-./sundials/cvodes/cvodes_nls_sim.c ./sundials/cvodes/cvodes_nls_stg.c \
-./sundials/cvodes/cvodes_nls_stg1.c ./sundials/cvodes/cvodes_spils.c
+SOURCES_CVODES = $(wildcard ./sundials/cvodes/*.c)
 
-SOURCES_IDA = ./sundials/ida/ida.c \
-./sundials/ida/ida_bbdpre.c ./sundials/ida/ida_ic.c \
-./sundials/ida/ida_io.c ./sundials/ida/ida_ls.c \
-./sundials/ida/ida_nls.c ./sundials/ida/ida_spils.c
+#SOURCES_IDA = $(wildcard ./sundials/ida/*.c)
+SOURCES_IDAS = $(wildcard ./sundials/idas/*.c)
+
+SOURCES_KINSOL = $(wildcard ./sundials/kinsol/*.c)
 
 SOURCES_NVECSERIAL= ./sundials/nvector/serial/nvector_serial.c
 
-SOURCES_SUNDIALS= ./sundials/sundials/sundials_band.c ./sundials/sundials/sundials_dense.c \
-./sundials/sundials/sundials_direct.c ./sundials/sundials/sundials_iterative.c \
-./sundials/sundials/sundials_linearsolver.c \
-./sundials/sundials/sundials_math.c ./sundials/sundials/sundials_matrix.c \
-./sundials/sundials/sundials_nonlinearsolver.c \
-./sundials/sundials/sundials_nvector.c ./sundials/sundials/sundials_nvector_senswrapper.c \
-./sundials/sundials/sundials_version.c
+SOURCES_SUNDIALS= $(wildcard ./sundials/sundials/*.c)
 
 #./sundials/sundials/sundials_mpi.c \
 #./sundials/sundials/sundials_pcg.c \
@@ -58,10 +46,10 @@ SOURCES_SUNNONLINSOL_FIXEDPOINT = ./sundials/sunnonlinsol/fixedpoint/sunnonlinso
 
 SOURCES_SUNNONLINSOL_NEWTON = ./sundials/sunnonlinsol/newton/sunnonlinsol_newton.c
 
-SOURCES_SUNDIALS_ALL= $(SOURCES_CVODES) $(SOURCES_IDA) $(SOURCES_NVECSERIAL) $(SOURCES_SUNDIALS) \
+SOURCES_SUNDIALS_ALL= $(SOURCES_CVODES) $(SOURCES_IDAS) $(SOURCES_NVECSERIAL) $(SOURCES_SUNDIALS) \
 $(SOURCES_SUNLINSOL_DENSE) $(SOURCES_SUNLINSOL_BAND) \
 $(SOURCES_SUNMAT_BAND) $(SOURCES_SUNMAT_DENSE) \
-$(SOURCES_SUNNONLINSOL_FIXEDPOINT) $(SOURCES_SUNNONLINSOL_NEWTON)
+$(SOURCES_SUNNONLINSOL_FIXEDPOINT) $(SOURCES_SUNNONLINSOL_NEWTON) $(SOURCES_KINSOL)
 
 OBJECTS_SUNDIALS_ALL = $(SOURCES_SUNDIALS_ALL:.c=.o)
 
@@ -77,6 +65,8 @@ clean:
 	(cd ./sundials/cvode;rm -f *.o)
 	(cd ./sundials/cvodes;rm -f *.o)
 	(cd ./sundials/ida;rm -f *.o)
+	(cd ./sundials/idas;rm -f *.o)
+	(cd ./sundials/kinsol;rm -f *.o)
 	(cd ./sundials/nvector/serial;rm -f *.o)
 	(cd ./sundials/sundials;rm -f *.o)
 	(cd ./sundials/sunlinsol/band;rm -f *.o)
