@@ -4,7 +4,7 @@
  * Based on code sundials_sptfqmr.h by: Aaron Collier @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2022, Lawrence Livermore National Security
+ * Copyright (c) 2002-2023, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -112,10 +112,11 @@ SUNDIALS_EXPORT int SUNLinSolSpace_SPTFQMR(SUNLinearSolver S,
                                            long int *lenrwLS,
                                            long int *leniwLS);
 SUNDIALS_EXPORT int SUNLinSolFree_SPTFQMR(SUNLinearSolver S);
-SUNDIALS_EXPORT int SUNLinSolSetInfoFile_SPTFQMR(SUNLinearSolver LS,
-                                                 FILE* info_file);
-SUNDIALS_EXPORT int SUNLinSolSetPrintLevel_SPTFQMR(SUNLinearSolver LS,
-                                                   int print_level);
+SUNDIALS_DEPRECATED_EXPORT_MSG("Use SUNLogger_SetInfoFilename instead")
+int SUNLinSolSetInfoFile_SPTFQMR(SUNLinearSolver LS,
+                                 FILE* info_file);
+SUNDIALS_DEPRECATED_EXPORT_MSG("Use SUNLogger interface instead")
+int SUNLinSolSetPrintLevel_SPTFQMR(SUNLinearSolver LS, int print_level);
 
 
 #ifdef __cplusplus

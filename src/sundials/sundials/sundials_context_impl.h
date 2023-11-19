@@ -2,7 +2,7 @@
  * Programmer(s): Cody J. Balos @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2022, Lawrence Livermore National Security
+ * Copyright (c) 2002-2023, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -17,17 +17,20 @@
 #ifndef _SUNDIALS_CONTEXT_IMPL_H
 #define _SUNDIALS_CONTEXT_IMPL_H
 
-#include <sundials/sundials_types.h>
-#include <sundials/sundials_profiler.h>
 #include <sundials/sundials_context.h>
+#include <sundials/sundials_logger.h>
+#include <sundials/sundials_profiler.h>
+#include <sundials/sundials_types.h>
 
-#ifdef __cplusplus  /* wrapper to enable C++ usage */
+#ifdef __cplusplus /* wrapper to enable C++ usage */
 extern "C" {
 #endif
 
 struct _SUNContext {
-   SUNProfiler profiler;
-   booleantype own_profiler;
+  SUNProfiler profiler;
+  booleantype own_profiler;
+  SUNLogger logger;
+  booleantype own_logger;
 };
 
 #ifdef __cplusplus

@@ -3,7 +3,7 @@
  *                Aaron Collier, and Slaven Peles @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2022, Lawrence Livermore National Security
+ * Copyright (c) 2002-2023, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -175,6 +175,19 @@ typedef SUNDIALS_INDEX_TYPE sunindextype;
 #ifndef SUNTRUE
 #define SUNTRUE 1
 #endif
+
+/*
+ *------------------------------------------------------------------
+ * Type : sunoutputformat
+ *------------------------------------------------------------------
+ * Constants for different output formats
+ *------------------------------------------------------------------
+ */
+
+typedef enum {
+  SUN_OUTPUTFORMAT_TABLE,
+  SUN_OUTPUTFORMAT_CSV
+} SUNOutputFormat;
 
 #ifdef __cplusplus
 }
