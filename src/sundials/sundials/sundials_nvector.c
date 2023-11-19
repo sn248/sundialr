@@ -4,7 +4,7 @@
  *                Daniel R. Reynolds @ SMU
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2022, Lawrence Livermore National Security
+ * Copyright (c) 2002-2023, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -118,6 +118,8 @@ N_Vector N_VNewEmpty(SUNContext sunctx)
    * OPTIONAL operations with no default implementation.
    */
 
+  ops->nvgetlocallength    = NULL;
+
   /* local reduction operations (optional) */
   ops->nvdotprodlocal      = NULL;
   ops->nvmaxnormlocal      = NULL;
@@ -138,7 +140,7 @@ N_Vector N_VNewEmpty(SUNContext sunctx)
   ops->nvbufpack   = NULL;
   ops->nvbufunpack = NULL;
 
-  /* debugging functions (called when SUNDIALS_DEBUG_PRINTVEC is defined) */
+  /* debugging functions */
   ops->nvprint     = NULL;
   ops->nvprintfile = NULL;
 
@@ -192,6 +194,7 @@ int N_VCopyOps(N_Vector w, N_Vector v)
   v->ops->nvsetarraypointer       = w->ops->nvsetarraypointer;
   v->ops->nvgetcommunicator       = w->ops->nvgetcommunicator;
   v->ops->nvgetlength             = w->ops->nvgetlength;
+  v->ops->nvgetlocallength        = w->ops->nvgetlocallength;
 
   /* standard vector operations */
   v->ops->nvlinearsum    = w->ops->nvlinearsum;
@@ -258,7 +261,7 @@ int N_VCopyOps(N_Vector w, N_Vector v)
   v->ops->nvbufpack   = w->ops->nvbufpack;
   v->ops->nvbufunpack = w->ops->nvbufunpack;
 
-  /* debugging functions (called when SUNDIALS_DEBUG_PRINTVEC is defined) */
+  /* debugging functions  */
   v->ops->nvprint     = w->ops->nvprint;
   v->ops->nvprintfile = w->ops->nvprintfile;
 
@@ -347,6 +350,11 @@ void *N_VGetCommunicator(N_Vector v)
 sunindextype N_VGetLength(N_Vector v)
 {
   return((sunindextype) v->ops->nvgetlength(v));
+}
+
+sunindextype N_VGetLocalLength(N_Vector v)
+{
+  return((sunindextype) v->ops->nvgetlocallength(v));
 }
 
 /* -----------------------------------------------------------------
@@ -1053,27 +1061,23 @@ void N_VPrint(N_Vector v)
 {
   if (v == NULL) {
     printf("NULL Vector\n");
-    return;
-  }
-  if (v->ops->nvprint == NULL) {
+  } else if (v->ops->nvprint == NULL) {
     printf("NULL Print Op\n");
-    return;
+  } else {
+    v->ops->nvprint(v);
   }
-  v->ops->nvprint(v);
-  return;
 }
 
 
 void N_VPrintFile(N_Vector v, FILE* outfile)
 {
-  if (v == NULL) {
-    fprintf(outfile, "NULL Vector\n");
-    return;
+  if (outfile != NULL) {
+    if (v == NULL) {
+      fprintf(outfile, "NULL Vector\n");
+    } else if (v->ops->nvprintfile == NULL) {
+      fprintf(outfile, "NULL PrintFile Op\n");
+    } else {
+      v->ops->nvprintfile(v, outfile);
+    }
   }
-  if (v->ops->nvprintfile == NULL) {
-    fprintf(outfile, "NULL PrintFile Op\n");
-    return;
-  }
-  v->ops->nvprintfile(v, outfile);
-  return;
 }

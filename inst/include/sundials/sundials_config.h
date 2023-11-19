@@ -2,7 +2,7 @@
  * Programmer(s): Cody J. Balos, Aaron Collier and Radu Serban @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2022, Lawrence Livermore National Security
+ * Copyright (c) 2002-2023, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -36,10 +36,10 @@
  * -----------------------------------------------------------------*/
 
 
-#define SUNDIALS_VERSION "6.1.1"
+#define SUNDIALS_VERSION "6.6.2"
 #define SUNDIALS_VERSION_MAJOR 6
-#define SUNDIALS_VERSION_MINOR 1
-#define SUNDIALS_VERSION_PATCH 1
+#define SUNDIALS_VERSION_MINOR 6
+#define SUNDIALS_VERSION_PATCH 2
 #define SUNDIALS_VERSION_LABEL ""
 #define SUNDIALS_GIT_VERSION ""
 
@@ -48,6 +48,9 @@
  * SUNDIALS build information
  * -----------------------------------------------------------------*/
 
+#define SUNDIALS_C_COMPILER_HAS_MATH_PRECISIONS
+#define SUNDIALS_C_COMPILER_HAS_ISINF_ISNAN
+#define SUNDIALS_C_COMPILER_HAS_INLINE
 
 /* Define precision of SUNDIALS data type 'realtype'
  * Depending on the precision level, one of the following
@@ -71,11 +74,10 @@
  */
 #define SUNDIALS_INDEX_TYPE int64_t
 
-/* Use generic math functions
- * If it was decided that generic math functions can be used, then
- *     #define SUNDIALS_USE_GENERIC_MATH
+/* Use std-c math functions
+ * DEPRECATED SUNDIALS_USE_GENERIC_MATH
  */
-#define SUNDIALS_USE_GENERIC_MATH
+/* #undef SUNDIALS_USE_GENERIC_MATH */
 
 /* Use POSIX timers if available.
  *     #define SUNDIALS_HAVE_POSIX_TIMERS
@@ -91,6 +93,41 @@
 /* BUILD SUNDIALS with profiling functionalities */
 /* #undef SUNDIALS_BUILD_WITH_PROFILING */
 
+/* BUILD SUNDIALS with logging functionalities */
+#define SUNDIALS_LOGGING_LEVEL 0
+
+/* BUILD SUNDIALS with MPI-enabled logging */
+/* #undef SUNDIALS_LOGGING_ENABLE_MPI */
+
+/* Is snprintf available? */
+#define SUNDIALS_C_COMPILER_HAS_SNPRINTF_AND_VA_COPY
+#ifndef SUNDIALS_C_COMPILER_HAS_SNPRINTF_AND_VA_COPY
+#define SUNDIALS_MAX_SPRINTF_SIZE 
+#endif
+
+/* Build metadata */
+#define SUN_C_COMPILER "AppleClang"
+#define SUN_C_COMPILER_VERSION "12.0.0.12000032"
+#define SUN_C_COMPILER_FLAGS ""
+
+#define SUN_CXX_COMPILER ""
+#define SUN_CXX_COMPILER_VERSION ""
+#define SUN_CXX_COMPILER_FLAGS ""
+
+#define SUN_FORTRAN_COMPILER ""
+#define SUN_FORTRAN_COMPILER_VERSION ""
+#define SUN_FORTRAN_COMPILER_FLAGS ""
+
+#define SUN_BUILD_TYPE ""
+
+#define SUN_JOB_ID "20231118131318"
+#define SUN_JOB_START_TIME "20231118131318"
+
+#define SUN_TPL_LIST ""
+#define SUN_TPL_LIST_SIZE ""
+
+#define SUNDIALS_SPACK_VERSION ""
+
 /* ------------------------------------------------------------------
  * SUNDIALS TPL macros
  * -----------------------------------------------------------------*/
@@ -98,8 +135,97 @@
 /* Caliper */
 /* #undef SUNDIALS_CALIPER_ENABLED */
 
+/* Adiak */
+/* #undef SUNDIALS_ADIAK_ENABLED */
+
+/* Ginkgo */
+/* #undef SUNDIALS_GINKGO_ENABLED */
+#define SUN_GINKGO_VERSION ""
+
+/* HYPRE */
+/* #undef SUNDIALS_HYPRE_ENABLED */
+#define SUN_HYPRE_VERSION ""
+
+/* KLU */
+/* #undef SUNDIALS_KLU_ENABLED */
+#define SUN_KLU_VERSION ""
+
+/* KOKKOS */
+/* #undef SUNDIALS_KOKKOS_ENABLED */
+#define SUN_KOKKOS_VERSION ""
+
+/* KOKKOS_KERNELS */
+/* #undef SUNDIALS_KOKKOS_KERNELS_ENABLED */
+#define SUN_KOKKOS_KERNELS_VERSION ""
+
+/* LAPACK */
+/* #undef SUNDIALS_BLAS_LAPACK_ENABLED */
+#define SUN_LAPACK_VERSION ""
+
+/* MAGMA */
+/* #undef SUNDIALS_MAGMA_ENABLED */
+#define SUN_MAGMA_VERSION ""
+
+/* MPI */
+#define SUN_MPI_C_COMPILER ""
+#define SUN_MPI_C_VERSION ""
+
+#define SUN_MPI_CXX_COMPILER ""
+#define SUN_MPI_CXX_VERSION ""
+
+#define SUN_MPI_FORTRAN_COMPILER ""
+#define SUN_MPI_FORTRAN_VERSION ""
+
+/* ONEMKL */
+/* #undef SUNDIALS_ONEMKL_ENABLED */
+#define SUN_ONEMKL_VERSION ""
+
+/* OpenMP */
+/* #undef SUNDIALS_OPENMP_ENABLED */
+#define SUN_OPENMP_VERSION ""
+
+/* PETSC */
+/* #undef SUNDIALS_PETSC_ENABLED */
+#define SUN_PETSC_VERSION ""
+
+/* PTHREADS */
+/* #undef SUNDIALS_PTHREADS_ENABLED */
+#define SUN_PTHREADS_VERSION ""
+
+/* RAJA */
+/* #undef SUNDIALS_RAJA_ENABLED */
+#define SUN_RAJA_VERSION ""
+
+/* SUPERLUDIST */
+/* #undef SUNDIALS_SUPERLUDIST_ENABLED */
+#define SUN_SUPERLUDIST_VERSION ""
+
+/* SUPERLUMT */
+/* #undef SUNDIALS_SUPERLUMT_ENABLED */
+#define SUN_SUPERLUMT_VERSION ""
+
+/* TRILLINOS */
+/* #undef SUNDIALS_TRILLINOS_ENABLED */
+#define SUN_TRILLINOS_VERSION ""
+
+/* XBRAID */
+/* #undef SUNDIALS_XBRAID_ENABLED */
+#define SUN_XBRAID_VERSION ""
+
+/* RAJA backends */
+/* #undef SUNDIALS_RAJA_BACKENDS_CUDA */
+/* #undef SUNDIALS_RAJA_BACKENDS_HIP */
+/* #undef SUNDIALS_RAJA_BACKENDS_SYCL */
+
+/* Ginkgo backends */
+/* #undef SUNDIALS_GINKGO_BACKENDS_CUDA */
+/* #undef SUNDIALS_GINKGO_BACKENDS_HIP */
+/* #undef SUNDIALS_GINKGO_BACKENDS_OMP */
+/* #undef SUNDIALS_GINKGO_BACKENDS_REF */
+/* #undef SUNDIALS_GINKGO_BACKENDS_DPCPP */
+
 /* MAGMA backends */
-#define SUNDIALS_MAGMA_BACKENDS_CUDA
+/* #undef SUNDIALS_MAGMA_BACKENDS_CUDA */
 /* #undef SUNDIALS_MAGMA_BACKENDS_HIP */
 
 /* Set if SUNDIALS is built with MPI support, then
@@ -109,18 +235,37 @@
  */
 #define SUNDIALS_MPI_ENABLED 0
 
- /* SUPERLUMT threading type */
-/* #undef SUNDIALS_SUPERLUMT_THREAD_TYPE */
+/* oneMKL interface options */
+/* #undef SUNDIALS_ONEMKL_USE_GETRF_LOOP */
+/* #undef SUNDIALS_ONEMKL_USE_GETRS_LOOP */
 
- /* Trilinos with MPI is available, then
-  *    #define SUNDIALS_TRILINOS_HAVE_MPI
-  */
+/* SUPERLUMT threading type */
+#define SUNDIALS_SUPERLUMT_THREAD_TYPE ""
+
+/* Trilinos with MPI is available, then
+ *    #define SUNDIALS_TRILINOS_HAVE_MPI
+ */
 /* #undef SUNDIALS_TRILINOS_HAVE_MPI */
 
-/* RAJA backends */
-#define SUNDIALS_RAJA_BACKENDS_CUDA
-/* #undef SUNDIALS_RAJA_BACKENDS_HIP */
-/* #undef SUNDIALS_RAJA_BACKENDS_SYCL */
+
+/* ------------------------------------------------------------------
+ * SUNDIALS language macros
+ * -----------------------------------------------------------------*/
+
+/* CUDA */
+/* #undef SUNDIALS_CUDA_ENABLED */
+#define SUN_CUDA_VERSION ""
+#define SUN_CUDA_COMPILER ""
+#define SUN_CUDA_ARCHITECTURES ""
+
+/* HIP */
+/* #undef SUNDIALS_HIP_ENABLED */
+#define SUN_HIP_VERSION ""
+#define SUN_AMDGPU_TARGETS ""
+
+/* SYCL options */
+/* #undef SUNDIALS_SYCL_2020_UNSUPPORTED */
+
 
 /* ------------------------------------------------------------------
  * SUNDIALS modules enabled
@@ -192,10 +337,10 @@
 #endif
 
 #ifndef SUNDIALS_C_INLINE
-#ifndef __STDC_VERSION__ /* must be c89 or c90 */
-#define SUNDIALS_C_INLINE
-#else
+#ifdef SUNDIALS_C_COMPILER_HAS_INLINE
 #define SUNDIALS_C_INLINE inline
+#else
+#define SUNDIALS_C_INLINE
 #endif
 #endif
 

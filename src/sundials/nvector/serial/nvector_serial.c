@@ -3,7 +3,7 @@
  *                and Aaron Collier @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2022, Lawrence Livermore National Security
+ * Copyright (c) 2002-2023, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -21,6 +21,7 @@
 
 #include <nvector/nvector_serial.h>
 #include <sundials/sundials_math.h>
+#include "sundials/sundials_nvector.h"
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)
@@ -88,6 +89,7 @@ N_Vector N_VNewEmpty_Serial(sunindextype length, SUNContext sunctx)
   v->ops->nvgetarraypointer = N_VGetArrayPointer_Serial;
   v->ops->nvsetarraypointer = N_VSetArrayPointer_Serial;
   v->ops->nvgetlength       = N_VGetLength_Serial;
+  v->ops->nvgetlocallength  = N_VGetLength_Serial;
 
   /* standard vector operations */
   v->ops->nvlinearsum    = N_VLinearSum_Serial;
