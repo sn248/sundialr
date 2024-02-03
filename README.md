@@ -10,7 +10,7 @@
 ## sundialr
 
 `sundialr` is a wrapper around a few of the solvers in the `SUNDIALS` ODE solving C library produced by the Lawrence Livermore National Laboratory and Southern Methodist University. More
-information about `SUNDIALS` can be found [here](https://computing.llnl.gov/projects/sundials/).
+information about `SUNDIALS` can be found [here](https://computing.llnl.gov/projects/sundials).
 `SUNDIALS` is one of the most popular and well-respected ODE solving libraries available and 
 `sundialr` provides a way to interface some of the `SUNDIALS` solvers in `R`. 
 
