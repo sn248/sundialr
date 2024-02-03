@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 ```
 
 ## Introduction
-Ordinary Differential Equations (ODEs) describe the rate of change of dependent variables with respect to a single independent variable and are used in many fields to model behavior of the system. There are many good `C` libraries available to solve (i.e., integrate systems of ODEs) and [SUNDIALS](https://computing.llnl.gov/projects/sundials/sundials-software) available from the Lawrence Livermore National Laboratory is a one of the most popular and well-respected `C` library for solving non-stiff and stiff systems of ODEs.
+Ordinary Differential Equations (ODEs) describe the rate of change of dependent variables with respect to a single independent variable and are used in many fields to model behavior of the system. There are many good `C` libraries available to solve (i.e., integrate systems of ODEs) and [SUNDIALS](https://computing.llnl.gov/projects/sundials) available from the Lawrence Livermore National Laboratory is a one of the most popular and well-respected `C` library for solving non-stiff and stiff systems of ODEs.
 
 Currently, this package provides an interface to the `CVODE` and `CVODES` function (serial version) in the library which is used to solve ODEs (or Initial Value Problems) and calculate sensitivities.
 

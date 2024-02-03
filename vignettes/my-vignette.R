@@ -46,7 +46,7 @@ ODErepeated_R <- function(t, y, p){
 TDOSE <- data.frame(ID = 1, TIMES = c(0, 10, 20, 30, 40, 50), VAL = 100)
 TDOSE
 
-## ---- fig.height=5, fig.width=7, fig.align="C"--------------------------------
+## ----fig.height=5, fig.width=7, fig.align="C"---------------------------------
 # Example of solving a set of ODEs with multiple discontinuities using cvsolve
 # A simple One dimensional equation, y = -0.1 * y
 # ODEs described by an R function
