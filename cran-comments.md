@@ -1,3 +1,6 @@
+## Comments for version 0.1.4.1.2
+* Fixed the issue with forwarded email address.
+
 ## Comments for version 0.1.4.1
 * Fixed the problem with linking due to multiple definitions. The downstream 
 dependency should be unaffected by this change.

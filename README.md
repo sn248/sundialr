@@ -2,9 +2,12 @@
 
 <!-- badges: start -->
 
-[![Build status](https://ci.appveyor.com/api/projects/status/3mp1p26lpqp16t3d?svg=true)](https://ci.appveyor.com/project/sn248/sundialr/)    [![Travis-CI Build Status](https://travis-ci.org/sn248/sundialr.svg?branch=master)](https://app.travis-ci.com/sn248/sundialr/)   [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/sundialr/)](https://cran.r-project.org/package=sundialr/) 
+[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/sundialr/)](https://cran.r-project.org/package=sundialr/) 
+
 [![](https://cranlogs.r-pkg.org/badges/grand-total/sundialr/)]( https://CRAN.R-project.org/package=sundialr/)
+
 [![R-CMD-check](https://github.com/sn248/sundialr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sn248/sundialr/actions/workflows/R-CMD-check.yaml)
+
 <!-- badges: end -->
 
 ## sundialr
