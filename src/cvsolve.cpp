@@ -68,19 +68,19 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
   int NSTATES = IC.length();
   int abstol_len = abstolerance.length();
   SUNContext sunctx;
-  SUNContext_Create(NULL, &sunctx);
+  SUNContext_Create(SUN_COMM_NULL, &sunctx);
 
   int flag;
-  realtype reltol = reltolerance;
+  sunrealtype reltol = reltolerance;
 
-  realtype T0 = RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
+  sunrealtype T0 = SUN_RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
 
   double time;
 
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
   N_Vector abstol = N_VNew_Serial(abstol_len, sunctx);
-  realtype *abstol_ptr = N_VGetArrayPointer(abstol);
+  sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
     for (int i = 0; i<y_len; i++){
@@ -138,7 +138,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
 
   // Set the initial conditions-------------------------------------------------
   N_Vector y0 = N_VNew_Serial(y_len, sunctx);
-  realtype *y0_ptr = N_VGetArrayPointer(y0);
+  sunrealtype *y0_ptr = N_VGetArrayPointer(y0);
   for (int i = 0; i<y_len; i++){
     y0_ptr[i] = ICchanged[i];
   }
@@ -192,7 +192,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
     flag = CVodeSetConstraints(cvode_mem, constraints);
     if(check_retval(&flag, "CVodeSetConstraints", 1)) { stop("Stopping cvsolve, something went wrong in setting constraints!"); }
 
-    realtype tout;  // For output times
+    sunrealtype tout;  // For output times
 
     // Solution vector has length equal to number of rows in TCOMB
     // Solution vector has width equal to number of IC + 1 (first column for time)
@@ -207,7 +207,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
 
     for(int iout = 0; iout < NOUT-1; iout++) {
 
-      realtype tprev = TCOMB(iout, 1);
+      sunrealtype tprev = TCOMB(iout, 1);
       // output times start from the index after initial time
       tout = TCOMB(iout + 1, 1);
 

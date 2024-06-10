@@ -50,14 +50,14 @@ struct res_func{
 
 
 // function called by IDAInit if user inputs R function
-int res_function(realtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data){
+int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data){
 
   // convert y to NumericVector y1
   int yy_len = NV_LENGTH_S(yy);
 
   // NumericVector analog of yy
   NumericVector yy1(yy_len);                       // filled with zeros
-  realtype *yy_ptr = N_VGetArrayPointer(yy);
+  sunrealtype *yy_ptr = N_VGetArrayPointer(yy);
   for (int i = 0; i < yy_len; i++){
     yy1[i] = yy_ptr[i];                           // Ith(y,i+1);
   }
@@ -65,7 +65,7 @@ int res_function(realtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* user_d
   int yp_len = NV_LENGTH_S(yp);
   // NumericVector analog of yp
   NumericVector yp1(yp_len);                      // filled with zeros
-  realtype *yp_ptr = N_VGetArrayPointer(yp);
+  sunrealtype *yp_ptr = N_VGetArrayPointer(yp);
   for (int i = 0; i < yp_len; i++){
     yp1[i] = yp_ptr[i];                          // Ith(y,i+1);
   }
@@ -99,7 +99,7 @@ int res_function(realtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* user_d
   }
 
   // convert NumericVector rr1 to N_Vector rr
-  realtype *rr_ptr = N_VGetArrayPointer(rr);
+  sunrealtype *rr_ptr = N_VGetArrayPointer(rr);
   for (int i = 0; i <  rr_len; i++){
     rr_ptr[i] = rr1[i];
   }
@@ -129,7 +129,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
   SUNContext sunctx;
-  SUNContext_Create(NULL, &sunctx);
+  SUNContext_Create(SUN_COMM_NULL, &sunctx);
 
   if(y_len != IRes.length()){
     stop("IC and IRes should be of same length");
@@ -138,9 +138,9 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
   int abstol_len = abstolerance.length();
 
   int flag;
-  realtype reltol = reltolerance;
+  sunrealtype reltol = reltolerance;
 
-  realtype T0 = RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
+  sunrealtype T0 = SUN_RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
 
   double time;
   int NOUT = time_vec_len;
@@ -148,7 +148,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
   N_Vector abstol = N_VNew_Serial(abstol_len, sunctx);
-  realtype *abstol_ptr = N_VGetArrayPointer(abstol);
+  sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
     for (int i = 0; i<y_len; i++){
@@ -168,14 +168,14 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
   //----------------------------------------------------------------------------
   // // Set the initial values of y -----------------------------------------------
   N_Vector yy0 = N_VNew_Serial(y_len, sunctx);          // declared as yy0 to be consistent with example C code
-  realtype *yy0_ptr = N_VGetArrayPointer(yy0);
+  sunrealtype *yy0_ptr = N_VGetArrayPointer(yy0);
   for (int i = 0; i<y_len; i++){
     yy0_ptr[i] = IC[i];
   }
 
   // // Set the initial values of ydot --------------------------------------------
   N_Vector yp0 = N_VNew_Serial(y_len, sunctx);         // declared as yp0 to be consistent with example C code
-  realtype *yp0_ptr = N_VGetArrayPointer(yp0);
+  sunrealtype *yp0_ptr = N_VGetArrayPointer(yp0);
   for (int i = 0; i<y_len; i++){
     yp0_ptr[i] = IRes[i];
   }
@@ -248,7 +248,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
     /* In loop, call IDASolve, print results, and test for error.
      Break out of loop when NOUT preset output times have been reached. */
 
-    realtype tout;  // For output times
+    sunrealtype tout;  // For output times
 
     int y_len_1 = y_len + 1; // remove later
     NumericMatrix soln(Dimension(time_vec_len,y_len_1));  // remove later

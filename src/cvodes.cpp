@@ -66,13 +66,13 @@ struct rhs_func_sens{
 // int ewt(N_Vector y, N_Vector w, void *user_data);
 
 // function called by CVodeInit if user inputs R function
-int rhs_function_sens(realtype t, N_Vector y, N_Vector ydot, void* user_data){
+int rhs_function_sens(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data){
 
   // convert y to NumericVector y1
   int y_len = NV_LENGTH_S(y);
 
   NumericVector y1(y_len);    // filled with zeros
-  realtype *y_ptr = N_VGetArrayPointer(y);
+  sunrealtype *y_ptr = N_VGetArrayPointer(y);
   for (int i = 0; i < y_len; i++){
     y1[i] = y_ptr[i];
   }
@@ -104,7 +104,7 @@ int rhs_function_sens(realtype t, N_Vector y, N_Vector ydot, void* user_data){
   }
 
   // convert NumericVector ydot1 to N_Vector ydot
-  realtype *ydot_ptr = N_VGetArrayPointer(ydot);
+  sunrealtype *ydot_ptr = N_VGetArrayPointer(ydot);
   for (int i = 0; i<  y_len; i++){
     ydot_ptr[i] = ydot1[i];
     // Rcout << ydot_ptr[i] << "\n";
@@ -119,7 +119,7 @@ int rhs_function_sens(realtype t, N_Vector y, N_Vector ydot, void* user_data){
 int ewt(N_Vector y, N_Vector w, void *user_data)
 {
   int i;
-  realtype yy, ww, rtol;
+  sunrealtype yy, ww, rtol;
   NumericVector atol;
 
   struct rhs_func_sens *my_rhs_fun = (struct rhs_func_sens*)user_data;
@@ -161,11 +161,11 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   int y_len = IC.length();
   int abstol_len = abstolerance.length();
   SUNContext sunctx;
-  SUNContext_Create(NULL, &sunctx);
+  SUNContext_Create(SUN_COMM_NULL, &sunctx);
 
   int flag;
 
-  realtype T0 = RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
+  sunrealtype T0 = SUN_RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
 
   double time;
   int NOUT = time_vec_len;
@@ -173,7 +173,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
   N_Vector abstol = N_VNew_Serial(abstol_len, sunctx);
-  realtype *abstol_ptr = N_VGetArrayPointer(abstol);
+  sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
     for (int i = 0; i<y_len; i++){
@@ -193,7 +193,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   //----------------------------------------------------------------------------
   // // Set the initial conditions-------------------------------------------------
   N_Vector y0 = N_VNew_Serial(y_len, sunctx);
-  realtype *y0_ptr = N_VGetArrayPointer(y0);
+  sunrealtype *y0_ptr = N_VGetArrayPointer(y0);
   for (int i = 0; i<y_len; i++){
     y0_ptr[i] = IC[i]; // NV_Ith_S(y0, i)
   }
@@ -269,7 +269,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
 
 
     if (check_retval((void *)yS, "N_VCloneVectorArray", 0)) { stop("Stopping cvodes, something went wrong in setting Sensitivity Array!"); }
-    for (int is=0;is<NS;is++) N_VConst(RCONST(0.0), yS[is]);
+    for (int is=0;is<NS;is++) N_VConst(SUN_RCONST(0.0), yS[is]);
 
     /* Call CVodeSensInit1 to activate forward sensitivity computations
      and allocate internal memory for COVEDS related to sensitivity
@@ -314,8 +314,8 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
       sens(0,i+1) = 0.0;
     }
 
-    realtype tout;  // For output times
-    realtype *yS_ptr = NULL;
+    sunrealtype tout;  // For output times
+    sunrealtype *yS_ptr = NULL;
     for(int iout = 0; iout < NOUT-1; iout++) {
 
       // output times start from the index after initial time

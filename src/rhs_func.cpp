@@ -39,7 +39,7 @@ using namespace Rcpp;
 #define Ith(v,i)    NV_Ith_S(v,i-1)         /* i-th vector component i=1..NEQ */
 
 // function called by CVodeInit if user inputs R function
-int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
+int rhs_function(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data){
 
   // convert y to NumericVector y1
   int y_len = NV_LENGTH_S(y);
@@ -76,7 +76,7 @@ int rhs_function(realtype t, N_Vector y, N_Vector ydot, void* user_data){
   }
 
   // convert NumericVector ydot1 to N_Vector ydot
-  realtype *ydot_ptr = N_VGetArrayPointer(ydot);
+  sunrealtype *ydot_ptr = N_VGetArrayPointer(ydot);
   for (int i = 0; i<  y_len; i++){
     ydot_ptr[i] = ydot1[i];
   }
