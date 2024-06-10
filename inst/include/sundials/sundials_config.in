@@ -2,7 +2,7 @@
  * Programmer(s): Cody J. Balos, Aaron Collier and Radu Serban @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2023, Lawrence Livermore National Security
+ * Copyright (c) 2002-2024, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -18,6 +18,14 @@
 #define _SUNDIALS_CONFIG_H
 
 #include "sundials/sundials_export.h"
+
+/* Indicates that the function will not report an error via last_err,
+   a return code. In C++, it is just defined as noexcept. */
+#if defined(__cplusplus)
+#define SUNDIALS_NOEXCEPT noexcept
+#else
+#define SUNDIALS_NOEXCEPT
+#endif
 
 #ifndef SUNDIALS_DEPRECATED_MSG
 #  define SUNDIALS_DEPRECATED_MSG(msg) @SUNDIALS_DEPRECATED_MSG_MACRO@
@@ -48,11 +56,12 @@
  * SUNDIALS build information
  * -----------------------------------------------------------------*/
 
-#cmakedefine SUNDIALS_C_COMPILER_HAS_MATH_PRECISIONS
-#cmakedefine SUNDIALS_C_COMPILER_HAS_ISINF_ISNAN
-#cmakedefine SUNDIALS_C_COMPILER_HAS_INLINE
+#cmakedefine SUNDIALS_C_COMPILER_HAS_BUILTIN_EXPECT
+#cmakedefine SUNDIALS_C_COMPILER_HAS_ATTRIBUTE_ASSUME
+#cmakedefine SUNDIALS_C_COMPILER_HAS_BUILTIN_ASSUME
+#cmakedefine SUNDIALS_C_COMPILER_HAS_ASSUME
 
-/* Define precision of SUNDIALS data type 'realtype'
+/* Define precision of SUNDIALS data type 'sunrealtype'
  * Depending on the precision level, one of the following
  * three macros will be defined:
  *     #define SUNDIALS_SINGLE_PRECISION 1
@@ -74,11 +83,6 @@
  */
 #define SUNDIALS_INDEX_TYPE @SUNDIALS_CINDEX_TYPE@
 
-/* Use std-c math functions
- * DEPRECATED SUNDIALS_USE_GENERIC_MATH
- */
-#cmakedefine SUNDIALS_USE_GENERIC_MATH
-
 /* Use POSIX timers if available.
  *     #define SUNDIALS_HAVE_POSIX_TIMERS
  */
@@ -93,17 +97,11 @@
 /* BUILD SUNDIALS with profiling functionalities */
 #cmakedefine SUNDIALS_BUILD_WITH_PROFILING
 
+/* Enable error checking within SUNDIALS */
+#cmakedefine SUNDIALS_ENABLE_ERROR_CHECKS
+
 /* BUILD SUNDIALS with logging functionalities */
 #define SUNDIALS_LOGGING_LEVEL @SUNDIALS_LOGGING_LEVEL@
-
-/* BUILD SUNDIALS with MPI-enabled logging */
-#cmakedefine SUNDIALS_LOGGING_ENABLE_MPI
-
-/* Is snprintf available? */
-#cmakedefine SUNDIALS_C_COMPILER_HAS_SNPRINTF_AND_VA_COPY
-#ifndef SUNDIALS_C_COMPILER_HAS_SNPRINTF_AND_VA_COPY
-#define SUNDIALS_MAX_SPRINTF_SIZE @SUNDIALS_MAX_SPRINTF_SIZE@
-#endif
 
 /* Build metadata */
 #define SUN_C_COMPILER "@CMAKE_C_COMPILER_ID@"
@@ -272,66 +270,5 @@
  * -----------------------------------------------------------------*/
 
 @SUNDIALS_CONFIGH_BUILDS@
-
-
-/* ------------------------------------------------------------------
- * SUNDIALS fortran configuration
- * -----------------------------------------------------------------*/
-
-
-/* Define Fortran name-mangling macro for C identifiers.
- * Depending on the inferred scheme, one of the following six
- * macros will be defined:
- *     #define SUNDIALS_F77_FUNC(name,NAME) name
- *     #define SUNDIALS_F77_FUNC(name,NAME) name ## _
- *     #define SUNDIALS_F77_FUNC(name,NAME) name ## __
- *     #define SUNDIALS_F77_FUNC(name,NAME) NAME
- *     #define SUNDIALS_F77_FUNC(name,NAME) NAME ## _
- *     #define SUNDIALS_F77_FUNC(name,NAME) NAME ## __
- */
-@F77_MANGLE_MACRO1@
-
-/* Define Fortran name-mangling macro for C identifiers
- * which contain underscores.
- */
-@F77_MANGLE_MACRO2@
-
-/* Allow user to specify different MPI communicator
- * If it was found that the MPI implementation supports MPI_Comm_f2c, then
- *      #define SUNDIALS_MPI_COMM_F2C 1
- * otherwise
- *      #define SUNDIALS_MPI_COMM_F2C 0
- */
-@F77_MPI_COMM_F2C@
-
-
-/* ------------------------------------------------------------------
- * SUNDIALS inline macros.
- * -----------------------------------------------------------------*/
-
-
-/* Mark SUNDIALS function as inline.
- */
-#ifndef SUNDIALS_CXX_INLINE
-#define SUNDIALS_CXX_INLINE inline
-#endif
-
-#ifndef SUNDIALS_C_INLINE
-#ifdef SUNDIALS_C_COMPILER_HAS_INLINE
-#define SUNDIALS_C_INLINE inline
-#else
-#define SUNDIALS_C_INLINE
-#endif
-#endif
-
-#ifdef __cplusplus
-#define SUNDIALS_INLINE SUNDIALS_CXX_INLINE
-#else
-#define SUNDIALS_INLINE SUNDIALS_C_INLINE
-#endif
-
-/* Mark SUNDIALS function as static inline.
- */
-#define SUNDIALS_STATIC_INLINE static SUNDIALS_INLINE
 
 #endif /* _SUNDIALS_CONFIG_H */

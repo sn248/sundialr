@@ -2,7 +2,7 @@
  * Programmer(s): Cody J. Balos @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2023, Lawrence Livermore National Security
+ * Copyright (c) 2002-2024, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -22,18 +22,20 @@
 #include <sundials/sundials_types.h>
 
 #include "sundials_hashmap.h"
+#include "sundials_utils.h"
 
-#define SUNDIALS_LOGGING_ERROR 1
+#define SUNDIALS_LOGGING_ERROR   1
 #define SUNDIALS_LOGGING_WARNING 2
-#define SUNDIALS_LOGGING_INFO 3
-#define SUNDIALS_LOGGING_DEBUG 4
+#define SUNDIALS_LOGGING_INFO    3
+#define SUNDIALS_LOGGING_DEBUG   4
 #if SUNDIALS_LOGGING_LEVEL > SUNDIALS_LOGGING_DEBUG
 #define SUNDIALS_LOGGING_EXTRA_DEBUG
 #endif
 
-struct SUNLogger_ {
+struct SUNLogger_
+{
   /* MPI information */
-  void* commptr;
+  SUNComm comm;
   int output_rank;
 
   /* Ouput files */
@@ -52,10 +54,31 @@ struct SUNLogger_ {
   void* content;
 
   /* Overridable operations */
-  int (*queuemsg)(SUNLogger logger, SUNLogLevel lvl, const char* scope,
-                  const char* label, const char* msg_txt, va_list args);
-  int (*flush)(SUNLogger logger, SUNLogLevel lvl);
-  int (*destroy)(SUNLogger* logger);
+  SUNErrCode (*queuemsg)(SUNLogger logger, SUNLogLevel lvl, const char* scope,
+                         const char* label, const char* msg_txt, va_list args);
+  SUNErrCode (*flush)(SUNLogger logger, SUNLogLevel lvl);
+  SUNErrCode (*destroy)(SUNLogger* logger);
 };
+
+/*
+  This function creates a log message string in the correct format.
+  It allocates the log_msg parameter, which must be freed by the caller.
+  The format of the log message is:
+
+    [ERROR][rank <rank>][<scope>][<label>] <formatted txt>
+
+  :param lvl: the logging level (ERROR, WARNING, INFO, DEBUG)
+  :param rank: the MPI rank of the caller
+  :param scope: the scope part of the log message (see above)
+  :param label: the label part of the log message (see above)
+  :param txt: descriptive text for the log message in the form of a format string
+  :param args: format string substitutions
+  :param log_msg: on output this is an allocated string containing the log message
+
+  :return: void
+*/
+void sunCreateLogMessage(SUNLogLevel lvl, int rank, const char* scope,
+                         const char* label, const char* txt, va_list args,
+                         char** log_msg);
 
 #endif /* _SUNDIALS_LOGGER_IMPL_H */

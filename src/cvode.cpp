@@ -30,16 +30,16 @@
 
 #include <Rcpp.h>
 
-#include <cvode/cvode.h>               /* prototypes for CVODE fcts., consts. */
-#include <nvector/nvector_serial.h>    /* serial N_Vector types, fcts., macros */
-#include <sundials/sundials_types.h>   /* definition of type realtype */
+#include <cvode/cvode.h>             /* prototypes for CVODE fcts., consts. */
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
+#include <sundials/sundials_types.h> /* definition of type realtype */
 #include <sunmatrix/sunmatrix_dense.h>
 #include <sunlinsol/sunlinsol_dense.h>
 
 #include <check_retval.h>
 #include <rhs_func.h>
 
-#define Ith(v,i)    NV_Ith_S(v,i-1)         /* i-th vector component i=1..NEQ */
+#define Ith(v,i)    NV_Ith_S(v,i-1)  /* i-th vector component i=1..NEQ */
 
 using namespace Rcpp;
 
@@ -64,12 +64,12 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
   int y_len = IC.length();
   int abstol_len = abstolerance.length();
   SUNContext sunctx;
-  SUNContext_Create(NULL, &sunctx);
+  SUNContext_Create(SUN_COMM_NULL, &sunctx);
 
   int flag;
-  realtype reltol = reltolerance;
+  sunrealtype reltol = reltolerance;
 
-  realtype T0 = RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
+  sunrealtype T0 = SUN_RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
 
   double time;
   int NOUT = time_vec_len;
@@ -77,7 +77,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
   N_Vector abstol = N_VNew_Serial(abstol_len, sunctx);
-  realtype *abstol_ptr = N_VGetArrayPointer(abstol);
+  sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
     for (int i = 0; i<y_len; i++){
@@ -95,7 +95,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
 
   // Set the initial conditions-------------------------------------------------
   N_Vector y0 = N_VNew_Serial(y_len, sunctx);
-  realtype *y0_ptr = N_VGetArrayPointer(y0);
+  sunrealtype *y0_ptr = N_VGetArrayPointer(y0);
   for (int i = 0; i<y_len; i++){
     y0_ptr[i] = IC[i]; // NV_Ith_S(y0, i)
   }
@@ -146,7 +146,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     // Call CVodeInit to initialize the integrator memory and specify the
     // user's right hand side function in y'=f(time,y),
     // // the inital time T0, and the initial dependent variable vector y.
-    realtype tout;  // For output times
+    sunrealtype tout;  // For output times
 
     int y_len_1 = y_len + 1; // remove later
     NumericMatrix soln(Dimension(time_vec_len,y_len_1));  // remove later

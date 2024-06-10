@@ -3,7 +3,7 @@
  * Programmer(s): Daniel Reynolds @ SMU
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2023, Lawrence Livermore National Security
+ * Copyright (c) 2002-2024, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -29,7 +29,7 @@
 #include <sundials/sundials_nvector.h>
 #include <sunmatrix/sunmatrix_band.h>
 
-#ifdef __cplusplus  /* wrapper to enable C++ usage */
+#ifdef __cplusplus /* wrapper to enable C++ usage */
 extern "C" {
 #endif
 
@@ -37,33 +37,33 @@ extern "C" {
  * LAPACK band implementation of SUNLinearSolver
  * ---------------------------------------------- */
 
-struct _SUNLinearSolverContent_LapackBand {
+struct _SUNLinearSolverContent_LapackBand
+{
   sunindextype N;
-  sunindextype *pivots;
+  sunindextype* pivots;
   sunindextype last_flag;
 };
 
-typedef struct _SUNLinearSolverContent_LapackBand *SUNLinearSolverContent_LapackBand;
-
+typedef struct _SUNLinearSolverContent_LapackBand* SUNLinearSolverContent_LapackBand;
 
 /* --------------------------------------------
  * Exported Functions for SUNLINSOL_LAPACKBAND
  * -------------------------------------------- */
 
-SUNDIALS_EXPORT SUNLinearSolver SUNLinSol_LapackBand(N_Vector y,
-                                                     SUNMatrix A,
+SUNDIALS_EXPORT SUNLinearSolver SUNLinSol_LapackBand(N_Vector y, SUNMatrix A,
                                                      SUNContext sunctx);
 SUNDIALS_EXPORT SUNLinearSolver_Type SUNLinSolGetType_LapackBand(SUNLinearSolver S);
 SUNDIALS_EXPORT SUNLinearSolver_ID SUNLinSolGetID_LapackBand(SUNLinearSolver S);
-SUNDIALS_EXPORT int SUNLinSolInitialize_LapackBand(SUNLinearSolver S);
+SUNDIALS_EXPORT SUNErrCode SUNLinSolInitialize_LapackBand(SUNLinearSolver S);
 SUNDIALS_EXPORT int SUNLinSolSetup_LapackBand(SUNLinearSolver S, SUNMatrix A);
 SUNDIALS_EXPORT int SUNLinSolSolve_LapackBand(SUNLinearSolver S, SUNMatrix A,
-                                              N_Vector x, N_Vector b, realtype tol);
+                                              N_Vector x, N_Vector b,
+                                              sunrealtype tol);
 SUNDIALS_EXPORT sunindextype SUNLinSolLastFlag_LapackBand(SUNLinearSolver S);
-SUNDIALS_EXPORT int SUNLinSolSpace_LapackBand(SUNLinearSolver S,
-                                              long int *lenrwLS,
-                                              long int *leniwLS);
-SUNDIALS_EXPORT int SUNLinSolFree_LapackBand(SUNLinearSolver S);
+SUNDIALS_EXPORT SUNErrCode SUNLinSolSpace_LapackBand(SUNLinearSolver S,
+                                                     long int* lenrwLS,
+                                                     long int* leniwLS);
+SUNDIALS_EXPORT SUNErrCode SUNLinSolFree_LapackBand(SUNLinearSolver S);
 
 #ifdef __cplusplus
 }
