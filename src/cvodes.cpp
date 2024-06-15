@@ -1,4 +1,4 @@
-//   Copyright (c) 2020, Satyaprakash Nayak
+//   Copyright (c) 2024, Satyaprakash Nayak
 //
 //   Redistribution and use in source and binary forms, with or without
 //   modification, are permitted provided that the following conditions are
@@ -12,7 +12,7 @@
 //   the documentation and/or other materials provided with the
 //   distribution.
 //
-//   Neither Satyaprakash Nayak nor the names of other
+//   Neither sundialr nor the names of its
 //   contributors may be used to endorse or promote products derived
 //   from this software without specific prior written permission.
 //
@@ -36,9 +36,9 @@
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector            */
 #include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix            */
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver      */
-// #include <cvodes/cvodes_direct.h>      /* access to CVDls interface            */
-#include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype      */
-#include <sundials/sundials_math.h>    /* definition of ABS */
+// #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype      */
+// #include <sundials/sundials_math.h>    /* definition of ABS */
+#include <sunmatrix/sunmatrix_dense.h>
 
 #include <check_retval.h>
 // #include "check_retval.cpp"
@@ -52,7 +52,6 @@ using namespace Rcpp;
 struct rhs_func_sens{
   Function rhs_eqn;
   NumericVector params;
-  // std::vector<double> params;
   double rtol;
   NumericVector atol;
 };
@@ -68,7 +67,7 @@ struct rhs_func_sens{
 // function called by CVodeInit if user inputs R function
 int rhs_function_sens(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data){
 
-  // convert y to NumericVector y1
+  // convert y (N_Vector) to NumericVector y1
   int y_len = NV_LENGTH_S(y);
 
   NumericVector y1(y_len);    // filled with zeros
@@ -80,7 +79,7 @@ int rhs_function_sens(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data)
   NumericVector ydot1(y_len);    // filled with zeros
 
   if(!user_data){
-    stop("Something went wrong, stopping!");
+    stop("Something went wrong in setting initial values, stopping!");
   }
 
   // cast void pointer to pointer to struct and assign rhs to a Function
@@ -96,11 +95,11 @@ int rhs_function_sens(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data)
       ydot1 = rhs_fun(t, y1, p_values);
     }
     else{
-      stop("Something went wrong, stopping!");
+      stop("Something went wrong in calculating derivatives, stopping!");
     }
   }
   else {
-    stop("Something went wrong, stopping!");
+    stop("Something went wrong in accessing the derivatives, stopping!");
   }
 
   // convert NumericVector ydot1 to N_Vector ydot
@@ -110,8 +109,7 @@ int rhs_function_sens(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data)
     // Rcout << ydot_ptr[i] << "\n";
   }
 
-
-  // everything went smoothly
+  // If everything went smoothly, return 0
   return(0);
 }
 
@@ -160,6 +158,13 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
   int abstol_len = abstolerance.length();
+
+  // absolute tolerance is either length == 1 or equal to length of IC
+  // If abstol is not equal to 1 and abstol is not equal to IC, then stop
+  if(abstol_len != 1 && abstol_len != y_len){
+    stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
+  }
+
   SUNContext sunctx;
   SUNContext_Create(SUN_COMM_NULL, &sunctx);
 
@@ -171,9 +176,10 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   int NOUT = time_vec_len;
 
   // Set the vector absolute tolerance -----------------------------------------
-  // abstol must be same length as IC
+  // abstol must be same length as IC, if it not 1 or not unequal to y_len
   N_Vector abstol = N_VNew_Serial(abstol_len, sunctx);
   sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
+
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
     for (int i = 0; i<y_len; i++){
@@ -185,10 +191,6 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
     for (int i = 0; i<abstol_len; i++){
       abstol_ptr[i] = abstolerance[i];
     }
-  }
-  else if(abstol_len != 1 || abstol_len != y_len){
-
-    stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
   //----------------------------------------------------------------------------
   // // Set the initial conditions-------------------------------------------------

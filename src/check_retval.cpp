@@ -1,4 +1,4 @@
-//   Copyright (c) 2020, Satyaprakash Nayak
+//   Copyright (c) 2024, Satyaprakash Nayak
 //
 //   Redistribution and use in source and binary forms, with or without
 //   modification, are permitted provided that the following conditions are
@@ -12,7 +12,7 @@
 //   the documentation and/or other materials provided with the
 //   distribution.
 //
-//   Neither the name of the <ORGANIZATION> nor the names of its
+//   Neither sundialr nor the names of its
 //   contributors may be used to endorse or promote products derived
 //   from this software without specific prior written permission.
 //
