@@ -1,4 +1,4 @@
-//   Copyright (c) 2020, Satyaprakash Nayak
+//   Copyright (c) 2024, Satyaprakash Nayak
 //
 //   Redistribution and use in source and binary forms, with or without
 //   modification, are permitted provided that the following conditions are
@@ -12,7 +12,7 @@
 //   the documentation and/or other materials provided with the
 //   distribution.
 //
-//   Neither the name of the <ORGANIZATION> nor the names of its
+//   Neither sundialr nor the names of its
 //   contributors may be used to endorse or promote products derived
 //   from this software without specific prior written permission.
 //
@@ -136,10 +136,14 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
   }
 
   int abstol_len = abstolerance.length();
+  // absolute tolerance is either length == 1 or equal to length of IC
+  // If abstol is not equal to 1 and abstol is not equal to IC, then stop
+  if(abstol_len != 1 && abstol_len != y_len){
+    stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
+  }
 
   int flag;
   sunrealtype reltol = reltolerance;
-
   sunrealtype T0 = SUN_RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
 
   double time;
@@ -160,10 +164,6 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
     for (int i = 0; i<abstol_len; i++){
       abstol_ptr[i] = abstolerance[i];
     }
-  }
-  else if(abstol_len != 1 || abstol_len != y_len){
-
-    stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
   //----------------------------------------------------------------------------
   // // Set the initial values of y -----------------------------------------------

@@ -1,4 +1,4 @@
-//   Copyright (c) 2020, Satyaprakash Nayak
+//   Copyright (c) 2024, Satyaprakash Nayak
 //
 //   Redistribution and use in source and binary forms, with or without
 //   modification, are permitted provided that the following conditions are
@@ -12,7 +12,7 @@
 //   the documentation and/or other materials provided with the
 //   distribution.
 //
-//   Neither the name of the <ORGANIZATION> nor the names of its
+//   Neither sundialr nor the names of its
 //   contributors may be used to endorse or promote products derived
 //   from this software without specific prior written permission.
 //
@@ -63,6 +63,13 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
   int abstol_len = abstolerance.length();
+
+  // absolute tolerance is either length == 1 or equal to length of IC
+  // If abstol is not equal to 1 and abstol is not equal to IC, then stop
+  if(abstol_len != 1 && abstol_len != y_len){
+    stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
+  }
+
   SUNContext sunctx;
   SUNContext_Create(SUN_COMM_NULL, &sunctx);
 
@@ -88,9 +95,6 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     for (int i = 0; i<abstol_len; i++){
       abstol_ptr[i] = abstolerance[i];
     }
-  }
-  else if(abstol_len != 1 || abstol_len != y_len){
-    stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
 
   // Set the initial conditions-------------------------------------------------
