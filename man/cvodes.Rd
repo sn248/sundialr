@@ -32,6 +32,9 @@ cvodes(
 
 \item{ErrCon}{Error Control - allowed values are TRUE or FALSE (default)}
 }
+\value{
+A data frame. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector
+}
 \description{
 CVODES solver to solve ODEs and calculate sensitivities
 }

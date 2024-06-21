@@ -29,6 +29,9 @@ cvsolve(
 
 \item{abstolerance}{Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)}
 }
+\value{
+A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
+}
 \description{
 CVSOLVE solver to solve stiff ODEs with discontinuties
 }

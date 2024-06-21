@@ -55,6 +55,7 @@ using namespace arma;
 //'@param Events Discontinuities in the solution (a DataFrame, default value is NULL)
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
+//'@returns A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
 //'@example /inst/examples/cvsolve_1D.r
 // [[Rcpp::export]]
 NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
