@@ -53,7 +53,8 @@ using namespace Rcpp;
 //'@param input_function Right Hand Side function of ODEs
 //'@param Parameters Parameters input to ODEs
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
-//'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
+//'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot (dy/dx), default = 1e-04)
+//'@returns A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
 //'@example /inst/examples/cv_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_function,

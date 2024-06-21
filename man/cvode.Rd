@@ -24,7 +24,10 @@ cvode(
 
 \item{reltolerance}{Relative Tolerance (a scalar, default value  = 1e-04)}
 
-\item{abstolerance}{Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)}
+\item{abstolerance}{Absolute Tolerance (a scalar or vector with length equal to ydot (dy/dx), default = 1e-04)}
+}
+\value{
+A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
 }
 \description{
 CVODE solver to solve stiff ODEs

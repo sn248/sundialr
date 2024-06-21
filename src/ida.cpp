@@ -120,6 +120,7 @@ int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* use
 //'@param Parameters Parameters input to ODEs
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
+//'@returns A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
 // [[Rcpp::export]]
 NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRes, SEXP input_function,
                   NumericVector Parameters,
