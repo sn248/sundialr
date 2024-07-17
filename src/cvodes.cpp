@@ -34,10 +34,9 @@
 
 #include <cvodes/cvodes.h>
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector            */
-#include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix            */
+#include <sundials/sundials_math.h>    /* definition of ABS */
+#include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype      */
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver      */
-// #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype      */
-// #include <sundials/sundials_math.h>    /* definition of ABS */
 #include <sunmatrix/sunmatrix_dense.h>
 
 #include <check_retval.h>
@@ -219,9 +218,9 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   cvode_mem = NULL;
 
   /* Set sensitivity initial conditions */
-  int NS = Parameters.length();
-  N_Vector *yS;
-  yS = N_VCloneVectorArray(NS, y0);
+  int NP = Parameters.length();
+  N_Vector *yS;                      // vector of sensitivities (yS)
+  yS = N_VCloneVectorArray(NP, y0);
 
   // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
   cvode_mem = CVodeCreate(CV_BDF, sunctx);
@@ -272,7 +271,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
 
 
     if (check_retval((void *)yS, "N_VCloneVectorArray", 0)) { stop("Stopping cvodes, something went wrong in setting Sensitivity Array!"); }
-    for (int is=0;is<NS;is++) N_VConst(SUN_RCONST(0.0), yS[is]);
+    for (int is=0;is<NP;is++) N_VConst(SUN_RCONST(0.0), yS[is]);
 
     /* Call CVodeSensInit1 to activate forward sensitivity computations
      and allocate internal memory for COVEDS related to sensitivity
@@ -281,7 +280,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
     // (int) flag to set sensitivity solution method - see CVodeSensInit1
     int ism = CV_STAGGERED;
     if (SensType.compare("SIM") == 0) ism = CV_SIMULTANEOUS;
-    flag = CVodeSensInit1(cvode_mem, NS, ism, NULL, yS);
+    flag = CVodeSensInit1(cvode_mem, NP, ism, NULL, yS);
     if(check_retval(&flag, "CVodeSensInit", 1)) { stop("Stopping cvodes, something went wrong in calculating Sensitivities!"); }
 
     /* Call CVodeSensEEtolerances to estimate tolerances for sensitivity
@@ -309,7 +308,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
       soln(0,i+1) = IC[i];
     }
 
-    NumericMatrix sens(Dimension(time_vec_len, (NS * y_len) + 1));
+    NumericMatrix sens(Dimension(time_vec_len, (y_len * NP) + 1));
     // Store the Sensitivity Results
     // Sensitivity of each entitiy w.r.t. parameters is zero at initial time
     sens(0,0) = time_vector[0];           // get the first time value
@@ -339,12 +338,12 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
       if (check_retval(&flag, "CVodeGetSens", 1)) { stop("Stopping cvodes, something went wrong in calculating Sensitivities!"); break; }
 
       if (flag == CV_SUCCESS) {
-        for (int i = 0; i < Parameters.length(); i++){
-          yS_ptr = N_VGetArrayPointer(yS[i]);
+        for (int i = 0; i < NP; i++){
+          yS_ptr = N_VGetArrayPointer(yS[i]);   // sensitivities w.r.t. param i
           for(int j = 0; j < y_len; j++){
             // store results in soln matrix
             sens(iout+1, 0) = time;           // first column is for time
-            sens(iout+1, (NS*i)+j+1) = yS_ptr[j];
+            sens(iout+1, y_len*i+j+1) = yS_ptr[j]; // sensitivities of y1 ... yJ w.r.t param i
           }
         }
       }
@@ -352,7 +351,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
     }
 
     N_VDestroy(y0);                          /* Free y vector */
-    N_VDestroyVectorArray(yS, NS);           /* Free yS vector */
+    N_VDestroyVectorArray(yS, NP);           /* Free yS vector */
     // free(data);                           /* Free user data */
     CVodeFree(&cvode_mem);                   /* Free CVODES memory */
     SUNLinSolFree(LS);                       /* Free the linear solver memory */
