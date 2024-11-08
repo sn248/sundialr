@@ -61,8 +61,20 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
                     NumericVector Parameters,
                     double reltolerance = 0.0001, NumericVector abstolerance = 0.0001){
 
+  int flag;
+
   int time_vec_len = time_vector.length();
+  double time;
+  int NOUT = time_vec_len;
+  sunrealtype T0 = SUN_RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
+
+  // Initial Conditions
   int y_len = IC.length();
+
+  // Relative tolerance
+  sunrealtype reltol = reltolerance;
+
+  // Absolute tolerance
   int abstol_len = abstolerance.length();
 
   // absolute tolerance is either length == 1 or equal to length of IC
@@ -71,20 +83,11 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
 
-  SUNContext sunctx;
-  SUNContext_Create(SUN_COMM_NULL, &sunctx);
-
-  int flag;
-  sunrealtype reltol = reltolerance;
-
-  sunrealtype T0 = SUN_RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
-
-  double time;
-  int NOUT = time_vec_len;
-
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
-  N_Vector abstol = N_VNew_Serial(abstol_len, sunctx);
+  SUNContext sunctx;
+  SUNContext_Create(SUN_COMM_NULL, &sunctx);
+  N_Vector abstol = N_VNew_Serial(y_len, sunctx);
   sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
@@ -93,10 +96,11 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_func
     }
   }
   else if (abstol_len == y_len){
-    for (int i = 0; i<abstol_len; i++){
+    for (int i = 0; i<y_len; i++){
       abstol_ptr[i] = abstolerance[i];
     }
   }
+
 
   // Set the initial conditions-------------------------------------------------
   N_Vector y0 = N_VNew_Serial(y_len, sunctx);

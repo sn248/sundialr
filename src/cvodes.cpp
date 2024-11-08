@@ -145,7 +145,7 @@ int ewt(N_Vector y, N_Vector w, void *user_data)
 //'@param Parameters Parameters input to ODEs
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
-//'@param SensType Sensitivity Type - allowed values are Staggered (default)", "STG" (for Staggered) or "SIM" (for Simultaneous)
+//'@param SensType Sensitivity Type - allowed values are "STG" (for Staggered, default) or "SIM" (for Simultaneous)
 //'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
 //'@returns A data frame. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector
 //'@example /inst/examples/cvs_Roberts_dns.r
@@ -155,31 +155,32 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
                      double reltolerance = 0.0001, NumericVector abstolerance = 0.0001,
                      std::string SensType = "STG", bool ErrCon = 'F'){
 
-  int time_vec_len = time_vector.length();
-  int y_len = IC.length();
-  int abstol_len = abstolerance.length();
+  int flag;
 
+  int time_vec_len = time_vector.length();
+  double time;
+  int NOUT = time_vec_len;
+  sunrealtype T0 = SUN_RCONST(time_vector[0]);     // Initial Time
+
+  // Initial Conditions
+  int y_len = IC.length();
+
+  // Relative Tolerance
+  sunrealtype reltol = reltolerance;
+
+  int abstol_len = abstolerance.length();
   // absolute tolerance is either length == 1 or equal to length of IC
   // If abstol is not equal to 1 and abstol is not equal to IC, then stop
   if(abstol_len != 1 && abstol_len != y_len){
     stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
 
-  SUNContext sunctx;
-  SUNContext_Create(SUN_COMM_NULL, &sunctx);
-
-  int flag;
-
-  sunrealtype T0 = SUN_RCONST(time_vector[0]);     //RCONST(0.0);  // Initial Time
-
-  double time;
-  int NOUT = time_vec_len;
-
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC, if it not 1 or not unequal to y_len
-  N_Vector abstol = N_VNew_Serial(abstol_len, sunctx);
+  SUNContext sunctx;
+  SUNContext_Create(SUN_COMM_NULL, &sunctx);
+  N_Vector abstol = N_VNew_Serial(y_len, sunctx);
   sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
-
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
     for (int i = 0; i<y_len; i++){
@@ -187,8 +188,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
     }
   }
   else if (abstol_len == y_len){
-
-    for (int i = 0; i<abstol_len; i++){
+    for (int i = 0; i<y_len; i++){
       abstol_ptr[i] = abstolerance[i];
     }
   }
@@ -197,7 +197,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   N_Vector y0 = N_VNew_Serial(y_len, sunctx);
   sunrealtype *y0_ptr = N_VGetArrayPointer(y0);
   for (int i = 0; i<y_len; i++){
-    y0_ptr[i] = IC[i]; // NV_Ith_S(y0, i)
+    y0_ptr[i] = IC[i];
   }
 
   // Check SensType input ---------------------------------------------------------
@@ -268,7 +268,6 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
     /* Attach the matrix and linear solver */
     flag = CVodeSetLinearSolver(cvode_mem, LS, SM);
     if (check_retval(&flag, "CVodeSetLinearSolver", 1)) { stop("Stopping cvodes, something went wrong in attaching SUNDenseMatrix and Linear Solver!"); }
-
 
     if (check_retval((void *)yS, "N_VCloneVectorArray", 0)) { stop("Stopping cvodes, something went wrong in setting Sensitivity Array!"); }
     for (int is=0;is<NP;is++) N_VConst(SUN_RCONST(0.0), yS[is]);
