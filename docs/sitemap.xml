@@ -1,14 +1,14 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
-<url><loc>/404.html</loc></url>
-<url><loc>/LICENSE-text.html</loc></url>
-<url><loc>/articles/index.html</loc></url>
-<url><loc>/articles/my-vignette.html</loc></url>
-<url><loc>/authors.html</loc></url>
-<url><loc>/index.html</loc></url>
-<url><loc>/reference/cvode.html</loc></url>
-<url><loc>/reference/cvodes.html</loc></url>
-<url><loc>/reference/cvsolve.html</loc></url>
-<url><loc>/reference/ida.html</loc></url>
-<url><loc>/reference/index.html</loc></url>
+<url><loc>http://sn248.github.io/sundialr/404.html</loc></url>
+<url><loc>http://sn248.github.io/sundialr/LICENSE-text.html</loc></url>
+<url><loc>http://sn248.github.io/sundialr/articles/index.html</loc></url>
+<url><loc>http://sn248.github.io/sundialr/articles/my-vignette.html</loc></url>
+<url><loc>http://sn248.github.io/sundialr/authors.html</loc></url>
+<url><loc>http://sn248.github.io/sundialr/index.html</loc></url>
+<url><loc>http://sn248.github.io/sundialr/reference/cvode.html</loc></url>
+<url><loc>http://sn248.github.io/sundialr/reference/cvodes.html</loc></url>
+<url><loc>http://sn248.github.io/sundialr/reference/cvsolve.html</loc></url>
+<url><loc>http://sn248.github.io/sundialr/reference/ida.html</loc></url>
+<url><loc>http://sn248.github.io/sundialr/reference/index.html</loc></url>
 </urlset>
 

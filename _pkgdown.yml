@@ -1,1 +1,5 @@
-destination: docs
+url: http://sn248.github.io/sundialr/
+template:
+  bootstrap: 5
+  bootswatch: cerulean
+
