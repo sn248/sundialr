@@ -150,10 +150,12 @@ int ewt(N_Vector y, N_Vector w, void *user_data)
 //'@returns A data frame. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector
 //'@example /inst/examples/cvs_Roberts_dns.r
 // [[Rcpp::export]]
-NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_function,
-                     NumericVector Parameters,
-                     double reltolerance = 0.0001, NumericVector abstolerance = 0.0001,
-                     std::string SensType = "STG", bool ErrCon = 'F'){
+NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
+                      SEXP input_function,
+                      NumericVector Parameters,
+                      double reltolerance = 0.0001,
+                      NumericVector abstolerance = 0.0001,
+                      std::string SensType = "STG", bool ErrCon = 'F'){
 
   int flag;
 
@@ -172,7 +174,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   // absolute tolerance is either length == 1 or equal to length of IC
   // If abstol is not equal to 1 and abstol is not equal to IC, then stop
   if(abstol_len != 1 && abstol_len != y_len){
-    stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
+     stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
 
   // Set the vector absolute tolerance -----------------------------------------
@@ -182,6 +184,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   N_Vector abstol = N_VNew_Serial(y_len, sunctx);
   sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstol_len == 1){
+
     // if a scalar is provided - use it to make a vector with same values
     for (int i = 0; i<y_len; i++){
       abstol_ptr[i] = abstolerance[0];
@@ -192,6 +195,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
       abstol_ptr[i] = abstolerance[i];
     }
   }
+
   //----------------------------------------------------------------------------
   // // Set the initial conditions-------------------------------------------------
   N_Vector y0 = N_VNew_Serial(y_len, sunctx);
@@ -213,6 +217,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
   if(ErrCon != TRUE && ErrCon != FALSE){
     stop("ErrCon can only be either TRUE or FALSE");
   }
+
   // //----------------------------------------------------------------------------
   void *cvode_mem;
   cvode_mem = NULL;
@@ -233,139 +238,134 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_fun
 
   // Rcout << TYPEOF(input_function) << "\n";
 
-  switch(TYPEOF(input_function)){
+  if (!input_function){ stop("There is no input function, stopping!"); }
 
-  case CLOSXP:{
+  if(TYPEOF(input_function) != CLOSXP) { stop("Incorrect input function type - input function can be an R or Rcpp function"); }
 
-    // realtype *params = Parameters.begin();
+  // realtype *params = Parameters.begin();
 
-    struct rhs_func_sens my_rhs_function = {input_function,
-                                            Parameters,
-                                            // as<std::vector<double> >(Parameters),
-                                            reltolerance, abstolerance};
+  struct rhs_func_sens my_rhs_function = {input_function,
+                                          Parameters,
+                                          // as<std::vector<double> >(Parameters),
+                                          reltolerance, abstolerance};
 
-    // setting the user_data in rhs function
-    flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
-    if (check_retval(&flag, "CVodeSetUserData", 1)) { stop("Stopping cvodes, something went wrong in setting user data!"); }
+  // setting the user_data in rhs function
+  flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
+  if (check_retval(&flag, "CVodeSetUserData", 1)) { stop("Stopping cvodes, something went wrong in setting user data!"); }
 
-    /* Allocate space for CVODES */
-    flag = CVodeInit(cvode_mem, rhs_function_sens, T0, y0);
-    if (check_retval(&flag, "CVodeInit", 1)) { stop("Stopping cvodes, something went wrong in allocating space for CVODES!"); }
+  /* Allocate space for CVODES */
+  flag = CVodeInit(cvode_mem, rhs_function_sens, T0, y0);
+  if (check_retval(&flag, "CVodeInit", 1)) { stop("Stopping cvodes, something went wrong in allocating space for CVODES!"); }
 
-    /* Use private function to compute error weights */
-    flag = CVodeWFtolerances(cvode_mem, ewt);
-    if (check_retval(&flag, "CVodeSetEwtFn", 1)) { stop("Stopping cvodes, something went wrong in computing error weights!"); }
+  /* Use private function to compute error weights */
+  flag = CVodeWFtolerances(cvode_mem, ewt);
+  if (check_retval(&flag, "CVodeSetEwtFn", 1)) { stop("Stopping cvodes, something went wrong in computing error weights!"); }
 
-    /* Create dense SUNMatrix */
-    sunindextype y_len_M = y_len;
-    SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
-    if (check_retval((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping cvodes, something went wrong in setting SUNDenseMatrix!"); }
+  /* Create dense SUNMatrix */
+  sunindextype y_len_M = y_len;
+  SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
+  if (check_retval((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping cvodes, something went wrong in setting SUNDenseMatrix!"); }
 
-    /* Create dense SUNLinearSolver */
-    SUNLinearSolver LS = SUNLinSol_Dense(y0, SM, sunctx);
-    if (check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping cvodes, something went wrong in setting Linear Solver!"); }
+  /* Create dense SUNLinearSolver */
+  SUNLinearSolver LS = SUNLinSol_Dense(y0, SM, sunctx);
+  if (check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping cvodes, something went wrong in setting Linear Solver!"); }
 
-    /* Attach the matrix and linear solver */
-    flag = CVodeSetLinearSolver(cvode_mem, LS, SM);
-    if (check_retval(&flag, "CVodeSetLinearSolver", 1)) { stop("Stopping cvodes, something went wrong in attaching SUNDenseMatrix and Linear Solver!"); }
+  /* Attach the matrix and linear solver */
+  flag = CVodeSetLinearSolver(cvode_mem, LS, SM);
+  if (check_retval(&flag, "CVodeSetLinearSolver", 1)) { stop("Stopping cvodes, something went wrong in attaching SUNDenseMatrix and Linear Solver!"); }
 
-    if (check_retval((void *)yS, "N_VCloneVectorArray", 0)) { stop("Stopping cvodes, something went wrong in setting Sensitivity Array!"); }
-    for (int is=0;is<NP;is++) N_VConst(SUN_RCONST(0.0), yS[is]);
+  if (check_retval((void *)yS, "N_VCloneVectorArray", 0)) { stop("Stopping cvodes, something went wrong in setting Sensitivity Array!"); }
+  for (int is=0;is<NP;is++) N_VConst(SUN_RCONST(0.0), yS[is]);
 
-    /* Call CVodeSensInit1 to activate forward sensitivity computations
-     and allocate internal memory for COVEDS related to sensitivity
-     calculations. Computes the right-hand sides of the sensitivity
-     ODE, one at a time */
-    // (int) flag to set sensitivity solution method - see CVodeSensInit1
-    int ism = CV_STAGGERED;
-    if (SensType.compare("SIM") == 0) ism = CV_SIMULTANEOUS;
-    flag = CVodeSensInit1(cvode_mem, NP, ism, NULL, yS);
-    if(check_retval(&flag, "CVodeSensInit", 1)) { stop("Stopping cvodes, something went wrong in calculating Sensitivities!"); }
+  /* Call CVodeSensInit1 to activate forward sensitivity computations
+   and allocate internal memory for COVEDS related to sensitivity
+   calculations. Computes the right-hand sides of the sensitivity
+   ODE, one at a time */
+  // (int) flag to set sensitivity solution method - see CVodeSensInit1
+  int ism = CV_STAGGERED;
+  if (SensType.compare("SIM") == 0) ism = CV_SIMULTANEOUS;
+  flag = CVodeSensInit1(cvode_mem, NP, ism, NULL, yS);
+  if(check_retval(&flag, "CVodeSensInit", 1)) { stop("Stopping cvodes, something went wrong in calculating Sensitivities!"); }
 
-    /* Call CVodeSensEEtolerances to estimate tolerances for sensitivity
-     variables based on the rolerances supplied for states variables and
-     the scaling factor pbar */
-    flag = CVodeSensEEtolerances(cvode_mem);
-    if(check_retval(&flag, "CVodeSensEEtolerances", 1)) { stop("Stopping cvodes, something went wrong in estimating tolerances for sensitivities!"); }
+  /* Call CVodeSensEEtolerances to estimate tolerances for sensitivity
+   variables based on the rolerances supplied for states variables and
+   the scaling factor pbar */
+  flag = CVodeSensEEtolerances(cvode_mem);
+  if(check_retval(&flag, "CVodeSensEEtolerances", 1)) { stop("Stopping cvodes, something went wrong in estimating tolerances for sensitivities!"); }
 
-    /* Call CVodeSetSensParams to specify problem parameter information for
-     sensitivity calculations */
-    // struct rhs_func_sens *ptr = &my_rhs_function;        // struct UserData storing my data
-    // p = (my_rhs_function.params).begin();
-    // Rcout << (my_rhs_function.params).begin() << "\n";
-    // Rcout << &(ptr->params[0]);
-    flag = CVodeSetSensParams(cvode_mem, (my_rhs_function.params).begin(), Parameters.begin(), NULL);  // double *y = x.begin()
-    if (check_retval(&flag, "CVodeSetSensParams", 1)) { stop("Stopping cvodes, something went wrong in setting Sensitivity Parameters!"); }
+  /* Call CVodeSetSensParams to specify problem parameter information for
+   sensitivity calculations */
+  // struct rhs_func_sens *ptr = &my_rhs_function;        // struct UserData storing my data
+  // p = (my_rhs_function.params).begin();
+  // Rcout << (my_rhs_function.params).begin() << "\n";
+  // Rcout << &(ptr->params[0]);
+  flag = CVodeSetSensParams(cvode_mem, (my_rhs_function.params).begin(), Parameters.begin(), NULL);  // double *y = x.begin()
+  if (check_retval(&flag, "CVodeSetSensParams", 1)) { stop("Stopping cvodes, something went wrong in setting Sensitivity Parameters!"); }
 
-    // First row for initial conditions, First column is for time
-    int y_len_1 = y_len + 1;
-    NumericMatrix soln(Dimension(time_vec_len,y_len_1));
+  // First row for initial conditions, First column is for time
+  int y_len_1 = y_len + 1;
+  NumericMatrix soln(Dimension(time_vec_len,y_len_1));
 
-    // fill the first row of soln matrix with Initial Conditions
-    soln(0,0) = time_vector[0];   // get the first time value
-    for(int i = 0; i<y_len; i++){
-      soln(0,i+1) = IC[i];
+  // fill the first row of soln matrix with Initial Conditions
+  soln(0,0) = time_vector[0];   // get the first time value
+  for(int i = 0; i<y_len; i++){
+    soln(0,i+1) = IC[i];
+  }
+
+  NumericMatrix sens(Dimension(time_vec_len, (y_len * NP) + 1));
+  // Store the Sensitivity Results
+  // Sensitivity of each entitiy w.r.t. parameters is zero at initial time
+  sens(0,0) = time_vector[0];           // get the first time value
+  for(int i = 0; i<y_len; i++){
+    sens(0,i+1) = 0.0;
+  }
+
+  sunrealtype tout;  // For output times
+  sunrealtype *yS_ptr = NULL;
+  for(int iout = 0; iout < NOUT-1; iout++) {
+
+    // output times start from the index after initial time
+    tout = time_vector[iout+1];
+
+    flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
+    if (check_retval(&flag, "CVode", 1)) { stop("Stopping cvodes, something went wrong in solving the system using CVODE!"); break; } // Something went wrong in solving it!
+    if (flag == CV_SUCCESS) {
+
+      // store results in soln matrix
+      soln(iout+1, 0) = time;           // first column is for time
+      for (int i = 0; i<y_len; i++){
+        soln(iout+1, i+1) = y0_ptr[i];
+      }
     }
 
-    NumericMatrix sens(Dimension(time_vec_len, (y_len * NP) + 1));
-    // Store the Sensitivity Results
-    // Sensitivity of each entitiy w.r.t. parameters is zero at initial time
-    sens(0,0) = time_vector[0];           // get the first time value
-    for(int i = 0; i<y_len; i++){
-      sens(0,i+1) = 0.0;
-    }
+    flag = CVodeGetSens(cvode_mem, &time, yS);
+    if (check_retval(&flag, "CVodeGetSens", 1)) { stop("Stopping cvodes, something went wrong in calculating Sensitivities!"); break; }
 
-    sunrealtype tout;  // For output times
-    sunrealtype *yS_ptr = NULL;
-    for(int iout = 0; iout < NOUT-1; iout++) {
-
-      // output times start from the index after initial time
-      tout = time_vector[iout+1];
-
-      flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
-      if (check_retval(&flag, "CVode", 1)) { stop("Stopping cvodes, something went wrong in solving the system using CVODE!"); break; } // Something went wrong in solving it!
-      if (flag == CV_SUCCESS) {
-
-        // store results in soln matrix
-        soln(iout+1, 0) = time;           // first column is for time
-        for (int i = 0; i<y_len; i++){
-          soln(iout+1, i+1) = y0_ptr[i];
+    if (flag == CV_SUCCESS) {
+      for (int i = 0; i < NP; i++){
+        yS_ptr = N_VGetArrayPointer(yS[i]);   // sensitivities w.r.t. param i
+        for(int j = 0; j < y_len; j++){
+          // store results in soln matrix
+          sens(iout+1, 0) = time;           // first column is for time
+          sens(iout+1, y_len*i+j+1) = yS_ptr[j]; // sensitivities of y1 ... yJ w.r.t param i
         }
       }
-
-      flag = CVodeGetSens(cvode_mem, &time, yS);
-      if (check_retval(&flag, "CVodeGetSens", 1)) { stop("Stopping cvodes, something went wrong in calculating Sensitivities!"); break; }
-
-      if (flag == CV_SUCCESS) {
-        for (int i = 0; i < NP; i++){
-          yS_ptr = N_VGetArrayPointer(yS[i]);   // sensitivities w.r.t. param i
-          for(int j = 0; j < y_len; j++){
-            // store results in soln matrix
-            sens(iout+1, 0) = time;           // first column is for time
-            sens(iout+1, y_len*i+j+1) = yS_ptr[j]; // sensitivities of y1 ... yJ w.r.t param i
-          }
-        }
-      }
-
     }
 
-    N_VDestroy(y0);                          /* Free y vector */
-    N_VDestroyVectorArray(yS, NP);           /* Free yS vector */
-    // free(data);                           /* Free user data */
-    CVodeFree(&cvode_mem);                   /* Free CVODES memory */
-    SUNLinSolFree(LS);                       /* Free the linear solver memory */
-    SUNMatDestroy(SM);                       /* Free the matrix memory */
-    SUNContext_Free(&sunctx);
-
-    return sens;
-    break;
-
   }
 
-  default: {
-    stop("Incorrect input function type - input function can be an R or Rcpp function");
-  }
+  N_VDestroy(y0);                          /* Free y vector */
+  N_VDestroyVectorArray(yS, NP);           /* Free yS vector */
 
-  }
+  // free(data);                           /* Free user data */
+  CVodeFree(&cvode_mem);                   /* Free CVODES memory */
+  SUNLinSolFree(LS);                       /* Free the linear solver memory */
+  SUNMatDestroy(SM);                       /* Free the matrix memory */
+  SUNContext_Free(&sunctx);
+
+  return sens;
+
+
 
 }
+

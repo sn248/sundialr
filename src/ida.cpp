@@ -48,7 +48,6 @@ struct res_func{
   NumericVector params;
 };
 
-
 // function called by IDAInit if user inputs R function
 int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data){
 
@@ -56,7 +55,7 @@ int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* use
   int yy_len = NV_LENGTH_S(yy);
 
   // NumericVector analog of yy
-  NumericVector yy1(yy_len);                       // filled with zeros
+  NumericVector yy1(yy_len);                      // filled with zeros
   sunrealtype *yy_ptr = N_VGetArrayPointer(yy);
   for (int i = 0; i < yy_len; i++){
     yy1[i] = yy_ptr[i];                           // Ith(y,i+1);
@@ -67,12 +66,12 @@ int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* use
   NumericVector yp1(yp_len);                      // filled with zeros
   sunrealtype *yp_ptr = N_VGetArrayPointer(yp);
   for (int i = 0; i < yp_len; i++){
-    yp1[i] = yp_ptr[i];                          // Ith(y,i+1);
+    yp1[i] = yp_ptr[i];                           // Ith(y,i+1);
   }
 
   // NumericVector analog of rr
   int rr_len = NV_LENGTH_S(rr);
-  NumericVector rr1(rr_len);                     // filled with zeros
+  NumericVector rr1(rr_len);                      // filled with zeros
 
   if(!user_data){
     stop("Something went wrong, stopping!");
@@ -91,11 +90,11 @@ int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* use
       rr1 = res_fun(t, yy1, yp1, p_values);
     }
     else{
-      stop("Something went wrong, stopping!");
+      stop("Something went wrong in evaluating the residual function, stopping!");
     }
   }
   else {
-    stop("Something went wrong, stopping!");
+    stop("Something went wrong in accessing the residual function, stopping!");
   }
 
   // convert NumericVector rr1 to N_Vector rr
@@ -122,19 +121,18 @@ int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* use
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 //'@returns A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
 // [[Rcpp::export]]
-NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRes, SEXP input_function,
+NumericMatrix ida(NumericVector time_vector, NumericVector IC,
+                  NumericVector IRes, SEXP input_function,
                   NumericVector Parameters,
-                  double reltolerance = 0.0001, NumericVector abstolerance = 0.0001){
-
+                  double reltolerance = 0.0001,
+                  NumericVector abstolerance = 0.0001){
 
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
   SUNContext sunctx;
   SUNContext_Create(SUN_COMM_NULL, &sunctx);
 
-  if(y_len != IRes.length()){
-    stop("IC and IRes should be of same length");
-  }
+  if(y_len != IRes.length()){ stop("IC (Initial Conditions) and IRes (Residuals) should be of same length"); }
 
   int abstol_len = abstolerance.length();
   // absolute tolerance is either length == 1 or equal to length of IC
@@ -166,6 +164,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
       abstol_ptr[i] = abstolerance[i];
     }
   }
+
   //----------------------------------------------------------------------------
   // // Set the initial values of y -----------------------------------------------
   N_Vector yy0 = N_VNew_Serial(y_len, sunctx);          // declared as yy0 to be consistent with example C code
@@ -188,124 +187,110 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRe
   /* Call IDACreate and IDAInit to initialize IDA memory */
   ida_mem = IDACreate(sunctx);
 
-  if(check_retval((void *)ida_mem, "IDACreate", 0)) {
-    stop("Stopping IDA, something went wrong in allocating memory!");
-    }
+  if(check_retval((void *)ida_mem, "IDACreate", 0)) { stop("Stopping IDA, something went wrong in allocating memory!"); }
 
   // -- assign user input to the struct based on SEXP type of input_function
-  if(!input_function){
-    stop("Something is wrong with the input function, stopping!");
+  if(!input_function){ stop("Something is wrong with the input function, stopping!"); }
+
+  if(TYPEOF(input_function) != CLOSXP) { stop("Incorrect input function type - input function can be an R or Rcpp function"); }
+
+  struct res_func my_res_function = {input_function, Parameters};
+
+  // setting the user data in the rhs residual function
+  flag = IDASetUserData(ida_mem, (void*)&my_res_function);
+  if (check_retval(&flag, "CVodeSetUserData", 1)) { stop("Stopping IDA, something went wrong in setting user data!"); }
+
+  flag = IDAInit(ida_mem, res_function, T0, yy0, yp0);
+  if(check_retval(&flag, "IDAInit", 1)) { stop("Stopping, something went wrong in initializing IDA!"); };
+
+  /* Call IDASVtolerances to set tolerances */
+  flag = IDASVtolerances(ida_mem, reltol, abstol);
+  if(check_retval(&flag, "IDASVtolerances", 1)) { stop("Stopping, something went wrong in setting tolerances!"); };
+
+  /* Call IDARootInit to specify the root function grob with 2 components */
+  // retval = IDARootInit(mem, 2, grob);
+  // if (check_retval(&retval, "IDARootInit", 1)) return(1);
+
+  /* Create dense SUNMatrix for use in linear solves */
+  sunindextype y_len_M = y_len;
+  SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
+  if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping IDA, something went wrong in setting the dense matrix!"); }
+
+
+  // Create dense SUNLinearSolver object for use by IDA
+  SUNLinearSolver LS = SUNLinSol_Dense(yy0, SM, sunctx);
+  if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping IDA, something went wrong in setting the linear solver!"); }
+
+  /* Attach the matrix and linear solver */
+  flag = IDASetLinearSolver(ida_mem, LS, SM);
+  if(check_retval(&flag, "IDASetLinearSolver", 1))  { stop("Stopping IDA, something went wrong in setting the linear solver!"); }
+
+  // /* Set the user-supplied Jacobian routine */
+  // retval = IDASetJacFn(mem, jacrob);
+  // if(check_retval(&retval, "IDASetJacFn", 1)) return(1);
+
+  /* Create Newton SUNNonlinearSolver object. IDA uses a
+   * Newton SUNNonlinearSolver by default, so it is unecessary
+   * to create it and attach it. */
+  SUNNonlinearSolver NLS = SUNNonlinSol_Newton(yy0, sunctx);
+  if(check_retval((void *)NLS, "SUNNonlinSol_Newton", 0))  { stop("Stopping IDA, something went wrong in creating the Non-linear Solver in IDA!"); }
+
+  /* Attach the nonlinear solver */
+  flag = IDASetNonlinearSolver(ida_mem, NLS);
+  if(check_retval(&flag, "IDASetNonlinearSolver", 1)) { stop("Stopping IDA, something went wrong in attaching the Non-linear Solver in IDA!"); }
+
+  /* In loop, call IDASolve, print results, and test for error.
+   Break out of loop when NOUT preset output times have been reached. */
+
+  sunrealtype tout;  // For output times
+
+  int y_len_1 = y_len + 1; // remove later
+  NumericMatrix soln(Dimension(time_vec_len,y_len_1));  // remove later
+
+
+  // nothing to do with Events - single initialization of the ODE system
+  // First row for initial conditions, First column is for time
+  // int y_len_1 = y_len + 1;
+  // NumericMatrix soln(Dimension(time_vec_len,y_len_1));
+
+  // fill the first row of soln matrix with Initial Conditions
+  soln(0,0) = time_vector[0];   // get the first time value
+  for(int i = 0; i<y_len; i++){
+    soln(0,i+1) = IC[i];
   }
 
-  switch(TYPEOF(input_function)){
+  for(int iout = 0; iout < NOUT-1; iout++) {
 
-  case CLOSXP:{
+    // output times start from the index after initial time
+    tout = time_vector[iout+1];
 
-    struct res_func my_res_function = {input_function, Parameters};
+    flag = IDASolve(ida_mem, tout, &time, yy0, yp0, IDA_NORMAL);
 
-    // setting the user data in the rhs residual function
-    flag = IDASetUserData(ida_mem, (void*)&my_res_function);
-    if (check_retval(&flag, "CVodeSetUserData", 1)) { stop("Stopping IDA, something went wrong in setting user data!"); }
+    if (check_retval(&flag, "CVode", 1)) {
+      stop("Stopping IDA, something went wrong in solving the system of DAEs!"); break;
+    } // Something went wrong in solving it!
 
-    flag = IDAInit(ida_mem, res_function, T0, yy0, yp0);
-    if(check_retval(&flag, "IDAInit", 1)) { stop("Stopping, something went wrong in initializing IDA!"); };
+    if (flag == IDA_SUCCESS) {
 
-    /* Call IDASVtolerances to set tolerances */
-    flag = IDASVtolerances(ida_mem, reltol, abstol);
-    if(check_retval(&flag, "IDASVtolerances", 1)) { stop("Stopping, something went wrong in setting tolerances!"); };
-
-    /* Call IDARootInit to specify the root function grob with 2 components */
-    // retval = IDARootInit(mem, 2, grob);
-    // if (check_retval(&retval, "IDARootInit", 1)) return(1);
-
-    /* Create dense SUNMatrix for use in linear solves */
-    sunindextype y_len_M = y_len;
-    SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
-    if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping IDA, something went wrong in setting the dense matrix!"); }
-
-
-    // Create dense SUNLinearSolver object for use by IDA
-    SUNLinearSolver LS = SUNLinSol_Dense(yy0, SM, sunctx);
-    if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping IDA, something went wrong in setting the linear solver!"); }
-
-    /* Attach the matrix and linear solver */
-    flag = IDASetLinearSolver(ida_mem, LS, SM);
-    if(check_retval(&flag, "IDASetLinearSolver", 1)) return(1);
-
-    // /* Set the user-supplied Jacobian routine */
-    // retval = IDASetJacFn(mem, jacrob);
-    // if(check_retval(&retval, "IDASetJacFn", 1)) return(1);
-
-    /* Create Newton SUNNonlinearSolver object. IDA uses a
-     * Newton SUNNonlinearSolver by default, so it is unecessary
-     * to create it and attach it. */
-    SUNNonlinearSolver NLS = SUNNonlinSol_Newton(yy0, sunctx);
-    if(check_retval((void *)NLS, "SUNNonlinSol_Newton", 0)) return(1);
-
-    /* Attach the nonlinear solver */
-    flag = IDASetNonlinearSolver(ida_mem, NLS);
-    if(check_retval(&flag, "IDASetNonlinearSolver", 1)) return(1);
-
-    /* In loop, call IDASolve, print results, and test for error.
-     Break out of loop when NOUT preset output times have been reached. */
-
-    sunrealtype tout;  // For output times
-
-    int y_len_1 = y_len + 1; // remove later
-    NumericMatrix soln(Dimension(time_vec_len,y_len_1));  // remove later
-
-
-    // nothing to do with Events - single initialization of the ODE system
-    // First row for initial conditions, First column is for time
-    // int y_len_1 = y_len + 1;
-    // NumericMatrix soln(Dimension(time_vec_len,y_len_1));
-
-    // fill the first row of soln matrix with Initial Conditions
-    soln(0,0) = time_vector[0];   // get the first time value
-    for(int i = 0; i<y_len; i++){
-      soln(0,i+1) = IC[i];
-    }
-
-    for(int iout = 0; iout < NOUT-1; iout++) {
-
-      // output times start from the index after initial time
-      tout = time_vector[iout+1];
-
-      flag = IDASolve(ida_mem, tout, &time, yy0, yp0, IDA_NORMAL);
-
-      if (check_retval(&flag, "CVode", 1)) {
-        stop("Stopping IDA, something went wrong in solving the system of DAEs!"); break;
-        } // Something went wrong in solving it!
-
-      if (flag == IDA_SUCCESS) {
-
-        // store results in soln matrix
-        soln(iout+1, 0) = time;           // first column is for time
-        for (int i = 0; i<y_len; i++){
-          soln(iout+1, i+1) = yy0_ptr[i];
-        }
+      // store results in soln matrix
+      soln(iout+1, 0) = time;           // first column is for time
+      for (int i = 0; i<y_len; i++){
+        soln(iout+1, i+1) = yy0_ptr[i];
       }
     }
-
-    /* Free memory */
-    IDAFree(&ida_mem);
-    SUNNonlinSolFree(NLS);
-    SUNLinSolFree(LS);
-    SUNMatDestroy(SM);
-    N_VDestroy(abstol);
-    N_VDestroy(yy0);
-    N_VDestroy(yp0);
-    SUNContext_Free(&sunctx);
-
-    return soln;
-    break;
-
   }
 
-  default: {
-    stop("Incorrect input function type - input function can be an R or Rcpp function");
-  }
+  /* Free memory */
+  IDAFree(&ida_mem);
+  SUNNonlinSolFree(NLS);
+  SUNLinSolFree(LS);
+  SUNMatDestroy(SM);
+  N_VDestroy(abstol);
+  N_VDestroy(yy0);
+  N_VDestroy(yp0);
+  SUNContext_Free(&sunctx);
 
- }
+  return soln;
 
 }
+

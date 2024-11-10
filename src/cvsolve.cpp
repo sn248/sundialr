@@ -126,7 +126,21 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
 
   if(Events.isNotNull()){
 
-    DataFrame Events_DF(Events);
+    Rcpp::DataFrame Events_DF(Events);
+
+    // Check that the first column index is less or equal to the no. of states
+    Rcpp::NumericVector EventsDF_state_col = Events_DF[0];
+    if(Rcpp::max(EventsDF_state_col) > y_len) {
+      stop("The state intex in first column of Events dataframe cannot be higher than number of states");
+    }
+
+    // Check that the highest event time is less than or equal to the last time point
+    Rcpp::NumericVector EventsDF_time_col = Events_DF[1];
+    if(Rcpp::max(EventsDF_time_col) > Rcpp::max(time_vector)) {
+      stop("Event cannot happen after the last time point. See the third column of the Events dataframe.");
+    }
+
+    // Sort the Event DataFrame to combine discontinuities and sampling data points
     TCOMB = sorted_times(Events_DF, time_vector, NSTATES);  // get the sorted  Combined time matrix
     // Decrease State index by 1 to convert R state index to internal cpp index, all sampling times get state index of -1
     for(int i = 0; i < TCOMB.nrow(); i++){
