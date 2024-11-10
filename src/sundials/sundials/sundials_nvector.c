@@ -284,8 +284,8 @@ N_Vector N_VClone(N_Vector w)
 {
   N_Vector result = NULL;
   SUNDIALS_MARK_FUNCTION_BEGIN(getSUNProfiler(w));
-  result         = w->ops->nvclone(w);
-  result->sunctx = w->sunctx;
+  result = w->ops->nvclone(w);
+  if (result) { result->sunctx = w->sunctx; }
   SUNDIALS_MARK_FUNCTION_END(getSUNProfiler(w));
   return result;
 }
@@ -294,8 +294,8 @@ N_Vector N_VCloneEmpty(N_Vector w)
 {
   N_Vector result;
   SUNDIALS_MARK_FUNCTION_BEGIN(getSUNProfiler(w));
-  result         = w->ops->nvcloneempty(w);
-  result->sunctx = w->sunctx;
+  result = w->ops->nvcloneempty(w);
+  if (result) { result->sunctx = w->sunctx; }
   SUNDIALS_MARK_FUNCTION_END(getSUNProfiler(w));
   return result;
 }
@@ -335,7 +335,11 @@ void N_VSpace(N_Vector v, sunindextype* lrw, sunindextype* liw)
 
 sunrealtype* N_VGetArrayPointer(N_Vector v)
 {
-  return ((sunrealtype*)v->ops->nvgetarraypointer(v));
+  if (v->ops->nvgetarraypointer)
+  {
+    return (sunrealtype*)v->ops->nvgetarraypointer(v);
+  }
+  else { return NULL; }
 }
 
 sunrealtype* N_VGetDeviceArrayPointer(N_Vector v)
@@ -349,7 +353,7 @@ sunrealtype* N_VGetDeviceArrayPointer(N_Vector v)
 
 void N_VSetArrayPointer(sunrealtype* v_data, N_Vector v)
 {
-  v->ops->nvsetarraypointer(v_data, v);
+  if (v->ops->nvsetarraypointer) { v->ops->nvsetarraypointer(v_data, v); }
   return;
 }
 

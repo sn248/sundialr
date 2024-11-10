@@ -28,7 +28,7 @@ cvodes(
 
 \item{abstolerance}{Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)}
 
-\item{SensType}{Sensitivity Type - allowed values are Staggered (default)", "STG" (for Staggered) or "SIM" (for Simultaneous)}
+\item{SensType}{Sensitivity Type - allowed values are "STG" (for Staggered, default) or "SIM" (for Simultaneous)}
 
 \item{ErrCon}{Error Control - allowed values are TRUE or FALSE (default)}
 }
