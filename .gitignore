@@ -9,3 +9,4 @@ src/*.dll
 *.o
 *.a
 inst/doc
+docs
