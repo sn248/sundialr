@@ -95,7 +95,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
       abstol_ptr[i] = abstolerance[0];
     }
   }
-  else if (abstol_len == y_len){
+  if (abstol_len == y_len){
     for (int i = 0; i<abstol_len; i++){
       abstol_ptr[i] = abstolerance[i];
     }

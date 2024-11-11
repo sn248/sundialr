@@ -115,7 +115,6 @@ int rhs_function_sens(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data)
 // EwtSet Function. Computes the error weights at the current solution.
 int ewt(N_Vector y, N_Vector w, void *user_data)
 {
-  int i;
   sunrealtype yy, ww, rtol;
   NumericVector atol;
 
@@ -124,14 +123,17 @@ int ewt(N_Vector y, N_Vector w, void *user_data)
   rtol = my_rhs_fun->rtol;
   atol = my_rhs_fun->atol;
 
-  for (i=1; i<=3; i++) {
+  sunindextype y_len = N_VGetLength_Serial(y);
+
+  for (int i=1; i<=y_len; i++) {
+
     yy = NV_Ith_S(y,i-1);
     ww = rtol * SUNRabs(yy) + atol[i-1];
     if (ww <= 0.0) return (-1);
     NV_Ith_S(w,i-1) = 1.0/ww;
-  }
 
-  // Rcout << Ith(w,1) << "\n";
+    // Rcpp::Rcout << NV_Ith_S(w,i-1) << "\n";
+  }
 
   return(0);
 }
@@ -170,34 +172,30 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   // Relative Tolerance
   sunrealtype reltol = reltolerance;
 
-  int abstol_len = abstolerance.length();
   // absolute tolerance is either length == 1 or equal to length of IC
-  // If abstol is not equal to 1 and abstol is not equal to IC, then stop
+  // If abstol is not equal to 1 or abstol is not equal to IC, then stop
+  int abstol_len = abstolerance.length();
   if(abstol_len != 1 && abstol_len != y_len){
      stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
+  // Create an abstolerance vector equal to IC length
+  Rcpp::NumericVector abstol(y_len);
+  if(abstol_len == 1){
+    for (int i = 0; i<y_len; i++){
+      abstol[i] = abstolerance[0];
+    }
+  }
+  if (abstol_len == y_len){
+    for (int i = 0; i<y_len; i++){
+      abstol[i] = abstolerance[i];
+    }
+  }
 
-  // Set the vector absolute tolerance -----------------------------------------
-  // abstol must be same length as IC, if it not 1 or not unequal to y_len
+  // Set context for sundials
   SUNContext sunctx;
   SUNContext_Create(SUN_COMM_NULL, &sunctx);
-  N_Vector abstol = N_VNew_Serial(y_len, sunctx);
-  sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
-  if(abstol_len == 1){
 
-    // if a scalar is provided - use it to make a vector with same values
-    for (int i = 0; i<y_len; i++){
-      abstol_ptr[i] = abstolerance[0];
-    }
-  }
-  else if (abstol_len == y_len){
-    for (int i = 0; i<y_len; i++){
-      abstol_ptr[i] = abstolerance[i];
-    }
-  }
-
-  //----------------------------------------------------------------------------
-  // // Set the initial conditions-------------------------------------------------
+  // Set the initial conditions-------------------------------------------------
   N_Vector y0 = N_VNew_Serial(y_len, sunctx);
   sunrealtype *y0_ptr = N_VGetArrayPointer(y0);
   for (int i = 0; i<y_len; i++){
@@ -247,7 +245,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   struct rhs_func_sens my_rhs_function = {input_function,
                                           Parameters,
                                           // as<std::vector<double> >(Parameters),
-                                          reltolerance, abstolerance};
+                                          reltol, abstol};
 
   // setting the user_data in rhs function
   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
