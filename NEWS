@@ -1,6 +1,11 @@
+sundialr v0.1.5
+================
+Bug fixes:
+* Fixed the bug in assigning absolute tolerances
+
 sundialr v0.1.4.1
 ================
-Bug fixex:
+Bug fixes:
 * Fixed the linking problem due to multiple defined sybmols
 
 sundialr v0.1.4

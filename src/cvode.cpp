@@ -76,7 +76,13 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC,
    // Relative tolerance
    sunrealtype reltol = reltolerance;
 
+   // Set Sundials context
+   SUNContext sunctx;
+   SUNContext_Create(SUN_COMM_NULL, &sunctx);
+
    // Absolute tolerance
+   // Set the vector absolute tolerance -----------------------------------------
+   // abstol must be same length as IC
    int abstol_len = abstolerance.length();
 
    // absolute tolerance is either length == 1 or equal to length of IC
@@ -85,10 +91,6 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC,
      stop("Absolute tolerance must be a scalar or a vector of same length as IC\n");
    }
 
-   // Set the vector absolute tolerance -----------------------------------------
-   // abstol must be same length as IC
-   SUNContext sunctx;
-   SUNContext_Create(SUN_COMM_NULL, &sunctx);
    N_Vector abstol = N_VNew_Serial(y_len, sunctx);
    sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
    if(abstol_len == 1){
@@ -97,7 +99,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC,
        abstol_ptr[i] = abstolerance[0];
      }
    }
-   else if (abstol_len == y_len){
+   if (abstol_len == y_len){
      for (int i = 0; i<y_len; i++){
        abstol_ptr[i] = abstolerance[i];
      }
