@@ -1,0 +1,395 @@
+[
+    {
+        "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/check_retval.h",
+        "file_last_write": 1732481178.0,
+        "definitions": [],
+        "hidden": false
+    },
+    {
+        "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+        "file_last_write": 1732481178.0,
+        "definitions": [
+            {
+                "usr": "c:cvode.h@1038@macro@CV_ADAMS",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_ADAMS",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 35,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1057@macro@CV_BDF",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_BDF",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 36,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1089@macro@CV_NORMAL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_NORMAL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 39,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1111@macro@CV_ONE_STEP",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_ONE_STEP",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 40,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1155@macro@CV_SUCCESS",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_SUCCESS",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 44,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1181@macro@CV_TSTOP_RETURN",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_TSTOP_RETURN",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 45,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1207@macro@CV_ROOT_RETURN",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_ROOT_RETURN",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 46,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1234@macro@CV_WARNING",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_WARNING",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 48,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1257@macro@CV_TOO_MUCH_WORK",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_TOO_MUCH_WORK",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 50,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1285@macro@CV_TOO_MUCH_ACC",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_TOO_MUCH_ACC",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 51,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1313@macro@CV_ERR_FAILURE",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_ERR_FAILURE",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 52,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1341@macro@CV_CONV_FAILURE",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_CONV_FAILURE",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 53,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1370@macro@CV_LINIT_FAIL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_LINIT_FAIL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 55,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1402@macro@CV_LSETUP_FAIL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_LSETUP_FAIL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 56,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1434@macro@CV_LSOLVE_FAIL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_LSOLVE_FAIL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 57,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1466@macro@CV_RHSFUNC_FAIL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_RHSFUNC_FAIL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 58,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1498@macro@CV_FIRST_RHSFUNC_ERR",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_FIRST_RHSFUNC_ERR",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 59,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1530@macro@CV_REPTD_RHSFUNC_ERR",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_REPTD_RHSFUNC_ERR",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 60,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1563@macro@CV_UNREC_RHSFUNC_ERR",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_UNREC_RHSFUNC_ERR",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 61,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1596@macro@CV_RTFUNC_FAIL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_RTFUNC_FAIL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 62,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1629@macro@CV_NLS_INIT_FAIL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_NLS_INIT_FAIL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 63,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1662@macro@CV_NLS_SETUP_FAIL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_NLS_SETUP_FAIL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 64,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1695@macro@CV_CONSTR_FAIL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_CONSTR_FAIL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 65,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1728@macro@CV_NLS_FAIL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_NLS_FAIL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 66,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1762@macro@CV_MEM_FAIL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_MEM_FAIL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 68,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1790@macro@CV_MEM_NULL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_MEM_NULL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 69,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1818@macro@CV_ILL_INPUT",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_ILL_INPUT",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 70,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1846@macro@CV_NO_MALLOC",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_NO_MALLOC",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 71,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1874@macro@CV_BAD_K",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_BAD_K",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 72,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1902@macro@CV_BAD_T",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_BAD_T",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 73,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1930@macro@CV_BAD_DKY",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_BAD_DKY",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 74,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1958@macro@CV_TOO_CLOSE",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_TOO_CLOSE",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 75,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@1986@macro@CV_VECTOROP_ERR",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_VECTOROP_ERR",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 76,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@2015@macro@CV_PROJ_MEM_NULL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_PROJ_MEM_NULL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 78,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@2049@macro@CV_PROJFUNC_FAIL",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_PROJFUNC_FAIL",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 79,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@2083@macro@CV_REPTD_PROJFUNC_ERR",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_REPTD_PROJFUNC_ERR",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 80,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@2118@macro@CV_CONTEXT_ERR",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_CONTEXT_ERR",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 82,
+                "column": 9,
+                "hidden": false
+            },
+            {
+                "usr": "c:cvode.h@2146@macro@CV_UNRECOGNIZED_ERR",
+                "kind": 9,
+                "parent_name": "",
+                "name": "CV_UNRECOGNIZED_ERR",
+                "file": "/home/nayaks16/Documents/git_repos/sn248/sundialr/inst/include/cvode/cvode.h",
+                "line": 84,
+                "column": 9,
+                "hidden": false
+            }
+        ],
+        "hidden": false
+    }
+]
