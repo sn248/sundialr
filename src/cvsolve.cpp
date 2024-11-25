@@ -39,7 +39,7 @@
 
 #include <check_retval.h>
 #include <rhs_func.h>
-#include "sortTimes.cpp"
+#include "./utils/sortTimes.cpp"
 
 using namespace Rcpp;
 using namespace arma;
