@@ -27,14 +27,12 @@ if test x"${need_to_build}" != x"no"; then
 	AC_PATH_PROG(have_cmake, cmake, no)
 	if test x"${have_cmake}" == x"no"; then
 		. src/scripts/cmake_config.sh
-		if test -z "${CMAKE_BIN}"; then
+		##if test -z "${CMAKE_BIN}"; then
 			## also error to end configure there
-			AC_MSG_ERROR([Could not find 'cmake'])
-		fi
+		##	AC_MSG_ERROR([Could not find 'cmake'])
+		##fi
 	fi
 
-	machine=`"${R_HOME}/bin/Rscript" -e 'cat(Sys.info()[["machine"]]'`
-	AC_MSG_RESULT([using sundialr via local cmake build on ${machine} ])
 	tools/cmake_call.sh
 
 	sundialr_include=""
