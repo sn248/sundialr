@@ -1,19 +1,15 @@
-##  sundialr configure.ac
-##  sundialr -- R interface to SUNDIALS
-## require at least autoconf 2.70
-
 AC_PREREQ([2.70])
 AC_INIT([sundialr],[0.1.5])
 
 ## Set R_HOME, respecting an environment variable if set
 : ${R_HOME=$(R RHOME)}
 if test -z "${R_HOME}"; then
-  AC_MSG_ERROR([Could not determine R_HOME.])
+	AC_MSG_ERROR([Could not determine R_HOME.])
 fi
 
 CXX=`"${R_HOME}/bin/R" CMD config CXX`
 if test -z "${CXX}"; then
-  AC_MSG_ERROR([No C++ compiler available])
+	AC_MSG_ERROR([no C++ compiler available])
 fi
 
 CXXFLAGS=`"${R_HOME}/bin/R" CMD config CXXFLAGS`
@@ -26,24 +22,23 @@ AC_PROG_CXX
 
 ## Default to build from source
 need_to_build="yes"
-## So do we need to build
+## So we do need to build
 if test x"${need_to_build}" != x"no"; then
-  AC_PATH_PROG(have_cmake, cmake, no)
-    if test x"${have_cmake}" == x"no"; then
-      . src/scripts/cmake_config.sh
-      if test -z "${CMAKE_BIN}"; then
-        ## also error to end configure here
-          AC_MSG_ERROR([Could not find 'cmake'.])
-      fi
-    fi
+	AC_PATH_PROG(have_cmake, cmake, no)
+	if test x"${have_cmake}" == x"no"; then
+		. src/scripts/cmake_config.sh
+		if test -z "${CMAKE_BIN}"; then
+			## also error to end configure there
+			AC_MSG_ERROR([Could not find 'cmake'])
+		fi
+	fi
 
-    ## 'uname -m' on M1 give x86_64 which is ... not helping
-    machine=`"${R_HOME}/bin/Rscript" -e 'cat(Sys.info()[["machine"]])'`
-    AC_MSG_RESULT([using sundialr via local cmake build on ${machine} ])
-    tools/cmake_call.sh
+	machine=`"${R_HOME}/bin/Rscript" -e 'cat(Sys.info()[["machine"]]'`
+	AC_MSG_RESULT([using sundialr via local cmake build on ${machine} ])
+	tools/cmake_call.sh
 
-    sundialr_include=""
-    sundialr_libs="-lsundials_idas -lsundials_cvodes -lsundials_nvecserial -lsundials_sunlinsoldense -lsundials_sunmatrixdense -lsundials_core -lm"
+	sundialr_include=""
+	sundialr_libs="-lsundials_idas -lsundials_cvodes -lsundials_nvecserial -lsundials_sunlinsoldense -lsundials_sunmatrixdense -lsundials_core -lm"
 fi
 
 ## Now use all the values
@@ -51,3 +46,4 @@ AC_SUBST([SUNDIALR_CPPFLAGS],["$sundialr_include"])
 AC_SUBST([SUNDIALR_LIBS],["$sundialr_libs"])
 AC_CONFIG_FILES([src/Makevars])
 AC_OUTPUT
+
