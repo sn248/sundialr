@@ -22,10 +22,10 @@ if test x"${need_to_build}" != x"no"; then
 	AC_PATH_PROG(have_cmake, cmake, no)
 	if test x"${have_cmake}" == x"no"; then
 		. src/scripts/cmake_config.sh
-		if test -z "${CMAKE_BIN}"; then
+		##if test -z "${CMAKE_BIN}"; then
 			## also error to end configure here
 			#AC_MSG_ERROR([Could not find 'cmake'.])
-		fi
+		##fi
 	fi
 	tools/cmake_call.sh
 	sundialr_include=""
