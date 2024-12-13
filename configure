@@ -2039,22 +2039,18 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-
 ## Set R_HOME, respecting an environment variable if set
 : ${R_HOME=$(R RHOME)}
 if test -z "${R_HOME}"; then
 	as_fn_error $? "Could not determine R_HOME." "$LINENO" 5
 fi
-
 CXX=`"${R_HOME}/bin/R" CMD config CXX`
 if test -z "${CXX}"; then
-	as_fn_error $? "no C++ compiler available" "$LINENO" 5
+	as_fn_error $? "No C++ compiler available" "$LINENO" 5
 fi
-
 CXXFLAGS=`"${R_HOME}/bin/R" CMD config CXXFLAGS`
 CPPFLAGS=`"${R_HOME}/bin/R" CMD config CPPFLAGS`
 CXX11FLAGS=`"${R_HOME}/bin/R" CMD config CXX11FLAGS`
-
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3191,10 +3187,9 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-
 ## Default to build from source
 need_to_build="yes"
-## So we do need to build
+## So do we need to build
 if test x"${need_to_build}" != x"no"; then
 	# Extract the first word of "cmake", so it can be a program name with args.
 set dummy cmake; ac_word=$2
@@ -3244,18 +3239,15 @@ fi
 
 	if test x"${have_cmake}" == x"no"; then
 		. src/scripts/cmake_config.sh
-		##if test -z "${CMAKE_BIN}"; then
-			## also error to end configure there
-		##	AC_MSG_ERROR([Could not find 'cmake'])
-		##fi
+		if test -z "${CMAKE_BIN}"; then
+			## also error to end configure here
+			#AC_MSG_ERROR([Could not find 'cmake'.])
+		fi
 	fi
-
 	tools/cmake_call.sh
-
 	sundialr_include=""
 	sundialr_libs="-lsundials_idas -lsundials_cvodes -lsundials_nvecserial -lsundials_sunlinsoldense -lsundials_sunmatrixdense -lsundials_core -lm"
 fi
-
 ## Now use all the values
 SUNDIALR_CPPFLAGS="$sundialr_include"
 
@@ -4412,6 +4404,5 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: unrecognized options: $ac_unrecognized_opts" >&5
 printf "%s\n" "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
-
 
 
