@@ -1,9 +1,0 @@
-PKG_CPPFLAGS = -I../inst/include/ -I/ucrt64/include/ -DHAVE_CONFIG_H -DARMA_USE_CXX11
-
-###PKG_LDFLAGS = -L/ucrt64/lib/ ###-L/mingw64/lib/ -L/mingw32/lib/ -L/clang64/lib/
-LIBS=-L/ -L/clang64/lib/ -L/mingw64/lib/ -L/mingw32/lib/ -L/ucrt64/lib/
-
-PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -L/ucrt64/lib/  -lsundials_idas -lsundials_cvodes -lsundials_nvecserial -lsundials_sunlinsoldense -lsundials_sunmatrixdense -lsundials_core -lm
-
-### -L/mingw64/lib/ -L/mingw32/lib/ -L/clang64/lib/
-###-I../inst/include/ -I../inst/ -I/mingw32/include/ -I/clang64/include/ -I/ming64/include/ -I/ucrt64/include/
