@@ -1,8 +1,8 @@
 ##  sundialr configure.ac
 ##  sundialr -- R interface to SUNDIALS
-# require at least autoconf 2.69
+## require at least autoconf 2.70
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.70])
 AC_INIT([sundialr],[0.1.5])
 
 ## Set R_HOME, respecting an environment variable if set
