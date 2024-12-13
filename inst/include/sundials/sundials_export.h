@@ -22,7 +22,7 @@
 #endif
 
 #ifndef SUNDIALS_DEPRECATED
-#  define SUNDIALS_DEPRECATED __declspec(deprecated)
+#  define SUNDIALS_DEPRECATED __attribute__ ((__deprecated__))
 #endif
 
 #ifndef SUNDIALS_DEPRECATED_EXPORT
@@ -33,7 +33,6 @@
 #  define SUNDIALS_DEPRECATED_NO_EXPORT SUNDIALS_NO_EXPORT SUNDIALS_DEPRECATED
 #endif
 
-/* NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if) */
 #if 0 /* DEFINE_NO_DEPRECATED */
 #  ifndef SUNDIALS_NO_DEPRECATED
 #    define SUNDIALS_NO_DEPRECATED
