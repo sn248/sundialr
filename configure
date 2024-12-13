@@ -2043,16 +2043,18 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 ## Set R_HOME, respecting an environment variable if set
 : ${R_HOME=$(R RHOME)}
 if test -z "${R_HOME}"; then
-   as_fn_error $? "Could not determine R_HOME." "$LINENO" 5
+  as_fn_error $? "Could not determine R_HOME." "$LINENO" 5
 fi
 
 CXX=`"${R_HOME}/bin/R" CMD config CXX`
 if test -z "${CXX}"; then
-    as_fn_error $? "No C++ compiler available" "$LINENO" 5
+  as_fn_error $? "No C++ compiler available" "$LINENO" 5
 fi
+
 CXXFLAGS=`"${R_HOME}/bin/R" CMD config CXXFLAGS`
 CPPFLAGS=`"${R_HOME}/bin/R" CMD config CPPFLAGS`
 CXX11FLAGS=`"${R_HOME}/bin/R" CMD config CXX11FLAGS`
+
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3192,10 +3194,9 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 ## Default to build from source
 need_to_build="yes"
-
 ## So do we need to build
 if test x"${need_to_build}" != x"no"; then
-    # Extract the first word of "cmake", so it can be a program name with args.
+  # Extract the first word of "cmake", so it can be a program name with args.
 set dummy cmake; ac_word=$2
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 printf %s "checking for $ac_word... " >&6; }
@@ -3242,20 +3243,19 @@ fi
 
 
     if test x"${have_cmake}" == x"no"; then
-       . src/scripts/cmake_config.sh
-       if test -z "${CMAKE_BIN}"; then
-          ## also error to end configure here
+      . src/scripts/cmake_config.sh
+      if test -z "${CMAKE_BIN}"; then
+        ## also error to end configure here
           as_fn_error $? "Could not find 'cmake'." "$LINENO" 5
-       fi
+      fi
     fi
+
     ## 'uname -m' on M1 give x86_64 which is ... not helping
     machine=`"${R_HOME}/bin/Rscript" -e 'cat(Sys.info()["machine"])'`
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: using sundialr via local cmake build on ${machine} " >&5
 printf "%s\n" "using sundialr via local cmake build on ${machine} " >&6; }
     tools/cmake_call.sh
 
-    ## cmake_call.sh installs into sundialr/lib, headers are copied
-    ## sundialr_include="../inst/*.a"
     sundialr_include=""
     sundialr_libs="-lsundials_idas -lsundials_cvodes -lsundials_nvecserial -lsundials_sunlinsoldense -lsundials_sunmatrixdense -lsundials_core -lm"
 fi
