@@ -1,7 +1,7 @@
 Package: sundialr
 Type: Package
 Title: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers
-Version: 0.1.5
+Version: 0.1.6
 Authors@R: c(
     person("Satyaprakash", "Nayak", "", "satyaprakash.nayak@gmail.com", c("aut", "cre","cph"), comment = c(ORCID = "0000-0001-7225-1317")),
     person("Lawrence Livermore National Security", role =  c("cph")),

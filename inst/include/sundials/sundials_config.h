@@ -44,10 +44,10 @@
  * -----------------------------------------------------------------*/
 
 
-#define SUNDIALS_VERSION "7.1.1"
+#define SUNDIALS_VERSION "7.2.0"
 #define SUNDIALS_VERSION_MAJOR 7
-#define SUNDIALS_VERSION_MINOR 1
-#define SUNDIALS_VERSION_PATCH 1
+#define SUNDIALS_VERSION_MINOR 2
+#define SUNDIALS_VERSION_PATCH 0
 #define SUNDIALS_VERSION_LABEL ""
 #define SUNDIALS_GIT_VERSION ""
 
@@ -119,8 +119,8 @@
 
 #define SUN_BUILD_TYPE "Release"
 
-#define SUN_JOB_ID "20241214113940"
-#define SUN_JOB_START_TIME "20241214113940"
+#define SUN_JOB_ID "20241214164049"
+#define SUN_JOB_START_TIME "20241214164049"
 
 #define SUN_TPL_LIST ""
 #define SUN_TPL_LIST_SIZE ""
@@ -144,6 +144,9 @@
 /* HYPRE */
 /* #undef SUNDIALS_HYPRE_ENABLED */
 #define SUN_HYPRE_VERSION ""
+#define SUN_HYPRE_VERSION_MAJOR 
+#define SUN_HYPRE_VERSION_MINOR 
+#define SUN_HYPRE_VERSION_PATCH 
 
 /* KLU */
 /* #undef SUNDIALS_KLU_ENABLED */
@@ -239,7 +242,7 @@
 /* #undef SUNDIALS_ONEMKL_USE_GETRS_LOOP */
 
 /* SUPERLUMT threading type */
-#define SUNDIALS_SUPERLUMT_THREAD_TYPE ""
+#define SUNDIALS_SUPERLUMT_THREAD_TYPE "PTHREAD"
 
 /* Trilinos with MPI is available, then
  *    #define SUNDIALS_TRILINOS_HAVE_MPI
