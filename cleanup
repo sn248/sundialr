@@ -1,0 +1,9 @@
+#! /bin/sh
+
+rm -fr src/*.o src/*.so autom4te.cache config.log config.status inst/lib/*.a inst/*.a
+rm -fr src/sundials
+rm -fr inst/lib
+rm -f configure~
+rm -f Makevars
+rm -f config.log
+rm -f config.status
