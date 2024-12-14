@@ -2,7 +2,8 @@
 
 <!-- badges: start -->
 
-[![CRAN](http://www.r-pkg.org/badges/version/sundialr)](https://cran.r-project.org/package=sundialr) [![R-CMD-check](https://github.com/sn248/sundialr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sn248/sundialr/actions/workflows/R-CMD-check.yaml)
+[![CRAN](https://www.r-pkg.org/badges/version/sundialr)](https://cran.r-project.org/package=sundialr) 
+[![R-CMD-check](https://github.com/sn248/sundialr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sn248/sundialr/actions/workflows/R-CMD-check.yaml)
 
 <!-- badges: end -->
 
