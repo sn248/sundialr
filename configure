@@ -3191,7 +3191,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 need_to_build="yes"
 ## So do we need to build
 if test x"${need_to_build}" != x"no"; then
-	# Extract the first word of "cmake", so it can be a program name with args.
+      	# Extract the first word of "cmake", so it can be a program name with args.
 set dummy cmake; ac_word=$2
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 printf %s "checking for $ac_word... " >&6; }
@@ -3239,14 +3239,10 @@ fi
 
 	if test x"${have_cmake}" == x"no"; then
 		. src/scripts/cmake_config.sh
-		##if test -z "${CMAKE_BIN}"; then
-			## also error to end configure here
-			#AC_MSG_ERROR([Could not find 'cmake'.])
-		##fi
 	fi
-	tools/cmake_call.sh
-	sundialr_include=""
-	sundialr_libs="-lsundials_idas -lsundials_cvodes -lsundials_nvecserial -lsundials_sunlinsoldense -lsundials_sunmatrixdense -lsundials_core -lm"
+  tools/cmake_call.sh
+  sundialr_include=""
+  sundialr_libs="-lsundials_idas -lsundials_cvodes -lsundials_nvecserial -lsundials_sunlinsoldense -lsundials_sunmatrixdense -lsundials_core -lm"
 fi
 ## Now use all the values
 SUNDIALR_CPPFLAGS="$sundialr_include"
