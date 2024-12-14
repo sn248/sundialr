@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">sundialr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,20 +62,35 @@
 </h2>
 <p><code>sundialr</code> is a wrapper around a few of the solvers in the <code>SUNDIALS</code> ODE solving C library produced by the Lawrence Livermore National Laboratory and Southern Methodist University. More information about <code>SUNDIALS</code> can be found <a href="https://computing.llnl.gov/projects/sundials" class="external-link">here</a>. <code>SUNDIALS</code> is one of the most popular and well-respected ODE solving libraries available and <code>sundialr</code> provides a way to interface some of the <code>SUNDIALS</code> solvers in <code>R</code>.</p>
 <p>Currently <code>sundialr</code> provides an interface to the <code>serial</code> versions of <code>cvode</code> (for solving ODES), <code>cvodes</code> (for solving ODE with sensitivity equations) and <code>ida</code> (for solving differential-algebraic equations) using the Linear Solver (dense version).</p>
-<p>A convenience function <code>cvsolve</code> is provided which allows solving a system of equations with multiple discontinutities in solution. An application of such a system of equations would be to simulate the effect of multiple bolus doses of a drug in clinical pharmacokinetics. See the vignette for more details.</p>
+<p>A convenience function <code>cvsolve</code> is provided which allows solving a system of equations with multiple discontinuities in solution. An application of such a system of equations would be to simulate the effect of multiple bolus doses of a drug in clinical pharmacokinetics. See the vignette for more details.</p>
 </div>
 <div class="section level2">
 <h2 id="whats-new">What’s new?<a class="anchor" aria-label="anchor" href="#whats-new"></a>
 </h2>
+</div>
+<div class="section level2">
+<h2 id="comments-for-version-016">Comments for version 0.1.6<a class="anchor" aria-label="anchor" href="#comments-for-version-016"></a>
+</h2>
+<ul>
+<li>Updated the upstream <code>SUNDIALS</code> to version 7.2.0</li>
+<li>Complete overall of the build system to use <code>cmake</code> based installation</li>
+</ul>
 <div class="section level3">
-<h3 id="release-015">Release 0.1.5<a class="anchor" aria-label="anchor" href="#release-015"></a>
+<h3 id="comments-for-version-015">Comments for version 0.1.5<a class="anchor" aria-label="anchor" href="#comments-for-version-015"></a>
 </h3>
 <ul>
 <li>Updated the upstream <code>SUNDIALS</code> to version 7.1.1.</li>
 <li>Fixed the <code>pkgdown</code> website</li>
-<li>There was a bug is assigning absolute tolerance in equations. Fixed now.</li>
+<li>There was a bug in assigning absolute tolerance in equations. Fixed now.</li>
 </ul>
 </div>
+</div>
+<div class="section level2">
+<h2 id="comments-for-version-01412">Comments for version 0.1.4.1.2<a class="anchor" aria-label="anchor" href="#comments-for-version-01412"></a>
+</h2>
+<ul>
+<li>Fixed the issue with forwarded email address.</li>
+</ul>
 <div class="section level3">
 <h3 id="release-0141">Release 0.1.4.1<a class="anchor" aria-label="anchor" href="#release-0141"></a>
 </h3>
