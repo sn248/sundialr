@@ -22,6 +22,6 @@ Suggests:
     knitr,
     rmarkdown,
     testthat
-SystemRequirements: GNU make
+SystemRequirements: cmake
 NeedsCompilation: yes
 VignetteBuilder: knitr

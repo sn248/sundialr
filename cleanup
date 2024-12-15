@@ -1,9 +1,10 @@
 #! /bin/sh
 
-rm -fr src/*.o src/*.so autom4te.cache config.log config.status inst/lib/*.a inst/*.a
+rm -fr src/*.o src/*.so autom4te.cache config.log config.status inst/lib/*.a inst/lib64/*.a
 rm -fr src/sundials
 rm -fr src/Makevars
-rm -fr inst/lib
+rm -fr inst/lib/cmake
+rm -fr inst/lib64/cmake
 rm -f configure~
 rm -f Makevars
 rm -f config.log
