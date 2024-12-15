@@ -2,6 +2,7 @@
 
 rm -fr src/*.o src/*.so autom4te.cache config.log config.status inst/lib/*.a inst/*.a
 rm -fr src/sundials
+rm -fr src/Makevars
 rm -fr inst/lib
 rm -f configure~
 rm -f Makevars
