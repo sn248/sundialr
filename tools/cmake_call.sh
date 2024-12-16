@@ -37,7 +37,16 @@ ${CMAKE_BIN} \
     -D EXAMPLES_INSTALL=OFF \
   ${CMAKE_ADD_AR} ${CMAKE_ADD_RANLIB} ../sundials-src
 make -j${NCORES}
+if [ $? -ne 0 ]; then
+    echo "Make failed!"
+    exit 1
+fi
+
 make install
+if [ $? -ne 0 ]; then
+    echo "Make install failed!"
+    exit 1
+fi
 cd ..
 ##mv sundials/lib* sundials/lib
 mv sundials-src/src/* ./sundials
