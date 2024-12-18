@@ -36,7 +36,7 @@ ${CMAKE_BIN} \
     -D EXAMPLES_ENABLE_CXX=OFF \
     -D EXAMPLES_INSTALL=OFF \
   ${CMAKE_ADD_AR} ${CMAKE_ADD_RANLIB} ../sundials-src
-make -j${NCORES}
+make #-j${NCORES}
 if [ $? -ne 0 ]; then
     echo "Make failed!"
     exit 1

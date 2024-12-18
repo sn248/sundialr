@@ -1,0 +1,6 @@
+CXX=clang++
+##CXX_STD = CXX11
+PKG_CPPFLAGS= -I../inst/include/ -I./inst/ -DHAVE_CONFIG_H -DARMA_USE_CXX11 -I./sundials/sundials 
+PKG_LDFLAGS = ../inst/lib
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -L$(PKG_LDFLAGS) -L../inst/lib -lsundials_idas -lsundials_cvodes -lsundials_nvecserial -lsundials_sunlinsoldense -lsundials_sunmatrixdense -lsundials_core -lm
+LIBS=-L./ -L../inst/lib
