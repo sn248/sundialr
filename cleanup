@@ -8,4 +8,4 @@ rm -f configure~
 rm -f Makevars
 rm -f config.log
 rm -f config.status
-rm -f src/sundials-*.tar.gz
+#rm -f src/sundials-*.tar.gz

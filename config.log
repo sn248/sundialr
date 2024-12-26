@@ -79,27 +79,27 @@ g++: fatal error: no input files
 compilation terminated.
 configure:2208: $? = 1
 configure:2228: checking whether the C++ compiler works
-configure:2250: g++ -std=gnu++17 -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3  -Wl,-Bsymbolic-functions -flto=auto -ffat-lto-objects -Wl,-z,relro conftest.cpp  >&5
+configure:2250: g++ -std=gnu++17 -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3 -UNDEBUG -Wall -pedantic -g -O0 -fdiagnostics-color=always  -Wl,-Bsymbolic-functions -flto=auto -ffat-lto-objects -Wl,-z,relro conftest.cpp  >&5
 configure:2254: $? = 0
 configure:2304: result: yes
 configure:2307: checking for C++ compiler default output file name
 configure:2309: result: a.out
 configure:2315: checking for suffix of executables
-configure:2322: g++ -std=gnu++17 -o conftest -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3  -Wl,-Bsymbolic-functions -flto=auto -ffat-lto-objects -Wl,-z,relro conftest.cpp  >&5
+configure:2322: g++ -std=gnu++17 -o conftest -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3 -UNDEBUG -Wall -pedantic -g -O0 -fdiagnostics-color=always  -Wl,-Bsymbolic-functions -flto=auto -ffat-lto-objects -Wl,-z,relro conftest.cpp  >&5
 configure:2326: $? = 0
 configure:2349: result: 
 configure:2371: checking whether we are cross compiling
-configure:2379: g++ -std=gnu++17 -o conftest -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3  -Wl,-Bsymbolic-functions -flto=auto -ffat-lto-objects -Wl,-z,relro conftest.cpp  >&5
+configure:2379: g++ -std=gnu++17 -o conftest -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3 -UNDEBUG -Wall -pedantic -g -O0 -fdiagnostics-color=always  -Wl,-Bsymbolic-functions -flto=auto -ffat-lto-objects -Wl,-z,relro conftest.cpp  >&5
 configure:2383: $? = 0
 configure:2390: ./conftest
 configure:2394: $? = 0
 configure:2409: result: no
 configure:2414: checking for suffix of object files
-configure:2437: g++ -std=gnu++17 -c -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3  conftest.cpp >&5
+configure:2437: g++ -std=gnu++17 -c -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3 -UNDEBUG -Wall -pedantic -g -O0 -fdiagnostics-color=always  conftest.cpp >&5
 configure:2441: $? = 0
 configure:2463: result: o
 configure:2467: checking whether the compiler supports GNU C++
-configure:2487: g++ -std=gnu++17 -c -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3  conftest.cpp >&5
+configure:2487: g++ -std=gnu++17 -c -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3 -UNDEBUG -Wall -pedantic -g -O0 -fdiagnostics-color=always  conftest.cpp >&5
 configure:2487: $? = 0
 configure:2497: result: yes
 configure:2508: checking whether g++ -std=gnu++17 accepts -g
@@ -107,16 +107,49 @@ configure:2529: g++ -std=gnu++17 -c -g  conftest.cpp >&5
 configure:2529: $? = 0
 configure:2573: result: yes
 configure:2593: checking for g++ -std=gnu++17 option to enable C++11 features
-configure:2608: g++ -std=gnu++17  -c -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3  conftest.cpp >&5
-conftest.cpp: In function 'int main(int, char**)':
-conftest.cpp:175:25: warning: empty parentheses were disambiguated as a function declaration [-Wvexing-parse]
-  175 |   cxx11test::delegate d2();
-      |                         ^~
-conftest.cpp:175:25: note: remove parentheses to default-initialize a variable
-  175 |   cxx11test::delegate d2();
-      |                         ^~
-      |                         --
-conftest.cpp:175:25: note: or replace parentheses with braces to value-initialize a variable
+configure:2608: g++ -std=gnu++17  -c -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3 -UNDEBUG -Wall -pedantic -g -O0 -fdiagnostics-color=always  conftest.cpp >&5
+[01m[Kconftest.cpp:[m[K In function '[01m[Kint[01;32m[K main[m[K(int, char**)[m[K':
+[01m[Kconftest.cpp:132:8:[m[K [01;35m[Kwarning: [m[Kunused variable '[01m[Ka1[m[K' [[01;35m[K-Wunused-variable[m[K]
+  132 |   auto [01;35m[Ka1[m[K = 6538;
+      |        [01;35m[K^~[m[K
+[01m[Kconftest.cpp:139:16:[m[K [01;35m[Kwarning: [m[Kunused variable '[01m[Ka4[m[K' [[01;35m[K-Wunused-variable[m[K]
+  139 |   decltype(a2) [01;35m[Ka4[m[K = 34895.034;
+      |                [01;35m[K^~[m[K
+[01m[Kconftest.cpp:143:9:[m[K [01;35m[Kwarning: [m[Kunused variable '[01m[Ksa[m[K' [[01;35m[K-Wunused-variable[m[K]
+  143 |   short [01;35m[Ksa[m[K[cxx11test::get_val()] = { 0 };
+      |         [01;35m[K^~[m[K
+[01m[Kconftest.cpp:147:23:[m[K [01;35m[Kwarning: [m[Kunused variable '[01m[Kil[m[K' [[01;35m[K-Wunused-variable[m[K]
+  147 |   cxx11test::testinit [01;35m[Kil[m[K = { 4323, 435234.23544 };
+      |                       [01;35m[K^~[m[K
+[01m[Kconftest.cpp:168:8:[m[K [01;35m[Kwarning: [m[Kunused variable '[01m[Ka[m[K' [[01;35m[K-Wunused-variable[m[K]
+  168 |   auto [01;35m[Ka[m[K = sum(1);
+      |        [01;35m[K^[m[K
+[01m[Kconftest.cpp:169:8:[m[K [01;35m[Kwarning: [m[Kunused variable '[01m[Kb[m[K' [[01;35m[K-Wunused-variable[m[K]
+  169 |   auto [01;35m[Kb[m[K = sum(1, 2);
+      |        [01;35m[K^[m[K
+[01m[Kconftest.cpp:170:8:[m[K [01;35m[Kwarning: [m[Kunused variable '[01m[Kc[m[K' [[01;35m[K-Wunused-variable[m[K]
+  170 |   auto [01;35m[Kc[m[K = sum(1.0, 2.0, 3.0);
+      |        [01;35m[K^[m[K
+[01m[Kconftest.cpp:175:25:[m[K [01;35m[Kwarning: [m[Kempty parentheses were disambiguated as a function declaration [[01;35m[K-Wvexing-parse[m[K]
+  175 |   cxx11test::delegate d2[01;35m[K()[m[K;
+      |                         [01;35m[K^~[m[K
+[01m[Kconftest.cpp:175:25:[m[K [01;36m[Knote: [m[Kremove parentheses to default-initialize a variable
+  175 |   cxx11test::delegate d2[01;36m[K()[m[K;
+      |                         [01;36m[K^~[m[K
+      |                         [31m[K--[m[K
+[01m[Kconftest.cpp:175:25:[m[K [01;36m[Knote: [m[Kor replace parentheses with braces to value-initialize a variable
+[01m[Kconftest.cpp:184:9:[m[K [01;35m[Kwarning: [m[Kunused variable '[01m[Kc[m[K' [[01;35m[K-Wunused-variable[m[K]
+  184 |   char *[01;35m[Kc[m[K = nullptr;
+      |         [01;35m[K^[m[K
+[01m[Kconftest.cpp:192:15:[m[K [01;35m[Kwarning: [m[Kunused variable '[01m[Kutf8[m[K' [[01;35m[K-Wunused-variable[m[K]
+  192 |   char const *[01;35m[Kutf8[m[K = u8"UTF-8 string \u2500";
+      |               [01;35m[K^~~~[m[K
+[01m[Kconftest.cpp:193:19:[m[K [01;35m[Kwarning: [m[Kunused variable '[01m[Kutf16[m[K' [[01;35m[K-Wunused-variable[m[K]
+  193 |   char16_t const *[01;35m[Kutf16[m[K = u"UTF-8 string \u2500";
+      |                   [01;35m[K^~~~~[m[K
+[01m[Kconftest.cpp:194:19:[m[K [01;35m[Kwarning: [m[Kunused variable '[01m[Kutf32[m[K' [[01;35m[K-Wunused-variable[m[K]
+  194 |   char32_t const *[01;35m[Kutf32[m[K = U"UTF-32 string \u2500";
+      |                   [01;35m[K^~~~~[m[K
 configure:2608: $? = 0
 configure:2626: result: none needed
 configure:2696: checking how to run the C++ preprocessor
@@ -228,7 +261,7 @@ ac_cv_env_CPPFLAGS_value=
 ac_cv_env_CXXCPP_set=
 ac_cv_env_CXXCPP_value=
 ac_cv_env_CXXFLAGS_set=set
-ac_cv_env_CXXFLAGS_value='-g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3'
+ac_cv_env_CXXFLAGS_value='-g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3 -UNDEBUG -Wall -pedantic -g -O0 -fdiagnostics-color=always'
 ac_cv_env_CXX_set=set
 ac_cv_env_CXX_value='g++ -std=gnu++17'
 ac_cv_env_LDFLAGS_set=set
@@ -255,7 +288,7 @@ ac_cv_prog_cxx_stdcxx=
 CPPFLAGS=''
 CXX='g++ -std=gnu++17'
 CXXCPP='g++ -std=gnu++17 -E'
-CXXFLAGS='-g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3'
+CXXFLAGS='-g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3 -UNDEBUG -Wall -pedantic -g -O0 -fdiagnostics-color=always'
 DEFS='-DPACKAGE_NAME=\"sundialr\" -DPACKAGE_TARNAME=\"sundialr\" -DPACKAGE_VERSION=\"0.1.5\" -DPACKAGE_STRING=\"sundialr\ 0.1.5\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\"'
 ECHO_C=''
 ECHO_N='-n'
