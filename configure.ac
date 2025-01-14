@@ -19,9 +19,9 @@ AC_PROG_CXX
 ## Default to build from source
 need_to_build="yes"
 ## So do we need to build
-if test x"${need_to_build}" != x"no"; then
+  if [[ "${need_to_build}" != "no" ]]; then
       	AC_PATH_PROG(have_cmake, cmake, no)
-	if test x"${have_cmake}" == x"no"; then
+	if [[ "${have_cmake}" == "no" ]]; then
 		. src/scripts/cmake_config.sh
 	fi
   tools/cmake_call.sh
