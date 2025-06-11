@@ -107,7 +107,7 @@
 /* Build metadata */
 #define SUN_C_COMPILER "GNU"
 #define SUN_C_COMPILER_VERSION "13.3.0"
-#define SUN_C_COMPILER_FLAGS "-fpic -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3 -UNDEBUG -Wall -pedantic -g -O0 -fdiagnostics-color=always"
+#define SUN_C_COMPILER_FLAGS "-fpic -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-qkOIYD/r-base-4.5.0=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-qkOIYD/r-base-4.5.0=/usr/src/r-base-4.5.0-3.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3"
 
 #define SUN_CXX_COMPILER ""
 #define SUN_CXX_COMPILER_VERSION ""
@@ -119,8 +119,8 @@
 
 #define SUN_BUILD_TYPE "Release"
 
-#define SUN_JOB_ID "20241226183038"
-#define SUN_JOB_START_TIME "20241226183038"
+#define SUN_JOB_ID "20250611065635"
+#define SUN_JOB_START_TIME "20250611065635"
 
 #define SUN_TPL_LIST ""
 #define SUN_TPL_LIST_SIZE ""
