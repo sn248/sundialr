@@ -53,7 +53,7 @@ $(SOURCES_SUNNONLINSOL_FIXEDPOINT) $(SOURCES_SUNNONLINSOL_NEWTON) $(SOURCES_KINS
 
 OBJECTS_SUNDIALS_ALL = $(SOURCES_SUNDIALS_ALL:.c=.o)
 
-all: $(SHLIB)
+all: $(SHLIB) clean
 
 $(SHLIB): ../inst/libsundials_all.a
 
@@ -78,3 +78,8 @@ clean:
 	rm -f *.dll
 	rm -f *.exe
 	(cd ../inst;rm -f *.a)
+	(cd ../inst/lib;rm -f *.a)
+	(cd ../inst;rm -f libsundials_all.a)
+	@rm -rf ../inst/libsundials_all.a || true
+
+.PHONY: clean
