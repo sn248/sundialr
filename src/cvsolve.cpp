@@ -39,6 +39,8 @@
 
 #include <check_retval.h>
 #include <rhs_func.h>
+// CRAN fix: replace SUNDIALS' default abort()-based error handler with Rf_error()
+#include <sundials_err_handler.h>
 #include "./utils/sortTimes.cpp"
 
 using namespace Rcpp;
@@ -77,6 +79,8 @@ using namespace arma;
 
    SUNContext sunctx;
    SUNContext_Create(SUN_COMM_NULL, &sunctx);
+   // CRAN fix: redirect SUNDIALS fatal errors to R instead of calling abort()
+   SUNContext_PushErrHandler(sunctx, sundials_r_err_handler, NULL);
 
    int flag;
    sunrealtype reltol = reltolerance;

@@ -21,7 +21,8 @@ need_to_build="yes"
 ## So do we need to build
 if test x"${need_to_build}" != x"no"; then
       	AC_PATH_PROG(have_cmake, cmake, no)
-	if test x"${have_cmake}" == x"no"; then
+	# CRAN fix: use POSIX-compliant single = in test; == is a bashism
+	if test x"${have_cmake}" = x"no"; then
 		. src/scripts/cmake_config.sh
 	fi
   tools/cmake_call.sh

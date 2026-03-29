@@ -39,6 +39,8 @@
 #include <sundials/sundials_math.h>           /* defs. of SUNRabs, SUNRexp, etc.      */
 
 #include <check_retval.h>
+// CRAN fix: replace SUNDIALS' default abort()-based error handler with Rf_error()
+#include <sundials_err_handler.h>
 
 using namespace Rcpp;
 
@@ -140,6 +142,9 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
   if(abstol_len != 1 && abstol_len != y_len){
     stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
+
+  // CRAN fix: redirect SUNDIALS fatal errors to R instead of calling abort()
+  SUNContext_PushErrHandler(sunctx, sundials_r_err_handler, NULL);
 
   int flag;
   sunrealtype reltol = reltolerance;
