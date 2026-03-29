@@ -38,6 +38,8 @@
 
 #include <check_retval.h>
 #include <rhs_func.h>
+// CRAN fix: replace SUNDIALS' default abort()-based error handler with Rf_error()
+#include <sundials_err_handler.h>
 
 #define Ith(v,i)    NV_Ith_S(v,i-1)  /* i-th vector component i=1..NEQ */
 
@@ -79,6 +81,8 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC,
    // Set Sundials context
    SUNContext sunctx;
    SUNContext_Create(SUN_COMM_NULL, &sunctx);
+   // CRAN fix: redirect SUNDIALS fatal errors to R instead of calling abort()
+   SUNContext_PushErrHandler(sunctx, sundials_r_err_handler, NULL);
 
    // Absolute tolerance
    // Set the vector absolute tolerance -----------------------------------------
