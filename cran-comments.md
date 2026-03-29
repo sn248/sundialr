@@ -1,3 +1,12 @@
+## Comments for version 0.1.6
++ Updated the upstream `SUNDIALS` to version 7.2.0
++ Complete overall of the build system to use `cmake` based installation
+
+## Comments for 0.1.5
++ Updated the upstream `SUNDIALS` to version 7.1.1. 
++ Fixed the `pkgdown` website
++ There was a bug in assigning absolute tolerance in equations. Fixed now.
+
 ## Comments for version 0.1.4.1.2
 * Fixed the issue with forwarded email address.
 
@@ -19,10 +28,3 @@ There were no ERRORs or WARNINGs or NOTEs.
 ## Downstream dependencies
 There are currently one downstream dependency for this package (CausalKinetiX) 
 which should be unaffected.
-
-
-
-  
-  
-
- 

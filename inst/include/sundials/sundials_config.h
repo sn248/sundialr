@@ -44,9 +44,9 @@
  * -----------------------------------------------------------------*/
 
 
-#define SUNDIALS_VERSION "7.1.1"
+#define SUNDIALS_VERSION "7.2.1"
 #define SUNDIALS_VERSION_MAJOR 7
-#define SUNDIALS_VERSION_MINOR 1
+#define SUNDIALS_VERSION_MINOR 2
 #define SUNDIALS_VERSION_PATCH 1
 #define SUNDIALS_VERSION_LABEL ""
 #define SUNDIALS_GIT_VERSION ""
@@ -107,7 +107,7 @@
 /* Build metadata */
 #define SUN_C_COMPILER "GNU"
 #define SUN_C_COMPILER_VERSION "13.3.0"
-#define SUN_C_COMPILER_FLAGS "-fpic -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-4sITk6/r-base-4.4.2=/usr/src/r-base-4.4.2-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3 -UNDEBUG -Wall -pedantic -g -O0 -fdiagnostics-color=always"
+#define SUN_C_COMPILER_FLAGS "-fpic -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-qkOIYD/r-base-4.5.0=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-qkOIYD/r-base-4.5.0=/usr/src/r-base-4.5.0-3.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3"
 
 #define SUN_CXX_COMPILER ""
 #define SUN_CXX_COMPILER_VERSION ""
@@ -119,8 +119,8 @@
 
 #define SUN_BUILD_TYPE "Release"
 
-#define SUN_JOB_ID "20241213212243"
-#define SUN_JOB_START_TIME "20241213212243"
+#define SUN_JOB_ID "20250611065635"
+#define SUN_JOB_START_TIME "20250611065635"
 
 #define SUN_TPL_LIST ""
 #define SUN_TPL_LIST_SIZE ""
@@ -144,6 +144,9 @@
 /* HYPRE */
 /* #undef SUNDIALS_HYPRE_ENABLED */
 #define SUN_HYPRE_VERSION ""
+#define SUN_HYPRE_VERSION_MAJOR 
+#define SUN_HYPRE_VERSION_MINOR 
+#define SUN_HYPRE_VERSION_PATCH 
 
 /* KLU */
 /* #undef SUNDIALS_KLU_ENABLED */
@@ -239,7 +242,7 @@
 /* #undef SUNDIALS_ONEMKL_USE_GETRS_LOOP */
 
 /* SUPERLUMT threading type */
-#define SUNDIALS_SUPERLUMT_THREAD_TYPE ""
+#define SUNDIALS_SUPERLUMT_THREAD_TYPE "PTHREAD"
 
 /* Trilinos with MPI is available, then
  *    #define SUNDIALS_TRILINOS_HAVE_MPI
