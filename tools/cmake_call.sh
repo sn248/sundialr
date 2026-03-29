@@ -94,9 +94,10 @@ ${CMAKE_BIN} \
     -D CMAKE_BUILD_TYPE=Release \
     -D BUILD_STATIC_LIBS=ON \
     -D BUILD_SHARED_LIBS=OFF \
+    -D CMAKE_INSTALL_LIBDIR=lib \
     -D CMAKE_INSTALL_PREFIX=../../inst \
     -D BUILD_TESTING=OFF \
-    -D CMAKE_C_STANDARD=11 \
+    -D CMAKE_C_STANDARD=99 \
     -D EXAMPLES_ENABLE_C=OFF \
     -D EXAMPLES_ENABLE_CXX=OFF \
     -D EXAMPLES_INSTALL=OFF \
@@ -106,7 +107,13 @@ ${CMAKE_BIN} \
   # which CRAN flags as non-compliant (compiled code must not write to stdout/stderr)
 make -j${NCORES}
 make install
+if [ $? -ne 0 ]; then
+    echo "Make install failed!"
+    exit 1
+fi
 cd ..
 ##mv sundials/lib* sundials/lib
 mv sundials-src/src/* ./sundials
 rm -fr sundials-src sundials-build
+
+

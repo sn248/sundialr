@@ -2,7 +2,8 @@
 
 <!-- badges: start -->
 
-[![CRAN](http://www.r-pkg.org/badges/version/sundialr)](https://cran.r-project.org/package=sundialr) [![R-CMD-check](https://github.com/sn248/sundialr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sn248/sundialr/actions/workflows/R-CMD-check.yaml)
+[![CRAN](https://www.r-pkg.org/badges/version/sundialr)](https://cran.r-project.org/package=sundialr) 
+[![R-CMD-check](https://github.com/sn248/sundialr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sn248/sundialr/actions/workflows/R-CMD-check.yaml)
 
 <!-- badges: end -->
 
@@ -16,16 +17,23 @@ information about `SUNDIALS` can be found [here](https://computing.llnl.gov/proj
 Currently `sundialr` provides an interface to the `serial` versions of `cvode` (for solving ODES), `cvodes` (for solving ODE with sensitivity equations) and `ida` (for solving differential-algebraic equations) using the Linear Solver (dense version).
 
 A convenience function `cvsolve` is provided which allows solving a system of equations with
-multiple discontinutities in solution. An application of such a system of equations would be 
+multiple discontinuities in solution. An application of such a system of equations would be 
 to simulate the effect of multiple bolus doses of a drug in clinical pharmacokinetics. See the 
 vignette for more details.
 
 ## What's new?
 
-### Release 0.1.5
+## Comments for version 0.1.6
++ Updated the upstream `SUNDIALS` to version 7.2.0
++ Complete overall of the build system to use `cmake` based installation
+
+### Comments for version 0.1.5
 + Updated the upstream `SUNDIALS` to version 7.1.1. 
 + Fixed the `pkgdown` website
-+ There was a bug is assigning absolute tolerance in equations. Fixed now.
++ There was a bug in assigning absolute tolerance in equations. Fixed now.
+
+## Comments for version 0.1.4.1.2
+* Fixed the issue with forwarded email address.
 
 ### Release 0.1.4.1
 + Fixed the linking bug due to multiple defined symbols. No other change.

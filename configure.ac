@@ -28,6 +28,7 @@ if test x"${need_to_build}" != x"no"; then
   tools/cmake_call.sh
   sundialr_include=""
   sundialr_libs="-lsundials_idas -lsundials_cvodes -lsundials_nvecserial -lsundials_sunlinsoldense -lsundials_sunmatrixdense -lsundials_core -lm"
+  ## tools/remove_static_libs.sh
 fi
 ## Now use all the values
 AC_SUBST([SUNDIALR_CPPFLAGS],["$sundialr_include"])
