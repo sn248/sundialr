@@ -5,7 +5,8 @@ rm -fr src/sundials
 rm -fr src/Makevars
 rm -fr inst/lib/cmake
 rm -f configure~
-rm -f Makevars
+# CRAN fix: remove generated src/Makevars so it is not included in the tarball
+rm -f src/Makevars
 rm -f config.log
 rm -f config.status
 #rm -f src/sundials-*.tar.gz
