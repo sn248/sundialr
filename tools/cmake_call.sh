@@ -52,10 +52,15 @@ sed -i 's|    fprintf(stderr, "\[FATAL LOGGER ERROR\].*|    /* CRAN: fprintf(std
 
 # sundials_futils.c: SUNDIALSFileOpen maps "stdout"/"stderr" names to FILE* handles.
 # Remove those branches; callers passing those names will get NULL (no output).
-sed -i 's|    if (!strcmp(filename, "stdout")) { fp = stdout; }|    /* CRAN: stdout mapping removed */|' \
+# Delete the stdout and stderr if/else-if lines, then strip the leading "else "
+# from the remaining branch so no dangling else is left.
+sed -i '/    if (!strcmp(filename, "stdout")) { fp = stdout; }/d' \
     sundials-src/src/sundials/sundials_futils.c
 
-sed -i 's|    else if (!strcmp(filename, "stderr")) { fp = stderr; }|    /* CRAN: stderr mapping removed */|' \
+sed -i '/    else if (!strcmp(filename, "stderr")) { fp = stderr; }/d' \
+    sundials-src/src/sundials/sundials_futils.c
+
+sed -i 's|    else { fp = fopen(filename, mode); }|    fp = fopen(filename, mode); /* CRAN: stdout\/stderr mappings removed */|' \
     sundials-src/src/sundials/sundials_futils.c
 
 # SUNDIALSFileClose guards fclose with fp != stdout and fp != stderr comparisons.

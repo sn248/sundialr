@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsundials_nvecserial.a CMakeFiles/sundials_nvecserial_obj_static.dir/nvector_serial.c.o
+/usr/bin/ranlib libsundials_nvecserial.a

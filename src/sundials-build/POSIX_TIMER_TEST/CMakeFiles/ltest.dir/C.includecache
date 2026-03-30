@@ -1,0 +1,14 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/quantilogy/Documents/GitHub/sn248/sundialr/src/sundials-build/POSIX_TIMER_TEST/ltest.c
+time.h
+-
+unistd.h
+-
+

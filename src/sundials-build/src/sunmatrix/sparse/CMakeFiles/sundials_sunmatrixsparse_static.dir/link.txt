@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsundials_sunmatrixsparse.a CMakeFiles/sundials_sunmatrixsparse_obj_static.dir/sunmatrix_sparse.c.o
+/usr/bin/ranlib libsundials_sunmatrixsparse.a

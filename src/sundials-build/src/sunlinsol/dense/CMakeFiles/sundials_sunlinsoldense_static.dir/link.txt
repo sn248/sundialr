@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsundials_sunlinsoldense.a CMakeFiles/sundials_sunlinsoldense_obj_static.dir/sunlinsol_dense.c.o
+/usr/bin/ranlib libsundials_sunlinsoldense.a

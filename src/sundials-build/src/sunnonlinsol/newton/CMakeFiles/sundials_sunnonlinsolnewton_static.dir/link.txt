@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsundials_sunnonlinsolnewton.a CMakeFiles/sundials_sunnonlinsolnewton_obj_static.dir/sunnonlinsol_newton.c.o
+/usr/bin/ranlib libsundials_sunnonlinsolnewton.a
