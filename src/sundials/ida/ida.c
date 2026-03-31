@@ -86,8 +86,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sundials/sundials_math.h>
-#include <sunnonlinsol/sunnonlinsol_newton.h>
 
 #include <ida/ida.h>
 #include <sundials/priv/sundials_errors_impl.h>
@@ -3754,8 +3752,6 @@ static int IDARcheck3(IDAMem IDA_mem, sunrealtype tout, int itask)
                        IDA_mem->ida_yp);
   return (RTFOUND);
 }
-
-#define DIFFERENT_SIGN(a, b) (((a) < 0 && (b) > 0) || ((a) > 0 && (b) < 0))
 
 /*
  * IDARootfind

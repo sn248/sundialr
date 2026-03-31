@@ -143,9 +143,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sundials/sundials_math.h>
-#include <sundials/sundials_nvector_senswrapper.h>
-#include <sunnonlinsol/sunnonlinsol_newton.h>
 
 #include <idas/idas.h>
 #include <sundials/priv/sundials_errors_impl.h>
@@ -6384,23 +6381,6 @@ static int IDANls(IDAMem IDA_mem)
       IDA_mem->ida_ss  = HUNDRED;
       IDA_mem->ida_ssS = HUNDRED;
     }
-
-    /* Return with error if |h| == hmin */
-    if (SUNRabs(IDA_mem->ida_hh) <= IDA_mem->ida_hmin * ONEPSM)
-    {
-      return (IDA_CONSTR_FAIL);
-    }
-
-    /* Constraints correction is too large, reduce h by computing rr = h'/h */
-    N_VLinearSum(ONE, IDA_mem->ida_phi[0], -ONE, IDA_mem->ida_yy, tmp);
-    N_VProd(mm, tmp, tmp);
-    IDA_mem->ida_eta = PT9 * N_VMinQuotient(IDA_mem->ida_phi[0], tmp);
-    IDA_mem->ida_eta = SUNMAX(IDA_mem->ida_eta, PT1);
-    IDA_mem->ida_eta = SUNMAX(IDA_mem->ida_eta,
-                              IDA_mem->ida_hmin / SUNRabs(IDA_mem->ida_hh));
-
-    /* Reattempt step with new step size */
-    return (IDA_CONSTR_RECVR);
   }
 
   /* initial guess for the correction to the predictor */
@@ -8225,8 +8205,6 @@ static int IDARcheck3(IDAMem IDA_mem, sunrealtype tout, int itask)
                        IDA_mem->ida_yp);
   return (RTFOUND);
 }
-
-#define DIFFERENT_SIGN(a, b) (((a) < 0 && (b) > 0) || ((a) > 0 && (b) < 0))
 
 /*
  * IDARootfind

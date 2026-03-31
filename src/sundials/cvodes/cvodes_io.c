@@ -2726,9 +2726,6 @@ int CVodePrintAllStats(void* cvode_mem, FILE* outfile, SUNOutputFormat fmt)
 int CVodeGetUserData(void* cvode_mem, void** user_data)
 {
   CVodeMem cv_mem;
-  CVLsMem cvls_mem;
-  CVodeProjMem cvproj_mem;
-  int is;
 
   if (cvode_mem == NULL)
   {

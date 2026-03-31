@@ -192,8 +192,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sundials/sundials_types.h>
-#include <sunnonlinsol/sunnonlinsol_newton.h>
 
 #include <cvodes/cvodes.h>
 #include <sundials/priv/sundials_errors_impl.h>
@@ -322,20 +320,6 @@ static sunbooleantype cvCheckNvector(N_Vector tmpl);
 /* Initial setup */
 
 static int cvInitialSetup(CVodeMem cv_mem, sunrealtype tout);
-
-/* Memory allocation/deallocation */
-
-static sunbooleantype cvAllocVectors(CVodeMem cv_mem, N_Vector tmpl);
-static void cvFreeVectors(CVodeMem cv_mem);
-
-static sunbooleantype cvQuadAllocVectors(CVodeMem cv_mem, N_Vector tmpl);
-static void cvQuadFreeVectors(CVodeMem cv_mem);
-
-static sunbooleantype cvSensAllocVectors(CVodeMem cv_mem, N_Vector tmpl);
-static void cvSensFreeVectors(CVodeMem cv_mem);
-
-static sunbooleantype cvQuadSensAllocVectors(CVodeMem cv_mem, N_Vector tmpl);
-static void cvQuadSensFreeVectors(CVodeMem cv_mem);
 
 /* Memory allocation/deallocation */
 
@@ -5627,8 +5611,7 @@ static int cvHin(CVodeMem cv_mem, sunrealtype tout)
     hg = hnew;
   }
 
-  cv_mem->cv_lrw -= (maxord + 5) * cv_mem->cv_Ns * cv_mem->cv_lrw1Q;
-  cv_mem->cv_liw -= (maxord + 5) * cv_mem->cv_Ns * cv_mem->cv_liw1Q;
+  /* Apply bounds, bias factor, and attach sign */
 
   h0 = H_BIAS * hnew;
   if (h0 < hlb) { h0 = hlb; }
@@ -8965,8 +8948,6 @@ static int cvRcheck3(CVodeMem cv_mem, sunrealtype tout, int itask)
   (void)CVodeGetDky(cv_mem, cv_mem->cv_trout, 0, cv_mem->cv_y);
   return (RTFOUND);
 }
-
-#define DIFFERENT_SIGN(a, b) (((a) < 0 && (b) > 0) || ((a) > 0 && (b) < 0))
 
 /*
  * cvRootfind
