@@ -116,9 +116,13 @@ ${CMAKE_BIN} \
     -D EXAMPLES_ENABLE_CXX=OFF \
     -D EXAMPLES_INSTALL=OFF \
     -D SUNDIALS_LOGGING_LEVEL=0 \
+    -D CMAKE_C_FLAGS="${CFLAGS} -Wno-deprecated-declarations" \
   ${CMAKE_ADD_AR} ${CMAKE_ADD_RANLIB} ../sundials-src
-  # CRAN fix: SUNDIALS_LOGGING_LEVEL=0 disables all stdout/stderr logging output
-  # which CRAN flags as non-compliant (compiled code must not write to stdout/stderr)
+  # CRAN fixes:
+  #   SUNDIALS_LOGGING_LEVEL=0 disables all stdout/stderr logging output
+  #   -Wno-deprecated-declarations suppresses N_VSpace/SUNMatSpace deprecation
+  #   warnings from SUNDIALS 7.x (these functions are removed in 8.0 but still
+  #   functional; CRAN treats installation warnings as errors)
 make -j${NCORES}
 make install
 if [ $? -ne 0 ]; then
