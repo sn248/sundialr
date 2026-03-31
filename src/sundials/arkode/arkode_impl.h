@@ -1,9 +1,12 @@
 /*---------------------------------------------------------------
- * Programmer(s): Daniel R. Reynolds @ SMU
+ * Programmer(s): Daniel R. Reynolds @ UMBC
  *---------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2024, Lawrence Livermore National Security
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
  * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
  * All rights reserved.
  *
  * See the top-level LICENSE and NOTICE files for details.
@@ -24,11 +27,15 @@
 #include <arkode/arkode_butcher_dirk.h>
 #include <arkode/arkode_butcher_erk.h>
 #include <arkode/arkode_mristep.h>
+
 #include <sundials/priv/sundials_context_impl.h>
 #include <sundials/priv/sundials_errors_impl.h>
 #include <sundials/sundials_adaptcontroller.h>
+#include <sundials/sundials_adjointcheckpointscheme.h>
+#include <sundials/sundials_adjointstepper.h>
 #include <sundials/sundials_context.h>
 #include <sundials/sundials_linearsolver.h>
+#include <sundials/sundials_types.h>
 
 #include "arkode_adapt_impl.h"
 #include "arkode_relaxation_impl.h"
@@ -42,28 +49,12 @@
 extern "C" {
 #endif
 
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-#define RSYM  ".32Lg"
-#define RSYMW "41.32Lg"
-#else
-#define RSYM  ".16g"
-#define RSYMW "23.16g"
-#endif
-
 /*===============================================================
   SHORTCUTS
   ===============================================================*/
 
 #define ARK_PROFILER ark_mem->sunctx->profiler
 #define ARK_LOGGER   ark_mem->sunctx->logger
-
-/*===============================================================
-  MACROS
-  ===============================================================*/
-
-/* TODO(DJG): replace with signbit when C99+ is required */
-#define DIFFERENT_SIGN(a, b) (((a) < 0 && (b) > 0) || ((a) > 0 && (b) < 0))
-#define SAME_SIGN(a, b)      (((a) > 0 && (b) > 0) || ((a) < 0 && (b) < 0))
 
 /*===============================================================
   ARKODE Private Constants
@@ -82,6 +73,8 @@ extern "C" {
 #define MAXCONSTRFAILS 10
 /*   max number of t+h==h warnings */
 #define MXHNIL 10
+/*   max number of attempts to recover in DQ J*v */
+#define MAX_DQITERS 3
 
 /* Numeric constants */
 #define ZERO  SUN_RCONST(0.0)
@@ -232,6 +225,10 @@ typedef int (*ARKTimestepGetNumRhsEvals)(ARKodeMem ark_mem, int partition_index,
                                          long int* num_rhs_evals);
 typedef int (*ARKTimestepSetStepDirection)(ARKodeMem ark_mem,
                                            sunrealtype stepdir);
+typedef int (*ARKTimestepSetUseCompensatedSums)(ARKodeMem ark_mem,
+                                                sunbooleantype onoff);
+typedef int (*ARKTimestepSetOptions)(ARKodeMem ark_mem, int* argidx, char* argv[],
+                                     size_t offset, sunbooleantype* arg_used);
 
 /* time stepper interface functions -- temporal adaptivity */
 typedef int (*ARKTimestepGetEstLocalErrors)(ARKodeMem ark_mem, N_Vector ele);
@@ -381,30 +378,31 @@ struct ARKodeMemRec
 {
   SUNContext sunctx;
 
+  void* python;
+
   sunrealtype uround; /* machine unit roundoff */
 
   /* Problem specification data */
-  void* user_data;               /* user ptr passed to supplied functions */
-  int itol;                      /* itol = ARK_SS (scalar, default),
+  void* user_data;          /* user ptr passed to supplied functions */
+  int itol;                 /* itol = ARK_SS (scalar, default),
                                          ARK_SV (vector),
                                          ARK_WF (user weight function)  */
-  int ritol;                     /* itol = ARK_SS (scalar, default),
+  int ritol;                /* itol = ARK_SS (scalar, default),
                                          ARK_SV (vector),
                                          ARK_WF (user weight function)  */
-  sunrealtype reltol;            /* relative tolerance                    */
-  sunrealtype Sabstol;           /* scalar absolute solution tolerance    */
-  N_Vector Vabstol;              /* vector absolute solution tolerance    */
-  sunbooleantype atolmin0;       /* flag indicating that min(abstol) = 0  */
-  sunrealtype SRabstol;          /* scalar absolute residual tolerance    */
-  N_Vector VRabstol;             /* vector absolute residual tolerance    */
-  sunbooleantype Ratolmin0;      /* flag indicating that min(Rabstol) = 0 */
-  sunbooleantype user_efun;      /* SUNTRUE if user sets efun             */
-  ARKEwtFn efun;                 /* function to set ewt                   */
-  void* e_data;                  /* user pointer passed to efun           */
-  sunbooleantype user_rfun;      /* SUNTRUE if user sets rfun             */
-  ARKRwtFn rfun;                 /* function to set rwt                   */
-  void* r_data;                  /* user pointer passed to rfun           */
-  sunbooleantype constraintsSet; /* check inequality constraints          */
+  sunrealtype reltol;       /* relative tolerance                    */
+  sunrealtype Sabstol;      /* scalar absolute solution tolerance    */
+  N_Vector Vabstol;         /* vector absolute solution tolerance    */
+  sunbooleantype atolmin0;  /* flag indicating that min(abstol) = 0  */
+  sunrealtype SRabstol;     /* scalar absolute residual tolerance    */
+  N_Vector VRabstol;        /* vector absolute residual tolerance    */
+  sunbooleantype Ratolmin0; /* flag indicating that min(Rabstol) = 0 */
+  sunbooleantype user_efun; /* SUNTRUE if user sets efun             */
+  ARKEwtFn efun;            /* function to set ewt                   */
+  void* e_data;             /* user pointer passed to efun           */
+  sunbooleantype user_rfun; /* SUNTRUE if user sets rfun             */
+  ARKRwtFn rfun;            /* function to set rwt                   */
+  void* r_data;             /* user pointer passed to rfun           */
 
   /* Time stepper module -- general */
   void* step_mem;
@@ -422,6 +420,8 @@ struct ARKodeMemRec
   ARKTimestepSetOrder step_setorder;
   ARKTimestepGetNumRhsEvals step_getnumrhsevals;
   ARKTimestepSetStepDirection step_setstepdirection;
+  ARKTimestepSetUseCompensatedSums step_setusecompensatedsums;
+  ARKTimestepSetOptions step_setoptions;
 
   /* Time stepper module -- temporal adaptivity */
   sunbooleantype step_supports_adaptive;
@@ -487,8 +487,6 @@ struct ARKodeMemRec
   N_Vector tempv4;
   N_Vector tempv5;
 
-  N_Vector constraints; /* vector of inequality constraint options         */
-
   /* Temporal interpolation module */
   ARKInterp interp;
   int interp_type;
@@ -516,12 +514,11 @@ struct ARKodeMemRec
   ARKodeHAdaptMem hadapt_mem; /* time step adaptivity structure           */
 
   /* Limits and various solver parameters */
-  long int mxstep;    /* max number of internal steps for one user call */
-  int mxhnil;         /* max number of warning messages issued to the
+  long int mxstep; /* max number of internal steps for one user call */
+  int mxhnil;      /* max number of warning messages issued to the
                               user that t+h == t for the next internal step  */
-  int maxconstrfails; /* max number of constraint check failures        */
-  int maxnef;         /* max error test fails in one step               */
-  int maxncf;         /* max num alg. solver conv. fails in one step    */
+  int maxnef;      /* max error test fails in one step               */
+  int maxncf;      /* max num alg. solver conv. fails in one step    */
 
   /* Counters */
   long int nst_attempts; /* number of attempted steps                  */
@@ -530,7 +527,6 @@ struct ARKodeMemRec
                              t+h == t for the next iternal step         */
   long int ncfn;         /* num corrector convergence failures         */
   long int netf;         /* num error test failures                    */
-  long int nconstrfails; /* number of constraint failures              */
 
   /* Space requirements for ARKODE */
   sunindextype lrw1; /* no. of sunrealtype words in 1 N_Vector          */
@@ -559,6 +555,11 @@ struct ARKodeMemRec
   /* Rootfinding Data */
   ARKodeRootMem root_mem; /* root-finding structure */
 
+  /* Inequality Constraints Data */
+  N_Vector constraints;  /* vector of constraint flags     */
+  long int nconstrfails; /* total constraint failures      */
+  int maxconstrfails;    /* max failures allowed in a step */
+
   /* Relaxation Data */
   sunbooleantype relax_enabled; /* is relaxation enabled?    */
   ARKodeRelaxMem relax_mem;     /* relaxation data structure */
@@ -571,6 +572,16 @@ struct ARKodeMemRec
   ARKPostProcessFn ProcessStage;
 
   sunbooleantype use_compensated_sums;
+
+  /* Adjoint solver data */
+  sunbooleantype load_checkpoint_fail;
+  sunbooleantype do_adjoint;
+  suncountertype adj_stage_idx; /* current stage index (only valid in adjoint context)*/
+  suncountertype adj_step_idx; /* current step index (only valid in adjoint context)*/
+
+  /* Checkpointing data */
+  SUNAdjointCheckpointScheme checkpoint_scheme;
+  suncountertype checkpoint_step_idx; /* the step number for checkpointing */
 
   /* XBraid interface variables */
   sunbooleantype force_pass; /* when true the step attempt loop will ignore the
@@ -628,7 +639,8 @@ void arkFreeVecArray(int count, N_Vector** v, sunindextype lrw1, long int* lrw,
                      sunindextype liw1, long int* liw);
 void arkFreeVectors(ARKodeMem ark_mem);
 sunbooleantype arkCheckTimestepper(ARKodeMem ark_mem);
-sunbooleantype arkCheckNvector(N_Vector tmpl);
+sunbooleantype arkCheckNvectorRequired(N_Vector tmpl);
+sunbooleantype arkCheckNvectorOptional(ARKodeMem ark_mem);
 
 int arkInitialSetup(ARKodeMem ark_mem, sunrealtype tout);
 int arkStopTests(ARKodeMem ark_mem, sunrealtype tout, N_Vector yout,
@@ -653,7 +665,7 @@ int arkPredict_Bootstrap(ARKodeMem ark_mem, sunrealtype hj, sunrealtype tau,
                          int nvec, sunrealtype* cvals, N_Vector* Xvecs,
                          N_Vector yguess);
 int arkCheckConvergence(ARKodeMem ark_mem, int* nflagPtr, int* ncfPtr);
-int arkCheckConstraints(ARKodeMem ark_mem, int* nflag, int* constrfails);
+int arkCheckConstraints(ARKodeMem ark_mem, int* constrfails, int* nflag);
 int arkCheckTemporalError(ARKodeMem ark_mem, int* nflagPtr, int* nefPtr,
                           sunrealtype dsm);
 int arkAccessHAdaptMem(void* arkode_mem, const char* fname, ARKodeMem* ark_mem,
@@ -680,39 +692,29 @@ int ark_MRIStepInnerGetAccumulatedError(MRIStepInnerStepper stepper,
 int ark_MRIStepInnerResetAccumulatedError(MRIStepInnerStepper stepper);
 int ark_MRIStepInnerSetRTol(MRIStepInnerStepper stepper, sunrealtype rtol);
 
+/* utility functions for wrapping ARKODE as a SUNStepper */
+SUNErrCode arkSUNStepperSelfDestruct(SUNStepper stepper);
+
 /* XBraid interface functions */
 int arkSetForcePass(void* arkode_mem, sunbooleantype force_pass);
 int arkGetLastKFlag(void* arkode_mem, int* last_kflag);
+
+/* function used to free the python user supplied function table  */
+#if defined(SUNDIALS_ENABLE_PYTHON)
+void arkode_user_supplied_fn_table_destroy(void* ptr);
+#endif
 
 /*===============================================================
   Reusable ARKODE Error Messages
   ===============================================================*/
 
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-
-#define MSG_TIME       "t = %Lg"
-#define MSG_TIME_H     "t = %Lg and h = %Lg"
-#define MSG_TIME_INT   "t = %Lg is not between tcur - hold = %Lg and tcur = %Lg."
-#define MSG_TIME_TOUT  "tout = %Lg"
-#define MSG_TIME_TSTOP "tstop = %Lg"
-
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
-
-#define MSG_TIME       "t = %lg"
-#define MSG_TIME_H     "t = %lg and h = %lg"
-#define MSG_TIME_INT   "t = %lg is not between tcur - hold = %lg and tcur = %lg."
-#define MSG_TIME_TOUT  "tout = %lg"
-#define MSG_TIME_TSTOP "tstop = %lg"
-
-#else
-
-#define MSG_TIME       "t = %g"
-#define MSG_TIME_H     "t = %g and h = %g"
-#define MSG_TIME_INT   "t = %g is not between tcur - hold = %g and tcur = %g."
-#define MSG_TIME_TOUT  "tout = %g"
-#define MSG_TIME_TSTOP "tstop = %g"
-
-#endif
+#define MSG_TIME   "t = " SUN_FORMAT_G
+#define MSG_TIME_H "t = " SUN_FORMAT_G " and h = " SUN_FORMAT_G
+#define MSG_TIME_INT                                                \
+  "t = " SUN_FORMAT_G " is not between tcur - hold = " SUN_FORMAT_G \
+  " and tcur = " SUN_FORMAT_G
+#define MSG_TIME_TOUT  "tout = " SUN_FORMAT_G
+#define MSG_TIME_TSTOP "tstop = " SUN_FORMAT_G
 
 /* Initialization and I/O error messages */
 #define MSG_ARK_NO_MEM         "arkode_mem = NULL illegal."
@@ -822,6 +824,10 @@ int arkGetLastKFlag(void* arkode_mem, int* last_kflag);
   "solver configuration)."
 #define MSG_ARK_INTERPOLATION_FAIL \
   "At " MSG_TIME ", interpolating the solution failed."
+#define MSG_ARK_ADJOINT_BAD_VECTOR                                           \
+  "JacPFn or JPvpFn was provided, but the number of subvectors in y is not " \
+  "2. To perform ASA w.r.t. parameters, one subvector should be the state "  \
+  "vector, and the other should be the parameter vector."
 
 /*===============================================================
 

@@ -2,8 +2,11 @@
  * Programmer(s): Cody J. Balos @ LLNL
  *---------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2024, Lawrence Livermore National Security
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
  * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
  * All rights reserved.
  *
  * See the top-level LICENSE and NOTICE files for details.
@@ -73,11 +76,14 @@ int sprkStep_FullRHS(ARKodeMem ark_mem, sunrealtype t, N_Vector y, N_Vector f,
 int sprkStep_TakeStep(ARKodeMem ark_mem, sunrealtype* dsmPtr, int* nflagPtr);
 int sprkStep_TakeStep_Compensated(ARKodeMem ark_mem, sunrealtype* dsmPtr,
                                   int* nflagPtr);
+int sprkStep_SetOptions(ARKodeMem ark_mem, int* argidx, char* argv[],
+                        size_t offset, sunbooleantype* arg_used);
 int sprkStep_SetUserData(ARKodeMem ark_mem, void* user_data);
 int sprkStep_SetDefaults(ARKodeMem ark_mem);
 int sprkStep_SetOrder(ARKodeMem ark_mem, int ord);
 int sprkStep_PrintAllStats(ARKodeMem ark_mem, FILE* outfile, SUNOutputFormat fmt);
 int sprkStep_WriteParameters(ARKodeMem ark_mem, FILE* fp);
+int sprkStep_SetUseCompensatedSums(ARKodeMem ark_mem, sunbooleantype onoff);
 int sprkStep_Reset(ARKodeMem ark_mem, sunrealtype tR, N_Vector yR);
 int sprkStep_Resize(ARKodeMem ark_mem, N_Vector y0, sunrealtype hscale,
                     sunrealtype t0, ARKVecResizeFn resize, void* resize_data);
@@ -91,7 +97,6 @@ int sprkStep_AccessARKODEStepMem(void* arkode_mem, const char* fname,
                                  ARKodeMem* ark_mem, ARKodeSPRKStepMem* step_mem);
 int sprkStep_AccessStepMem(ARKodeMem ark_mem, const char* fname,
                            ARKodeSPRKStepMem* step_mem);
-sunbooleantype sprkStep_CheckNVector(N_Vector tmpl);
 
 /* f1 = p' (Force evaluation) */
 int sprkStep_f1(ARKodeSPRKStepMem step_mem, sunrealtype tcur, N_Vector ycur,

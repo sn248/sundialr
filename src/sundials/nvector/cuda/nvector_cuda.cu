@@ -2,8 +2,11 @@
  * Programmer(s): Slaven Peles, and Cody J. Balos @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2024, Lawrence Livermore National Security
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
  * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
  * All rights reserved.
  *
  * See the top-level LICENSE and NOTICE files for details.
@@ -611,15 +614,8 @@ void N_VPrintFile_Cuda(N_Vector x, FILE* outfile)
 
   for (i = 0; i < NVEC_CUDA_CONTENT(x)->length; i++)
   {
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-    fprintf(outfile, "%35.32Le\n", NVEC_CUDA_HDATAp(x)[i]);
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
-    fprintf(outfile, "%19.16e\n", NVEC_CUDA_HDATAp(x)[i]);
-#else
-    fprintf(outfile, "%11.8e\n", NVEC_CUDA_HDATAp(x)[i]);
-#endif
+    fprintf(outfile, SUN_FORMAT_E "\n", NVEC_CUDA_HDATAp(x)[i]);
   }
-  fprintf(outfile, "\n");
 
   return;
 }

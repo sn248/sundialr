@@ -155,6 +155,16 @@ set_target_properties(SUNDIALS::sunnonlinsolfixedpoint_static PROPERTIES
 list(APPEND _cmake_import_check_targets SUNDIALS::sunnonlinsolfixedpoint_static )
 list(APPEND _cmake_import_check_files_for_SUNDIALS::sunnonlinsolfixedpoint_static "${_IMPORT_PREFIX}/lib/libsundials_sunnonlinsolfixedpoint.a" )
 
+# Import target "SUNDIALS::sundomeigestpower_static" for configuration "Release"
+set_property(TARGET SUNDIALS::sundomeigestpower_static APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(SUNDIALS::sundomeigestpower_static PROPERTIES
+  IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/lib/libsundials_sundomeigestpower.a"
+  )
+
+list(APPEND _cmake_import_check_targets SUNDIALS::sundomeigestpower_static )
+list(APPEND _cmake_import_check_files_for_SUNDIALS::sundomeigestpower_static "${_IMPORT_PREFIX}/lib/libsundials_sundomeigestpower.a" )
+
 # Import target "SUNDIALS::arkode_static" for configuration "Release"
 set_property(TARGET SUNDIALS::arkode_static APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
 set_target_properties(SUNDIALS::arkode_static PROPERTIES

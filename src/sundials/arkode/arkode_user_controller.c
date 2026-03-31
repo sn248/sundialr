@@ -1,9 +1,12 @@
 /* -----------------------------------------------------------------
- * Programmer(s): Daniel R. Reynolds @ SMU
+ * Programmer(s): Daniel R. Reynolds @ UMBC
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2024, Lawrence Livermore National Security
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
  * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
  * All rights reserved.
  *
  * See the top-level LICENSE and NOTICE files for details.
@@ -128,17 +131,10 @@ SUNErrCode SUNAdaptController_Write_ARKUserControl(SUNAdaptController C,
                                                    FILE* fptr)
 {
   fprintf(fptr, "ARKUserControl module:\n");
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-  fprintf(fptr, "  hp = %12Lg\n", SC_HP(C));
-  fprintf(fptr, "  hpp = %12Lg\n", SC_HPP(C));
-  fprintf(fptr, "  ep = %12Lg\n", SC_EP(C));
-  fprintf(fptr, "  epp = %12Lg\n", SC_EPP(C));
-#else
-  fprintf(fptr, "  hp = %12g\n", SC_HP(C));
-  fprintf(fptr, "  hpp = %12g\n", SC_HPP(C));
-  fprintf(fptr, "  ep = %12g\n", SC_EP(C));
-  fprintf(fptr, "  epp = %12g\n", SC_EPP(C));
-#endif
+  fprintf(fptr, "  hp = " SUN_FORMAT_G "\n", SC_HP(C));
+  fprintf(fptr, "  hpp = " SUN_FORMAT_G "\n", SC_HPP(C));
+  fprintf(fptr, "  ep = " SUN_FORMAT_G "\n", SC_EP(C));
+  fprintf(fptr, "  epp = " SUN_FORMAT_G "\n", SC_EPP(C));
   fprintf(fptr, "  hadapt_data = %p\n", SC_DATA(C));
   return SUN_SUCCESS;
 }

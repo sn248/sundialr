@@ -47,15 +47,29 @@ sed -i 's|  logger->warning_fp = stdout;|  logger->warning_fp = NULL; /* CRAN: s
 sed -i 's|  if (fp && fp != stdout && fp != stderr)|  if (fp) /* CRAN: stdout/stderr refs removed */|' \
     sundials-src/src/sundials/sundials_logger.c
 
-sed -i 's|    fprintf(stderr, "\[FATAL LOGGER ERROR\].*|    /* CRAN: fprintf(stderr) removed */|' \
-    sundials-src/src/sundials/sundials_logger.c
+python3 -c "
+import re
+fname = 'sundials-src/src/sundials/sundials_logger.c'
+with open(fname, 'r') as f: c = f.read()
+c = re.sub(
+    r'    char\* fileAndLine = sunCombineFileAndLine\([^\n]+\);\n    fprintf\(stderr,[^\n]+\n[^\n]+\"FATAL LOGGER ERROR[^;]+;\n    free\(fileAndLine\);',
+    '    /* CRAN: fprintf(stderr) removed; fatal logger error silenced */',
+    c
+)
+with open(fname, 'w') as f: f.write(c)
+"
 
 # sundials_futils.c: SUNDIALSFileOpen maps "stdout"/"stderr" names to FILE* handles.
 # Remove those branches; callers passing those names will get NULL (no output).
-sed -i 's|    if (!strcmp(filename, "stdout")) { fp = stdout; }|    /* CRAN: stdout mapping removed */|' \
+# Delete the stdout and stderr if/else-if lines, then strip the leading "else "
+# from the remaining branch so no dangling else is left.
+sed -i '/    if (!strcmp(filename, "stdout")) { fp = stdout; }/d' \
     sundials-src/src/sundials/sundials_futils.c
 
-sed -i 's|    else if (!strcmp(filename, "stderr")) { fp = stderr; }|    /* CRAN: stderr mapping removed */|' \
+sed -i '/    else if (!strcmp(filename, "stderr")) { fp = stderr; }/d' \
+    sundials-src/src/sundials/sundials_futils.c
+
+sed -i 's|    else { fp = fopen(filename, mode); }|    fp = fopen(filename, mode); /* CRAN: stdout\/stderr mappings removed */|' \
     sundials-src/src/sundials/sundials_futils.c
 
 # SUNDIALSFileClose guards fclose with fp != stdout and fp != stderr comparisons.

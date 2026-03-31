@@ -1,11 +1,14 @@
 /* -----------------------------------------------------------------
- * Programmer(s): Daniel Reynolds @ SMU
+ * Programmer(s): Daniel Reynolds @ UMBC
  *                David J. Gardner, Carol S. Woodward, and
  *                Slaven Peles @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2024, Lawrence Livermore National Security
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
  * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
  * All rights reserved.
  *
  * See the top-level LICENSE and NOTICE files for details.
@@ -17,6 +20,8 @@
  * It contains the implementation of the SUNMatrix operations listed
  * in sundials_matrix.h
  * -----------------------------------------------------------------*/
+
+#include "sundials/sundials_matrix.h"
 
 #include <stdlib.h>
 #include <sundials/priv/sundials_errors_impl.h>
@@ -52,16 +57,17 @@ SUNMatrix SUNMatNewEmpty(SUNContext sunctx)
   SUNAssertNull(ops, SUN_ERR_MALLOC_FAIL);
 
   /* initialize operations to NULL */
-  ops->getid       = NULL;
-  ops->clone       = NULL;
-  ops->destroy     = NULL;
-  ops->zero        = NULL;
-  ops->copy        = NULL;
-  ops->scaleadd    = NULL;
-  ops->scaleaddi   = NULL;
-  ops->matvecsetup = NULL;
-  ops->matvec      = NULL;
-  ops->space       = NULL;
+  ops->getid                    = NULL;
+  ops->clone                    = NULL;
+  ops->destroy                  = NULL;
+  ops->zero                     = NULL;
+  ops->copy                     = NULL;
+  ops->scaleadd                 = NULL;
+  ops->scaleaddi                = NULL;
+  ops->matvecsetup              = NULL;
+  ops->matvec                   = NULL;
+  ops->mathermitiantransposevec = NULL;
+  ops->space                    = NULL;
 
   /* attach ops and initialize content to NULL */
   A->ops     = ops;
@@ -217,6 +223,19 @@ SUNErrCode SUNMatMatvec(SUNMatrix A, N_Vector x, N_Vector y)
   SUNErrCode ier;
   SUNDIALS_MARK_FUNCTION_BEGIN(getSUNProfiler(A));
   ier = A->ops->matvec(A, x, y);
+  SUNDIALS_MARK_FUNCTION_END(getSUNProfiler(A));
+  return (ier);
+}
+
+SUNErrCode SUNMatHermitianTransposeVec(SUNMatrix A, N_Vector x, N_Vector y)
+{
+  SUNErrCode ier;
+  SUNDIALS_MARK_FUNCTION_BEGIN(getSUNProfiler(A));
+  if (A->ops->mathermitiantransposevec)
+  {
+    ier = A->ops->mathermitiantransposevec(A, x, y);
+  }
+  else { ier = SUN_ERR_NOT_IMPLEMENTED; }
   SUNDIALS_MARK_FUNCTION_END(getSUNProfiler(A));
   return (ier);
 }

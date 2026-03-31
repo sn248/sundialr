@@ -1,9 +1,12 @@
 /*---------------------------------------------------------------
- * Programmer(s): Daniel R. Reynolds @ SMU
+ * Programmer(s): Daniel R. Reynolds @ UMBC
  *---------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2024, Lawrence Livermore National Security
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
  * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
  * All rights reserved.
  *
  * See the top-level LICENSE and NOTICE files for details.
@@ -270,11 +273,12 @@ void arkInterpPrintMem_Hermite(ARKInterp interp, FILE* outfile)
   {
     fprintf(outfile, "arkode_interp (Hermite): degree = %d\n",
             HINT_DEGREE(interp));
-    fprintf(outfile, "arkode_interp (Hermite): told = %" RSYM "\n",
+    fprintf(outfile, "arkode_interp (Hermite): told = " SUN_FORMAT_G "\n",
             HINT_TOLD(interp));
-    fprintf(outfile, "arkode_interp (Hermite): tnew = %" RSYM "\n",
+    fprintf(outfile, "arkode_interp (Hermite): tnew = " SUN_FORMAT_G "\n",
             HINT_TNEW(interp));
-    fprintf(outfile, "arkode_interp (Hermite): h = %" RSYM "\n", HINT_H(interp));
+    fprintf(outfile, "arkode_interp (Hermite): h = " SUN_FORMAT_G "\n",
+            HINT_H(interp));
 #ifdef SUNDIALS_DEBUG_PRINTVEC
     fprintf(outfile, "arkode_interp (Hermite): fold:\n");
     N_VPrintFile(HINT_FOLD(interp), outfile);
@@ -460,8 +464,8 @@ int arkInterpEvaluate_Hermite(ARKodeMem ark_mem, ARKInterp interp,
   q = SUNMAX(order, 0);               /* respect lower bound  */
   q = SUNMIN(q, HINT_DEGREE(interp)); /* respect max possible */
 
-  SUNLogDebug(ARK_LOGGER, "interp-eval", "tau = %" RSYM ", d = %i, q = %i", tau,
-              d, q);
+  SUNLogDebug(ARK_LOGGER, "interp-eval",
+              "tau = " SUN_FORMAT_G ", d = %i, q = %i", tau, d, q);
 
   /* call full RHS if needed -- called just AFTER the end of a step, so yn has
      been updated to ycur */
@@ -961,7 +965,7 @@ void arkInterpPrintMem_Lagrange(ARKInterp I, FILE* outfile)
       fprintf(outfile, "arkode_interp (Lagrange): thist =");
       for (i = 0; i < LINT_NMAX(I); i++)
       {
-        fprintf(outfile, "  %" RSYM, LINT_TJ(I, i));
+        fprintf(outfile, "  " SUN_FORMAT_G, LINT_TJ(I, i));
       }
       fprintf(outfile, "\n");
     }
@@ -1200,8 +1204,8 @@ int arkInterpEvaluate_Lagrange(ARKodeMem ark_mem, ARKInterp I, sunrealtype tau,
   q = SUNMAX(degree, 0);    /* respect lower bound */
   q = SUNMIN(q, nhist - 1); /* respect max possible */
 
-  SUNLogDebug(ARK_LOGGER, "interp-eval", "tau = %" RSYM ", d = %i, q = %i", tau,
-              deriv, q);
+  SUNLogDebug(ARK_LOGGER, "interp-eval",
+              "tau = " SUN_FORMAT_G ", d = %i, q = %i", tau, deriv, q);
 
   /* error on illegal deriv */
   if ((deriv < 0) || (deriv > 3))

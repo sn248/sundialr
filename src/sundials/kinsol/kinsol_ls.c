@@ -1,10 +1,13 @@
 /*-----------------------------------------------------------------
- * Programmer(s): Daniel R. Reynolds @ SMU
+ * Programmer(s): Daniel R. Reynolds @ UMBC
  *                David J. Gardner, Radu Serban and Aaron Collier @ LLNL
  *-----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2024, Lawrence Livermore National Security
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
  * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
  * All rights reserved.
  *
  * See the top-level LICENSE and NOTICE files for details.
@@ -28,10 +31,8 @@
 #include "kinsol_ls_impl.h"
 
 /* constants */
-#define MIN_INC_MULT SUN_RCONST(1000.0)
-#define ZERO         SUN_RCONST(0.0)
-#define ONE          SUN_RCONST(1.0)
-#define TWO          SUN_RCONST(2.0)
+#define ZERO SUN_RCONST(0.0)
+#define ONE  SUN_RCONST(1.0)
 
 /*==================================================================
   KINLS Exported functions -- Required
@@ -1208,7 +1209,7 @@ int kinLsSolve(KINMem kin_mem, N_Vector xx, N_Vector bb, sunrealtype* sJpnorm,
 {
   KINLsMem kinls_mem;
   int nli_inc, retval;
-  sunrealtype res_norm, tol;
+  sunrealtype tol;
 
   /* Access KINLsMem structure */
   if (kin_mem->kin_lmem == NULL)
@@ -1238,21 +1239,23 @@ int kinLsSolve(KINMem kin_mem, N_Vector xx, N_Vector bb, sunrealtype* sJpnorm,
   retval = SUNLinSolSolve(kinls_mem->LS, kinls_mem->J, xx, bb, tol);
 
   /* Retrieve solver statistics */
-  res_norm = ZERO;
-  if (kinls_mem->LS->ops->resnorm)
-  {
-    res_norm = SUNLinSolResNorm(kinls_mem->LS);
-  }
   nli_inc = 0;
   if (kinls_mem->LS->ops->numiters)
   {
     nli_inc = SUNLinSolNumIters(kinls_mem->LS);
   }
 
-#if SUNDIALS_LOGGING_LEVEL >= SUNDIALS_LOGLEVEL_INFO
+#if SUNDIALS_LOGGING_LEVEL >= SUNDIALS_LOGGING_INFO
   if (kinls_mem->iterative)
   {
     KINPrintInfo(kin_mem, PRNT_NLI, "KINLS", __func__, INFO_NLI, nli_inc);
+
+    if (kinls_mem->LS->ops->resnorm)
+    {
+      sunrealtype res_norm = SUNLinSolResNorm(kinls_mem->LS);
+      KINPrintInfo(kin_mem, PRNT_EPS, "KINLS", __func__, INFO_EPS, res_norm,
+                   kin_mem->kin_eps);
+    }
   }
 #endif
 
@@ -1332,14 +1335,6 @@ int kinLsSolve(KINMem kin_mem, N_Vector xx, N_Vector bb, sunrealtype* sJpnorm,
       *sFdotJp = N_VDotProd(kin_mem->kin_fval, bb);
     }
   }
-
-#if SUNDIALS_LOGGING_LEVEL >= SUNDIALS_LOGLEVEL_INFO
-  if (kin_mem->kin_inexact_ls)
-  {
-    KINPrintInfo(kin_mem, PRNT_EPS, "KINLS", __func__, INFO_EPS, res_norm,
-                 kin_mem->kin_eps);
-  }
-#endif
 
   return (0);
 }

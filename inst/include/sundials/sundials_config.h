@@ -2,8 +2,11 @@
  * Programmer(s): Cody J. Balos, Aaron Collier and Radu Serban @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2024, Lawrence Livermore National Security
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
  * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
  * All rights reserved.
  *
  * See the top-level LICENSE and NOTICE files for details.
@@ -44,10 +47,10 @@
  * -----------------------------------------------------------------*/
 
 
-#define SUNDIALS_VERSION "7.2.1"
+#define SUNDIALS_VERSION "7.6.0"
 #define SUNDIALS_VERSION_MAJOR 7
-#define SUNDIALS_VERSION_MINOR 2
-#define SUNDIALS_VERSION_PATCH 1
+#define SUNDIALS_VERSION_MINOR 6
+#define SUNDIALS_VERSION_PATCH 0
 #define SUNDIALS_VERSION_LABEL ""
 #define SUNDIALS_GIT_VERSION ""
 
@@ -84,6 +87,11 @@
  */
 #define SUNDIALS_INDEX_TYPE int64_t
 
+/* Define the type used for 'suncountertype'.
+ * The macro will be defined with a type of the appropriate size.
+ */
+#define SUNDIALS_COUNTER_TYPE long int
+
 /* Use POSIX timers if available.
  *     #define SUNDIALS_HAVE_POSIX_TIMERS
  */
@@ -102,12 +110,12 @@
 /* #undef SUNDIALS_ENABLE_ERROR_CHECKS */
 
 /* BUILD SUNDIALS with logging functionalities */
-#define SUNDIALS_LOGGING_LEVEL 2
+#define SUNDIALS_LOGGING_LEVEL 0
 
 /* Build metadata */
 #define SUN_C_COMPILER "GNU"
 #define SUN_C_COMPILER_VERSION "13.3.0"
-#define SUN_C_COMPILER_FLAGS "-fpic -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-qkOIYD/r-base-4.5.0=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-qkOIYD/r-base-4.5.0=/usr/src/r-base-4.5.0-3.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3"
+#define SUN_C_COMPILER_FLAGS "-fpic -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-tpN123/r-base-4.5.3=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-tpN123/r-base-4.5.3=/usr/src/r-base-4.5.3-1.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3"
 
 #define SUN_CXX_COMPILER ""
 #define SUN_CXX_COMPILER_VERSION ""
@@ -119,8 +127,8 @@
 
 #define SUN_BUILD_TYPE "Release"
 
-#define SUN_JOB_ID "20250611065635"
-#define SUN_JOB_START_TIME "20250611065635"
+#define SUN_JOB_ID "20260330213830"
+#define SUN_JOB_START_TIME "20260330213830"
 
 #define SUN_TPL_LIST ""
 #define SUN_TPL_LIST_SIZE ""
@@ -267,6 +275,9 @@
 
 /* SYCL options */
 /* #undef SUNDIALS_SYCL_2020_UNSUPPORTED */
+
+/* Python options */
+/* #undef SUNDIALS_ENABLE_PYTHON */
 
 
 /* ------------------------------------------------------------------

@@ -1,10 +1,13 @@
 /* ---------------------------------------------------------------------------
  * Programmer(s): David J. Gardner @ LLNL
- *                Daniel R. Reynolds @ SMU
+ *                Daniel R. Reynolds @ UMBC
  * ---------------------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2024, Lawrence Livermore National Security
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
  * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
  * All rights reserved.
  *
  * See the top-level LICENSE and NOTICE files for details.
@@ -684,7 +687,7 @@ void MRIStepCoupling_Write(MRIStepCoupling MRIC, FILE* outfile)
   fprintf(outfile, "  c = ");
   for (i = 0; i < MRIC->stages; i++)
   {
-    fprintf(outfile, "%" RSYM "  ", MRIC->c[i]);
+    fprintf(outfile, SUN_FORMAT_E "  ", MRIC->c[i]);
   }
   fprintf(outfile, "\n");
 
@@ -698,7 +701,7 @@ void MRIStepCoupling_Write(MRIStepCoupling MRIC, FILE* outfile)
         fprintf(outfile, "      ");
         for (j = 0; j < MRIC->stages; j++)
         {
-          fprintf(outfile, "%" RSYMW "  ", MRIC->W[k][i][j]);
+          fprintf(outfile, SUN_FORMAT_E "  ", MRIC->W[k][i][j]);
         }
         fprintf(outfile, "\n");
       }
@@ -716,7 +719,7 @@ void MRIStepCoupling_Write(MRIStepCoupling MRIC, FILE* outfile)
         fprintf(outfile, "      ");
         for (j = 0; j < MRIC->stages; j++)
         {
-          fprintf(outfile, "%" RSYMW "  ", MRIC->G[k][i][j]);
+          fprintf(outfile, SUN_FORMAT_E "  ", MRIC->G[k][i][j]);
         }
         fprintf(outfile, "\n");
       }

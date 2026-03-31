@@ -2,8 +2,11 @@
  * Programmer: Cody J. Balos @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2024, Lawrence Livermore National Security
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
  * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
  * All rights reserved.
  *
  * See the top-level LICENSE and NOTICE files for details.
@@ -17,22 +20,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <sundials/priv/sundials_errors_impl.h>
 #include <sundials/sundials_config.h>
 #include <sundials/sundials_errors.h>
 #include <sundials/sundials_logger.h>
-#include <sundials/sundials_types.h>
+
+#include <sundials/priv/sundials_errors_impl.h>
+#include "sundials_logger_impl.h"
+
+#include "sundials/sundials_errors.h"
+#include "sundials/sundials_types.h"
 
 #if SUNDIALS_MPI_ENABLED
 #include <mpi.h>
 #endif
 
-#include "sundials_logger_impl.h"
+#include "sundials_hashmap_impl.h"
 #include "sundials_macros.h"
 #include "sundials_utils.h"
 
-/* max number of files that can be opened */
-#define SUN_MAX_LOGFILE_HANDLES_ 8
+/* default number of files that we allocate space for */
+#define SUN_DEFAULT_LOGFILE_HANDLES_ 8
 
 void sunCreateLogMessage(SUNLogLevel lvl, int rank, const char* scope,
                          const char* label, const char* txt, va_list args,
@@ -50,7 +57,7 @@ void sunCreateLogMessage(SUNLogLevel lvl, int rank, const char* scope,
   msg_length = sunvasnprintf(&formatted_txt, txt, args);
   if (msg_length < 0)
   {
-    fprintf(stderr, "[FATAL LOGGER ERROR] %s\n", "message size too large");
+    /* CRAN: fprintf(stderr) removed; fatal logger error silenced */
   }
 
   if (lvl == SUN_LOGLEVEL_DEBUG) { prefix = "DEBUG"; }
@@ -84,7 +91,7 @@ static FILE* sunOpenLogFile(const char* fname, const char* mode)
 
 static void sunCloseLogFile(void* fp)
 {
-  if (fp && fp != stdout && fp != stderr) { fclose((FILE*)fp); }
+  if (fp) /* CRAN: stdout/stderr refs removed */ { fclose((FILE*)fp); }
 }
 
 static sunbooleantype sunLoggerIsOutputRank(SUNDIALS_MAYBE_UNUSED SUNLogger logger,
@@ -119,6 +126,15 @@ static sunbooleantype sunLoggerIsOutputRank(SUNDIALS_MAYBE_UNUSED SUNLogger logg
   return retval;
 }
 
+static SUNErrCode sunLoggerFreeKeyValue(SUNHashMapKeyValue* kv_ptr)
+{
+  if (!kv_ptr || !(*kv_ptr)) { return SUN_SUCCESS; }
+  sunCloseLogFile((*kv_ptr)->value);
+  free((*kv_ptr)->key);
+  free(*kv_ptr);
+  return SUN_SUCCESS;
+}
+
 SUNErrCode SUNLogger_Create(SUNComm comm, int output_rank, SUNLogger* logger_ptr)
 {
   SUNLogger logger = NULL;
@@ -148,8 +164,8 @@ SUNErrCode SUNLogger_Create(SUNComm comm, int output_rank, SUNLogger* logger_ptr
 
   /* set the output file handles */
   logger->filenames  = NULL;
-  logger->error_fp   = stderr;
-  logger->warning_fp = stdout;
+  logger->error_fp   = NULL; /* CRAN: stderr not allowed */
+  logger->warning_fp = NULL; /* CRAN: stdout not allowed */
   logger->debug_fp   = NULL;
   logger->info_fp    = NULL;
   if (sunLoggerIsOutputRank(logger, NULL))
@@ -157,7 +173,8 @@ SUNErrCode SUNLogger_Create(SUNComm comm, int output_rank, SUNLogger* logger_ptr
     /* We store the FILE* in a hash map so that we can ensure
        that we do not open a file twice if the same file is used
        for multiple output levels */
-    SUNHashMap_New(SUN_MAX_LOGFILE_HANDLES_, &logger->filenames);
+    SUNHashMap_New(SUN_DEFAULT_LOGFILE_HANDLES_, sunLoggerFreeKeyValue,
+                   &logger->filenames);
   }
 
   return SUN_SUCCESS;
@@ -460,7 +477,7 @@ SUNErrCode SUNLogger_Destroy(SUNLogger* logger_ptr)
 
     if (sunLoggerIsOutputRank(logger, NULL))
     {
-      SUNHashMap_Destroy(&logger->filenames, sunCloseLogFile);
+      SUNHashMap_Destroy(&logger->filenames);
     }
 
 #if SUNDIALS_MPI_ENABLED

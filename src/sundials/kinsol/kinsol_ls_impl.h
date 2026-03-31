@@ -1,10 +1,13 @@
 /*-----------------------------------------------------------------
- * Programmer(s): Daniel R. Reynolds @ SMU
+ * Programmer(s): Daniel R. Reynolds @ UMBC
  *                David J. Gardner, Radu Serban and Aaron Collier @ LLNL
  *-----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2024, Lawrence Livermore National Security
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
  * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
  * All rights reserved.
  *
  * See the top-level LICENSE and NOTICE files for details.
@@ -163,20 +166,7 @@ int kinLs_AccessLMem(void* kinmem, const char* fname, KINMem* kin_mem,
   ------------------------------------------------------------------*/
 
 #define INFO_NLI "nli_inc = %d"
-
-#if defined(SUNDIALS_EXTENDED_PRECISION)
-
-#define INFO_EPS "residual norm = %12.3Lg  eps = %12.3Lg"
-
-#elif defined(SUNDIALS_DOUBLE_PRECISION)
-
-#define INFO_EPS "residual norm = %12.3lg  eps = %12.3lg"
-
-#else
-
-#define INFO_EPS "residual norm = %12.3g  eps = %12.3g"
-
-#endif
+#define INFO_EPS "residual norm = " SUN_FORMAT_G "  eps = " SUN_FORMAT_G
 
 #ifdef __cplusplus
 }

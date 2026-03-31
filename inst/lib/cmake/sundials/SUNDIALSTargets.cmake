@@ -19,7 +19,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_cmake_targets_defined "")
 set(_cmake_targets_not_defined "")
 set(_cmake_expected_targets "")
-foreach(_cmake_expected_target IN ITEMS SUNDIALS::core_static SUNDIALS::nvecserial_static SUNDIALS::nvecmanyvector_static SUNDIALS::sunmatrixband_static SUNDIALS::sunmatrixdense_static SUNDIALS::sunmatrixsparse_static SUNDIALS::sunlinsolband_static SUNDIALS::sunlinsoldense_static SUNDIALS::sunlinsolpcg_static SUNDIALS::sunlinsolspbcgs_static SUNDIALS::sunlinsolspfgmr_static SUNDIALS::sunlinsolspgmr_static SUNDIALS::sunlinsolsptfqmr_static SUNDIALS::sunnonlinsolnewton_static SUNDIALS::sunnonlinsolfixedpoint_static SUNDIALS::arkode_static SUNDIALS::cvode_static SUNDIALS::cvodes_static SUNDIALS::ida_static SUNDIALS::idas_static SUNDIALS::kinsol_static)
+foreach(_cmake_expected_target IN ITEMS SUNDIALS::core_static SUNDIALS::nvecserial_static SUNDIALS::nvecmanyvector_static SUNDIALS::sunmatrixband_static SUNDIALS::sunmatrixdense_static SUNDIALS::sunmatrixsparse_static SUNDIALS::sunlinsolband_static SUNDIALS::sunlinsoldense_static SUNDIALS::sunlinsolpcg_static SUNDIALS::sunlinsolspbcgs_static SUNDIALS::sunlinsolspfgmr_static SUNDIALS::sunlinsolspgmr_static SUNDIALS::sunlinsolsptfqmr_static SUNDIALS::sunnonlinsolnewton_static SUNDIALS::sunnonlinsolfixedpoint_static SUNDIALS::sundomeigestpower_static SUNDIALS::arkode_static SUNDIALS::cvode_static SUNDIALS::cvodes_static SUNDIALS::ida_static SUNDIALS::idas_static SUNDIALS::kinsol_static)
   list(APPEND _cmake_expected_targets "${_cmake_expected_target}")
   if(TARGET "${_cmake_expected_target}")
     list(APPEND _cmake_targets_defined "${_cmake_expected_target}")
@@ -185,6 +185,15 @@ set_target_properties(SUNDIALS::sunnonlinsolnewton_static PROPERTIES
 add_library(SUNDIALS::sunnonlinsolfixedpoint_static STATIC IMPORTED)
 
 set_target_properties(SUNDIALS::sunnonlinsolfixedpoint_static PROPERTIES
+  INTERFACE_COMPILE_DEFINITIONS "SUNDIALS_STATIC_DEFINE"
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
+  INTERFACE_LINK_LIBRARIES "\$<LINK_ONLY:-lm>;SUNDIALS::core_static"
+)
+
+# Create imported target SUNDIALS::sundomeigestpower_static
+add_library(SUNDIALS::sundomeigestpower_static STATIC IMPORTED)
+
+set_target_properties(SUNDIALS::sundomeigestpower_static PROPERTIES
   INTERFACE_COMPILE_DEFINITIONS "SUNDIALS_STATIC_DEFINE"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
   INTERFACE_LINK_LIBRARIES "\$<LINK_ONLY:-lm>;SUNDIALS::core_static"

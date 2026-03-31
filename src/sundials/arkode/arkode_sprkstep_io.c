@@ -2,8 +2,11 @@
  * Programmer(s): Cody J. Balos @ LLNL
  *---------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2024, Lawrence Livermore National Security
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
  * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
  * All rights reserved.
  *
  * See the top-level LICENSE and NOTICE files for details.
@@ -21,12 +24,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_types.h>
 
 #include "arkode/arkode.h"
 #include "arkode/arkode_sprk.h"
 #include "arkode_sprkstep_impl.h"
+#include "arkode_types_impl.h"
+
+#include "sundials_cli.h"
+#include "sundials_utils.h"
 
 /*===============================================================
   Exported optional input functions.
@@ -48,25 +56,10 @@ int SPRKStepSetUseCompensatedSums(void* arkode_mem, sunbooleantype onoff)
                                         &step_mem);
   if (retval != ARK_SUCCESS) { return (retval); }
 
-  if (onoff)
-  {
-    ark_mem->use_compensated_sums = SUNTRUE;
-    ark_mem->step                 = sprkStep_TakeStep_Compensated;
-    if (!step_mem->yerr)
-    {
-      if (!arkAllocVec(ark_mem, ark_mem->yn, &(step_mem->yerr)))
-      {
-        return ARK_MEM_FAIL;
-      }
-      /* Zero yerr for compensated summation */
-      N_VConst(ZERO, step_mem->yerr);
-    }
-  }
-  else
-  {
-    ark_mem->use_compensated_sums = SUNFALSE;
-    ark_mem->step                 = sprkStep_TakeStep;
-  }
+  if (onoff) { ark_mem->use_compensated_sums = SUNTRUE; }
+  else { ark_mem->use_compensated_sums = SUNFALSE; }
+
+  retval = sprkStep_SetUseCompensatedSums(arkode_mem, onoff);
 
   return (retval);
 }
@@ -209,6 +202,35 @@ int SPRKStepGetNumRhsEvals(void* arkode_mem, long int* nf1, long int* nf2)
   ===============================================================*/
 
 /*---------------------------------------------------------------
+  sprkStep_SetOption:
+
+  Provides string-based control over SPRKStep-specific "set"
+  routines.
+  ---------------------------------------------------------------*/
+int sprkStep_SetOptions(ARKodeMem ark_mem, int* argidx, char* argv[],
+                        size_t offset, sunbooleantype* arg_used)
+{
+  /* Set lists of keys, and the corresponding set routines */
+  static const struct sunKeyCharPair char_pairs[] = {
+    {"method_name", SPRKStepSetMethodName}};
+  static const int num_char_keys = sizeof(char_pairs) / sizeof(*char_pairs);
+
+  /* check all "char" keys */
+  int j, retval;
+  retval = sunCheckAndSetCharArgs((void*)ark_mem, argidx, argv, offset,
+                                  char_pairs, num_char_keys, arg_used, &j);
+  if (retval != ARK_SUCCESS)
+  {
+    arkProcessError(ark_mem, retval, __LINE__, __func__, __FILE__,
+                    "error setting key: %s", char_pairs[j].key);
+    return retval;
+  }
+  if (*arg_used) { return ARK_SUCCESS; }
+
+  return (ARK_SUCCESS);
+}
+
+/*---------------------------------------------------------------
   sprkStep_SetDefaults:
 
   Resets all SPRKStep optional inputs to their default values.
@@ -267,23 +289,8 @@ int sprkStep_PrintAllStats(ARKodeMem ark_mem, FILE* outfile, SUNOutputFormat fmt
   retval = sprkStep_AccessStepMem(ark_mem, __func__, &step_mem);
   if (retval != ARK_SUCCESS) { return (retval); }
 
-  switch (fmt)
-  {
-  case SUN_OUTPUTFORMAT_TABLE:
-    /* function evaluations */
-    fprintf(outfile, "f1 RHS fn evals              = %ld\n", step_mem->nf1);
-    fprintf(outfile, "f2 RHS fn evals              = %ld\n", step_mem->nf2);
-    break;
-  case SUN_OUTPUTFORMAT_CSV:
-    /* function evaluations */
-    fprintf(outfile, ",f1 RHS evals,%ld", step_mem->nf1);
-    fprintf(outfile, ",f2 RHS fn evals,%ld", step_mem->nf2);
-    break;
-  default:
-    arkProcessError(ark_mem, ARK_ILL_INPUT, __LINE__, __func__, __FILE__,
-                    "Invalid formatting option.");
-    return (ARK_ILL_INPUT);
-  }
+  sunfprintf_long(outfile, fmt, SUNFALSE, "f1 RHS fn evals", step_mem->nf1);
+  sunfprintf_long(outfile, fmt, SUNFALSE, "f2 RHS fn evals", step_mem->nf2);
 
   return (ARK_SUCCESS);
 }
@@ -308,6 +315,33 @@ int sprkStep_WriteParameters(ARKodeMem ark_mem, FILE* fp)
   fprintf(fp, "  Method stages %i\n", step_mem->method->stages);
 
   return (ARK_SUCCESS);
+}
+
+int sprkStep_SetUseCompensatedSums(ARKodeMem ark_mem, sunbooleantype onoff)
+{
+  ARKodeSPRKStepMem step_mem = NULL;
+  int retval                 = 0;
+
+  /* access ARKodeSPRKStepMem structure */
+  retval = sprkStep_AccessStepMem(ark_mem, __func__, &step_mem);
+  if (retval != ARK_SUCCESS) { return (retval); }
+
+  if (onoff)
+  {
+    ark_mem->step = sprkStep_TakeStep_Compensated;
+    if (!step_mem->yerr)
+    {
+      if (!arkAllocVec(ark_mem, ark_mem->yn, &(step_mem->yerr)))
+      {
+        return ARK_MEM_FAIL;
+      }
+      /* Zero yerr for compensated summation */
+      N_VConst(ZERO, step_mem->yerr);
+    }
+  }
+  else { ark_mem->step = sprkStep_TakeStep; }
+
+  return (retval);
 }
 
 /*===============================================================
