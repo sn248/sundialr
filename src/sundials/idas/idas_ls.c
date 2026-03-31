@@ -815,17 +815,17 @@ char* IDAGetLinReturnFlagName(long int flag)
 
   switch (flag)
   {
-  case IDALS_SUCCESS: sprintf(name, "IDALS_SUCCESS"); break;
-  case IDALS_MEM_NULL: sprintf(name, "IDALS_MEM_NULL"); break;
-  case IDALS_LMEM_NULL: sprintf(name, "IDALS_LMEM_NULL"); break;
-  case IDALS_ILL_INPUT: sprintf(name, "IDALS_ILL_INPUT"); break;
-  case IDALS_MEM_FAIL: sprintf(name, "IDALS_MEM_FAIL"); break;
-  case IDALS_PMEM_NULL: sprintf(name, "IDALS_PMEM_NULL"); break;
-  case IDALS_JACFUNC_UNRECVR: sprintf(name, "IDALS_JACFUNC_UNRECVR"); break;
-  case IDALS_JACFUNC_RECVR: sprintf(name, "IDALS_JACFUNC_RECVR"); break;
-  case IDALS_SUNMAT_FAIL: sprintf(name, "IDALS_SUNMAT_FAIL"); break;
-  case IDALS_SUNLS_FAIL: sprintf(name, "IDALS_SUNLS_FAIL"); break;
-  default: sprintf(name, "NONE");
+  case IDALS_SUCCESS: strcpy(name, "IDALS_SUCCESS"); break;
+  case IDALS_MEM_NULL: strcpy(name, "IDALS_MEM_NULL"); break;
+  case IDALS_LMEM_NULL: strcpy(name, "IDALS_LMEM_NULL"); break;
+  case IDALS_ILL_INPUT: strcpy(name, "IDALS_ILL_INPUT"); break;
+  case IDALS_MEM_FAIL: strcpy(name, "IDALS_MEM_FAIL"); break;
+  case IDALS_PMEM_NULL: strcpy(name, "IDALS_PMEM_NULL"); break;
+  case IDALS_JACFUNC_UNRECVR: strcpy(name, "IDALS_JACFUNC_UNRECVR"); break;
+  case IDALS_JACFUNC_RECVR: strcpy(name, "IDALS_JACFUNC_RECVR"); break;
+  case IDALS_SUNMAT_FAIL: strcpy(name, "IDALS_SUNMAT_FAIL"); break;
+  case IDALS_SUNLS_FAIL: strcpy(name, "IDALS_SUNLS_FAIL"); break;
+  default: strcpy(name, "NONE");
   }
 
   return (name);

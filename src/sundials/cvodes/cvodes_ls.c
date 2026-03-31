@@ -940,19 +940,19 @@ char* CVodeGetLinReturnFlagName(long int flag)
 
   switch (flag)
   {
-  case CVLS_SUCCESS: sprintf(name, "CVLS_SUCCESS"); break;
-  case CVLS_MEM_NULL: sprintf(name, "CVLS_MEM_NULL"); break;
-  case CVLS_LMEM_NULL: sprintf(name, "CVLS_LMEM_NULL"); break;
-  case CVLS_ILL_INPUT: sprintf(name, "CVLS_ILL_INPUT"); break;
-  case CVLS_MEM_FAIL: sprintf(name, "CVLS_MEM_FAIL"); break;
-  case CVLS_PMEM_NULL: sprintf(name, "CVLS_PMEM_NULL"); break;
-  case CVLS_JACFUNC_UNRECVR: sprintf(name, "CVLS_JACFUNC_UNRECVR"); break;
-  case CVLS_JACFUNC_RECVR: sprintf(name, "CVLS_JACFUNC_RECVR"); break;
-  case CVLS_SUNMAT_FAIL: sprintf(name, "CVLS_SUNMAT_FAIL"); break;
-  case CVLS_SUNLS_FAIL: sprintf(name, "CVLS_SUNLS_FAIL"); break;
-  case CVLS_NO_ADJ: sprintf(name, "CVLS_NO_ADJ"); break;
-  case CVLS_LMEMB_NULL: sprintf(name, "CVLS_LMEMB_NULL"); break;
-  default: sprintf(name, "NONE");
+  case CVLS_SUCCESS: strcpy(name, "CVLS_SUCCESS"); break;
+  case CVLS_MEM_NULL: strcpy(name, "CVLS_MEM_NULL"); break;
+  case CVLS_LMEM_NULL: strcpy(name, "CVLS_LMEM_NULL"); break;
+  case CVLS_ILL_INPUT: strcpy(name, "CVLS_ILL_INPUT"); break;
+  case CVLS_MEM_FAIL: strcpy(name, "CVLS_MEM_FAIL"); break;
+  case CVLS_PMEM_NULL: strcpy(name, "CVLS_PMEM_NULL"); break;
+  case CVLS_JACFUNC_UNRECVR: strcpy(name, "CVLS_JACFUNC_UNRECVR"); break;
+  case CVLS_JACFUNC_RECVR: strcpy(name, "CVLS_JACFUNC_RECVR"); break;
+  case CVLS_SUNMAT_FAIL: strcpy(name, "CVLS_SUNMAT_FAIL"); break;
+  case CVLS_SUNLS_FAIL: strcpy(name, "CVLS_SUNLS_FAIL"); break;
+  case CVLS_NO_ADJ: strcpy(name, "CVLS_NO_ADJ"); break;
+  case CVLS_LMEMB_NULL: strcpy(name, "CVLS_LMEMB_NULL"); break;
+  default: strcpy(name, "NONE");
   }
 
   return (name);

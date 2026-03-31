@@ -1192,29 +1192,29 @@ char* KINGetReturnFlagName(long int flag)
 
   switch (flag)
   {
-  case KIN_SUCCESS: sprintf(name, "KIN_SUCCESS"); break;
-  case KIN_INITIAL_GUESS_OK: sprintf(name, "KIN_INITIAL_GUESS_OK"); break;
-  case KIN_STEP_LT_STPTOL: sprintf(name, "KIN_STEP_LT_STPTOL"); break;
-  case KIN_WARNING: sprintf(name, "KIN_WARNING"); break;
-  case KIN_MEM_NULL: sprintf(name, "KIN_MEM_NULL"); break;
-  case KIN_ILL_INPUT: sprintf(name, "KIN_ILL_INPUT"); break;
-  case KIN_NO_MALLOC: sprintf(name, "KIN_NO_MALLOC"); break;
-  case KIN_MEM_FAIL: sprintf(name, "KIN_MEM_FAIL"); break;
-  case KIN_LINESEARCH_NONCONV: sprintf(name, "KIN_LINESEARCH_NONCONV"); break;
-  case KIN_MAXITER_REACHED: sprintf(name, "KIN_MAXITER_REACHED"); break;
-  case KIN_MXNEWT_5X_EXCEEDED: sprintf(name, "KIN_MXNEWT_5X_EXCEEDED"); break;
-  case KIN_LINESEARCH_BCFAIL: sprintf(name, "KIN_LINESEARCH_BCFAIL"); break;
-  case KIN_LINSOLV_NO_RECOVERY: sprintf(name, "KIN_LINSOLV_NO_RECOVERY"); break;
-  case KIN_LINIT_FAIL: sprintf(name, "KIN_LINIT_FAIL"); break;
-  case KIN_LSETUP_FAIL: sprintf(name, "KIN_LSETUP_FAIL"); break;
-  case KIN_LSOLVE_FAIL: sprintf(name, "KIN_LSOLVE_FAIL"); break;
-  case KIN_SYSFUNC_FAIL: sprintf(name, "KIN_SYSFUNC_FAIL"); break;
-  case KIN_FIRST_SYSFUNC_ERR: sprintf(name, "KIN_FIRST_SYSFUNC_ERR"); break;
-  case KIN_REPTD_SYSFUNC_ERR: sprintf(name, "KIN_REPTD_SYSFUNC_ERR"); break;
-  case KIN_VECTOROP_ERR: sprintf(name, "KIN_VECTOROP_ERR"); break;
-  case KIN_CONTEXT_ERR: sprintf(name, "KIN_CONTEXT_ERR"); break;
-  case KIN_DAMPING_FN_ERR: sprintf(name, "KIN_DAMPING_FN_ERR"); break;
-  default: sprintf(name, "NONE");
+  case KIN_SUCCESS: strcpy(name, "KIN_SUCCESS"); break;
+  case KIN_INITIAL_GUESS_OK: strcpy(name, "KIN_INITIAL_GUESS_OK"); break;
+  case KIN_STEP_LT_STPTOL: strcpy(name, "KIN_STEP_LT_STPTOL"); break;
+  case KIN_WARNING: strcpy(name, "KIN_WARNING"); break;
+  case KIN_MEM_NULL: strcpy(name, "KIN_MEM_NULL"); break;
+  case KIN_ILL_INPUT: strcpy(name, "KIN_ILL_INPUT"); break;
+  case KIN_NO_MALLOC: strcpy(name, "KIN_NO_MALLOC"); break;
+  case KIN_MEM_FAIL: strcpy(name, "KIN_MEM_FAIL"); break;
+  case KIN_LINESEARCH_NONCONV: strcpy(name, "KIN_LINESEARCH_NONCONV"); break;
+  case KIN_MAXITER_REACHED: strcpy(name, "KIN_MAXITER_REACHED"); break;
+  case KIN_MXNEWT_5X_EXCEEDED: strcpy(name, "KIN_MXNEWT_5X_EXCEEDED"); break;
+  case KIN_LINESEARCH_BCFAIL: strcpy(name, "KIN_LINESEARCH_BCFAIL"); break;
+  case KIN_LINSOLV_NO_RECOVERY: strcpy(name, "KIN_LINSOLV_NO_RECOVERY"); break;
+  case KIN_LINIT_FAIL: strcpy(name, "KIN_LINIT_FAIL"); break;
+  case KIN_LSETUP_FAIL: strcpy(name, "KIN_LSETUP_FAIL"); break;
+  case KIN_LSOLVE_FAIL: strcpy(name, "KIN_LSOLVE_FAIL"); break;
+  case KIN_SYSFUNC_FAIL: strcpy(name, "KIN_SYSFUNC_FAIL"); break;
+  case KIN_FIRST_SYSFUNC_ERR: strcpy(name, "KIN_FIRST_SYSFUNC_ERR"); break;
+  case KIN_REPTD_SYSFUNC_ERR: strcpy(name, "KIN_REPTD_SYSFUNC_ERR"); break;
+  case KIN_VECTOROP_ERR: strcpy(name, "KIN_VECTOROP_ERR"); break;
+  case KIN_CONTEXT_ERR: strcpy(name, "KIN_CONTEXT_ERR"); break;
+  case KIN_DAMPING_FN_ERR: strcpy(name, "KIN_DAMPING_FN_ERR"); break;
+  default: strcpy(name, "NONE");
   }
 
   return (name);

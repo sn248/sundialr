@@ -1591,19 +1591,19 @@ char* ARKodeGetLinReturnFlagName(long int flag)
 
   switch (flag)
   {
-  case ARKLS_SUCCESS: sprintf(name, "ARKLS_SUCCESS"); break;
-  case ARKLS_MEM_NULL: sprintf(name, "ARKLS_MEM_NULL"); break;
-  case ARKLS_LMEM_NULL: sprintf(name, "ARKLS_LMEM_NULL"); break;
-  case ARKLS_ILL_INPUT: sprintf(name, "ARKLS_ILL_INPUT"); break;
-  case ARKLS_MEM_FAIL: sprintf(name, "ARKLS_MEM_FAIL"); break;
-  case ARKLS_MASSMEM_NULL: sprintf(name, "ARKLS_MASSMEM_NULL"); break;
-  case ARKLS_JACFUNC_UNRECVR: sprintf(name, "ARKLS_JACFUNC_UNRECVR"); break;
-  case ARKLS_JACFUNC_RECVR: sprintf(name, "ARKLS_JACFUNC_RECVR"); break;
-  case ARKLS_MASSFUNC_UNRECVR: sprintf(name, "ARKLS_MASSFUNC_UNRECVR"); break;
-  case ARKLS_MASSFUNC_RECVR: sprintf(name, "ARKLS_MASSFUNC_RECVR"); break;
-  case ARKLS_SUNMAT_FAIL: sprintf(name, "ARKLS_SUNMAT_FAIL"); break;
-  case ARKLS_SUNLS_FAIL: sprintf(name, "ARKLS_SUNLS_FAIL"); break;
-  default: sprintf(name, "NONE");
+  case ARKLS_SUCCESS: strcpy(name, "ARKLS_SUCCESS"); break;
+  case ARKLS_MEM_NULL: strcpy(name, "ARKLS_MEM_NULL"); break;
+  case ARKLS_LMEM_NULL: strcpy(name, "ARKLS_LMEM_NULL"); break;
+  case ARKLS_ILL_INPUT: strcpy(name, "ARKLS_ILL_INPUT"); break;
+  case ARKLS_MEM_FAIL: strcpy(name, "ARKLS_MEM_FAIL"); break;
+  case ARKLS_MASSMEM_NULL: strcpy(name, "ARKLS_MASSMEM_NULL"); break;
+  case ARKLS_JACFUNC_UNRECVR: strcpy(name, "ARKLS_JACFUNC_UNRECVR"); break;
+  case ARKLS_JACFUNC_RECVR: strcpy(name, "ARKLS_JACFUNC_RECVR"); break;
+  case ARKLS_MASSFUNC_UNRECVR: strcpy(name, "ARKLS_MASSFUNC_UNRECVR"); break;
+  case ARKLS_MASSFUNC_RECVR: strcpy(name, "ARKLS_MASSFUNC_RECVR"); break;
+  case ARKLS_SUNMAT_FAIL: strcpy(name, "ARKLS_SUNMAT_FAIL"); break;
+  case ARKLS_SUNLS_FAIL: strcpy(name, "ARKLS_SUNLS_FAIL"); break;
+  default: strcpy(name, "NONE");
   }
 
   return (name);

@@ -2108,29 +2108,29 @@ void KINPrintInfo(SUNDIALS_MAYBE_UNUSED KINMem kin_mem, int info_code,
 
     switch (ret)
     {
-    case KIN_SUCCESS: sprintf(retstr, "KIN_SUCCESS"); break;
-    case KIN_SYSFUNC_FAIL: sprintf(retstr, "KIN_SYSFUNC_FAIL"); break;
-    case KIN_REPTD_SYSFUNC_ERR: sprintf(retstr, "KIN_REPTD_SYSFUNC_ERR"); break;
-    case KIN_STEP_LT_STPTOL: sprintf(retstr, "KIN_STEP_LT_STPTOL"); break;
+    case KIN_SUCCESS: strcpy(retstr, "KIN_SUCCESS"); break;
+    case KIN_SYSFUNC_FAIL: strcpy(retstr, "KIN_SYSFUNC_FAIL"); break;
+    case KIN_REPTD_SYSFUNC_ERR: strcpy(retstr, "KIN_REPTD_SYSFUNC_ERR"); break;
+    case KIN_STEP_LT_STPTOL: strcpy(retstr, "KIN_STEP_LT_STPTOL"); break;
     case KIN_LINESEARCH_NONCONV:
-      sprintf(retstr, "KIN_LINESEARCH_NONCONV");
+      strcpy(retstr, "KIN_LINESEARCH_NONCONV");
       break;
-    case KIN_LINESEARCH_BCFAIL: sprintf(retstr, "KIN_LINESEARCH_BCFAIL"); break;
-    case KIN_MAXITER_REACHED: sprintf(retstr, "KIN_MAXITER_REACHED"); break;
+    case KIN_LINESEARCH_BCFAIL: strcpy(retstr, "KIN_LINESEARCH_BCFAIL"); break;
+    case KIN_MAXITER_REACHED: strcpy(retstr, "KIN_MAXITER_REACHED"); break;
     case KIN_MXNEWT_5X_EXCEEDED:
-      sprintf(retstr, "KIN_MXNEWT_5X_EXCEEDED");
+      strcpy(retstr, "KIN_MXNEWT_5X_EXCEEDED");
       break;
     case KIN_LINSOLV_NO_RECOVERY:
-      sprintf(retstr, "KIN_LINSOLV_NO_RECOVERY");
+      strcpy(retstr, "KIN_LINSOLV_NO_RECOVERY");
       break;
-    case KIN_LSETUP_FAIL: sprintf(retstr, "KIN_PRECONDSET_FAILURE"); break;
-    case KIN_LSOLVE_FAIL: sprintf(retstr, "KIN_PRECONDSOLVE_FAILURE"); break;
+    case KIN_LSETUP_FAIL: strcpy(retstr, "KIN_PRECONDSET_FAILURE"); break;
+    case KIN_LSOLVE_FAIL: strcpy(retstr, "KIN_PRECONDSOLVE_FAILURE"); break;
     }
 
     /* Compose the message */
 
-    sprintf(msg1, msgfmt, ret);
-    sprintf(msg, "%s (%s)", msg1, retstr);
+    snprintf(msg1, sizeof msg1, msgfmt, ret);
+    snprintf(msg, sizeof msg, "%s (%s)", msg1, retstr);
   }
   else
   {

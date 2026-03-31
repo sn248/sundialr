@@ -12,10 +12,14 @@ cd src
 # compile sundials from source ###################################################
 sh ./scripts/sundials_download.sh ${RSCRIPT_BIN}
 
-# CRAN fix: patch SUNDIALS source to remove abort(), fprintf(stderr,...), and
-# stdout/stderr symbol references, which CRAN flags as non-compliant.
+# CRAN fix: patch SUNDIALS source to remove abort(), fprintf(stderr,...),
+# stdout/stderr symbol references, and sprintf, which CRAN flags as non-compliant.
 # See "Writing R Extensions" §1.6.4. Our registered R error handler (via
 # SUNContext_PushErrHandler) makes these code paths unreachable at runtime.
+#
+# NOTE: All patches use 'perl -pi -e' instead of 'sed -i' for portability.
+#   macOS BSD sed requires 'sed -i ""' while GNU sed uses 'sed -i'; perl
+#   handles in-place editing identically on both platforms.
 #
 # sundials_errors.c:
 #   - SUNAbortErrHandlerFn: remove abort() (replaced by our Rf_error handler)
@@ -31,20 +35,23 @@ sh ./scripts/sundials_download.sh ${RSCRIPT_BIN}
 #   - N_VPrint: remove printf("NULL...\n") calls that GCC optimizes to puts()
 # nvector_serial.c:
 #   - N_VPrint_Serial: remove direct stdout argument to N_VPrintFile_Serial
+# cvodes/{cvodes_io,cvodes_ls,cvodes_diag}.c, idas/{idas_io,idas_ls}.c:
+#   - replace sprintf(name, "LITERAL") with strcpy(name, "LITERAL") to remove
+#     the sprintf (___sprintf_chk on macOS) symbol from the linked libraries
 
-sed -i 's|  abort();|  /* CRAN: abort() removed; Rf_error raised via SUNContext_PushErrHandler */|' \
+perl -pi -e 's|  abort\(\);|  /* CRAN: abort() removed; Rf_error raised via SUNContext_PushErrHandler */|' \
     sundials-src/src/sundials/sundials_errors.c
 
-sed -i 's|  fprintf(stderr, "%s", log_msg);|  /* CRAN: fprintf(stderr) removed */|g' \
+perl -pi -e 's|  fprintf\(stderr, "%s", log_msg\);|  /* CRAN: fprintf(stderr) removed */|g' \
     sundials-src/src/sundials/sundials_errors.c
 
-sed -i 's|  logger->error_fp   = stderr;|  logger->error_fp   = NULL; /* CRAN: stderr not allowed */|' \
+perl -pi -e 's|  logger->error_fp   = stderr;|  logger->error_fp   = NULL; /* CRAN: stderr not allowed */|' \
     sundials-src/src/sundials/sundials_logger.c
 
-sed -i 's|  logger->warning_fp = stdout;|  logger->warning_fp = NULL; /* CRAN: stdout not allowed */|' \
+perl -pi -e 's|  logger->warning_fp = stdout;|  logger->warning_fp = NULL; /* CRAN: stdout not allowed */|' \
     sundials-src/src/sundials/sundials_logger.c
 
-sed -i 's|  if (fp && fp != stdout && fp != stderr)|  if (fp) /* CRAN: stdout/stderr refs removed */|' \
+perl -pi -e 's|  if \(fp && fp != stdout && fp != stderr\)|  if (fp) /* CRAN: stdout/stderr refs removed */|' \
     sundials-src/src/sundials/sundials_logger.c
 
 python3 -c "
@@ -63,33 +70,46 @@ with open(fname, 'w') as f: f.write(c)
 # Remove those branches; callers passing those names will get NULL (no output).
 # Delete the stdout and stderr if/else-if lines, then strip the leading "else "
 # from the remaining branch so no dangling else is left.
-sed -i '/    if (!strcmp(filename, "stdout")) { fp = stdout; }/d' \
+perl -ni -e 'print unless m{    if \(!strcmp\(filename, "stdout"\)\) \{ fp = stdout; \}}' \
     sundials-src/src/sundials/sundials_futils.c
 
-sed -i '/    else if (!strcmp(filename, "stderr")) { fp = stderr; }/d' \
+perl -ni -e 'print unless m{    else if \(!strcmp\(filename, "stderr"\)\) \{ fp = stderr; \}}' \
     sundials-src/src/sundials/sundials_futils.c
 
-sed -i 's|    else { fp = fopen(filename, mode); }|    fp = fopen(filename, mode); /* CRAN: stdout\/stderr mappings removed */|' \
+perl -pi -e 's|    else \{ fp = fopen\(filename, mode\); \}|    fp = fopen(filename, mode); /* CRAN: stdout/stderr mappings removed */|' \
     sundials-src/src/sundials/sundials_futils.c
 
 # SUNDIALSFileClose guards fclose with fp != stdout and fp != stderr comparisons.
 # Safe to remove since we no longer assign stdout/stderr to any fp above.
-sed -i 's|  if (fp && (fp != stdout) && (fp != stderr)) { fclose(fp); }|  if (fp) { fclose(fp); } /* CRAN: stdout/stderr refs removed */|' \
+perl -pi -e 's|  if \(fp && \(fp != stdout\) && \(fp != stderr\)\) \{ fclose\(fp\); \}|  if (fp) { fclose(fp); } /* CRAN: stdout/stderr refs removed */|' \
     sundials-src/src/sundials/sundials_futils.c
 
 # sundials_nvector.c: N_VPrint uses printf("NULL...\n") which GCC -O2 optimises
 # to puts(). Replace with no-ops; these are debug-only print paths.
-sed -i 's|  if (v == NULL) { printf("NULL Vector\\n"); }|  if (v == NULL) { /* CRAN: puts removed */ }|' \
+perl -pi -e 's|  if \(v == NULL\) \{ printf\("NULL Vector\\n"\); \}|  if (v == NULL) { /* CRAN: puts removed */ }|' \
     sundials-src/src/sundials/sundials_nvector.c
 
-sed -i 's|  else if (v->ops->nvprint == NULL) { printf("NULL Print Op\\n"); }|  else if (v->ops->nvprint == NULL) { /* CRAN: puts removed */ }|' \
+perl -pi -e 's|  else if \(v->ops->nvprint == NULL\) \{ printf\("NULL Print Op\\n"\); \}|  else if (v->ops->nvprint == NULL) { /* CRAN: puts removed */ }|' \
     sundials-src/src/sundials/sundials_nvector.c
 
 # nvector_serial.c: N_VPrint_Serial passes stdout directly to N_VPrintFile_Serial.
 # Replace with a no-op; users who need vector printing can call N_VPrintFile_Serial
 # with an explicit FILE* handle.
-sed -i 's|  N_VPrintFile_Serial(x, stdout);|  /* CRAN: stdout removed; use N_VPrintFile_Serial with explicit FILE* */|' \
+perl -pi -e 's|  N_VPrintFile_Serial\(x, stdout\);|  /* CRAN: stdout removed; use N_VPrintFile_Serial with explicit FILE* */|' \
     sundials-src/src/nvector/serial/nvector_serial.c
+
+# cvodes and idas: replace sprintf(name, "LITERAL") with strcpy(name, "LITERAL")
+# to eliminate the sprintf (___sprintf_chk on macOS) symbol from the linked libs.
+# All sprintf calls in these files use a plain string literal with no format
+# specifiers, so strcpy is a safe and equivalent replacement.
+for f in \
+    sundials-src/src/cvodes/cvodes_io.c \
+    sundials-src/src/cvodes/cvodes_ls.c \
+    sundials-src/src/cvodes/cvodes_diag.c \
+    sundials-src/src/idas/idas_io.c \
+    sundials-src/src/idas/idas_ls.c; do
+  perl -pi -e 's/sprintf\((\w+), ("(?:[^"\\]|\\.)*")\)/strcpy($1, $2)/g' "$f"
+done
 
 dot() { file=$1; shift; . "$file"; }
 dot ./scripts/r_config.sh ""
