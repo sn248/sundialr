@@ -1,2 +1,0 @@
-/usr/bin/ar qc libsundials_sunlinsolsptfqmr.a CMakeFiles/sundials_sunlinsolsptfqmr_obj_static.dir/sunlinsol_sptfqmr.c.o
-/usr/bin/ranlib libsundials_sunlinsolsptfqmr.a

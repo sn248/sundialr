@@ -1,2 +1,0 @@
-/usr/bin/ar qc libsundials_nvecmanyvector.a CMakeFiles/sundials_nvecmanyvector_obj_static.dir/nvector_manyvector.c.o
-/usr/bin/ranlib libsundials_nvecmanyvector.a

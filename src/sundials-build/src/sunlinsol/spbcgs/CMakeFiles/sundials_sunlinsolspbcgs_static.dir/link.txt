@@ -1,2 +1,0 @@
-/usr/bin/ar qc libsundials_sunlinsolspbcgs.a CMakeFiles/sundials_sunlinsolspbcgs_obj_static.dir/sunlinsol_spbcgs.c.o
-/usr/bin/ranlib libsundials_sunlinsolspbcgs.a

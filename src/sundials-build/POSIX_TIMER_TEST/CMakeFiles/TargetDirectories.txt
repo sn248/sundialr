@@ -1,3 +1,0 @@
-/home/quantilogy/Documents/GitHub/sn248/sundialr/src/sundials-build/POSIX_TIMER_TEST/CMakeFiles/ltest.dir
-/home/quantilogy/Documents/GitHub/sn248/sundialr/src/sundials-build/POSIX_TIMER_TEST/CMakeFiles/edit_cache.dir
-/home/quantilogy/Documents/GitHub/sn248/sundialr/src/sundials-build/POSIX_TIMER_TEST/CMakeFiles/rebuild_cache.dir

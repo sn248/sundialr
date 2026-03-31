@@ -2,8 +2,11 @@
 # Programmer(s): Cody J. Balos @ LLNL
 # ---------------------------------------------------------------
 # SUNDIALS Copyright Start
-# Copyright (c) 2002-2024, Lawrence Livermore National Security
+# Copyright (c) 2025-2026, Lawrence Livermore National Security,
+# University of Maryland Baltimore County, and the SUNDIALS contributors.
+# Copyright (c) 2013-2025, Lawrence Livermore National Security
 # and Southern Methodist University.
+# Copyright (c) 2002-2013, Lawrence Livermore National Security.
 # All rights reserved.
 #
 # See the top-level LICENSE and NOTICE files for details.
@@ -42,7 +45,7 @@ include(CMakeFindDependencyMacro)
 
 ### ------- Set FOUND status for SUNDIALS components
 
-set(_installed_components "kinsol;idas;ida;cvodes;cvode;arkode;sunnonlinsolfixedpoint;sunnonlinsolnewton;sunlinsolsptfqmr;sunlinsolspgmr;sunlinsolspfgmr;sunlinsolspbcgs;sunlinsolpcg;sunlinsoldense;sunlinsolband;sunmatrixsparse;sunmatrixdense;sunmatrixband;nvecmanyvector;nvecserial;core;kinsol;idas;ida;cvodes;cvode;arkode;sunnonlinsolfixedpoint;sunnonlinsolnewton;sunlinsolsptfqmr;sunlinsolspgmr;sunlinsolspfgmr;sunlinsolspbcgs;sunlinsolpcg;sunlinsoldense;sunlinsolband;sunmatrixsparse;sunmatrixdense;sunmatrixband;nvecmanyvector;nvecserial;core;")
+set(_installed_components "kinsol;idas;ida;cvodes;cvode;arkode;sundomeigestpower;sunnonlinsolfixedpoint;sunnonlinsolnewton;sunlinsolsptfqmr;sunlinsolspgmr;sunlinsolspfgmr;sunlinsolspbcgs;sunlinsolpcg;sunlinsoldense;sunlinsolband;sunmatrixsparse;sunmatrixdense;sunmatrixband;nvecmanyvector;nvecserial;core;")
 
 set(_comp_not_found "")
 foreach(_comp ${SUNDIALS_FIND_COMPONENTS})
@@ -64,7 +67,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/SUNDIALSTargets.cmake")
 
 ### ------- Alias targets
 
-set(_SUNDIALS_ALIAS_TARGETS "sundials_kinsol->sundials_kinsol_static;sundials_idas->sundials_idas_static;sundials_ida->sundials_ida_static;sundials_cvodes->sundials_cvodes_static;sundials_cvode->sundials_cvode_static;sundials_arkode->sundials_arkode_static;sundials_sunnonlinsolfixedpoint->sundials_sunnonlinsolfixedpoint_static;sundials_sunnonlinsolnewton->sundials_sunnonlinsolnewton_static;sundials_sunlinsolsptfqmr->sundials_sunlinsolsptfqmr_static;sundials_sunlinsolspgmr->sundials_sunlinsolspgmr_static;sundials_sunlinsolspfgmr->sundials_sunlinsolspfgmr_static;sundials_sunlinsolspbcgs->sundials_sunlinsolspbcgs_static;sundials_sunlinsolpcg->sundials_sunlinsolpcg_static;sundials_sunlinsoldense->sundials_sunlinsoldense_static;sundials_sunlinsolband->sundials_sunlinsolband_static;sundials_sunmatrixsparse->sundials_sunmatrixsparse_static;sundials_sunmatrixdense->sundials_sunmatrixdense_static;sundials_sunmatrixband->sundials_sunmatrixband_static;sundials_nvecmanyvector->sundials_nvecmanyvector_static;sundials_nvecserial->sundials_nvecserial_static;sundials_core->sundials_core_static;")
+set(_SUNDIALS_ALIAS_TARGETS "sundials_kinsol->sundials_kinsol_static;sundials_idas->sundials_idas_static;sundials_ida->sundials_ida_static;sundials_cvodes->sundials_cvodes_static;sundials_cvode->sundials_cvode_static;sundials_arkode->sundials_arkode_static;sundials_sundomeigestpower->sundials_sundomeigestpower_static;sundials_sunnonlinsolfixedpoint->sundials_sunnonlinsolfixedpoint_static;sundials_sunnonlinsolnewton->sundials_sunnonlinsolnewton_static;sundials_sunlinsolsptfqmr->sundials_sunlinsolsptfqmr_static;sundials_sunlinsolspgmr->sundials_sunlinsolspgmr_static;sundials_sunlinsolspfgmr->sundials_sunlinsolspfgmr_static;sundials_sunlinsolspbcgs->sundials_sunlinsolspbcgs_static;sundials_sunlinsolpcg->sundials_sunlinsolpcg_static;sundials_sunlinsoldense->sundials_sunlinsoldense_static;sundials_sunlinsolband->sundials_sunlinsolband_static;sundials_sunmatrixsparse->sundials_sunmatrixsparse_static;sundials_sunmatrixdense->sundials_sunmatrixdense_static;sundials_sunmatrixband->sundials_sunmatrixband_static;sundials_nvecmanyvector->sundials_nvecmanyvector_static;sundials_nvecserial->sundials_nvecserial_static;sundials_core->sundials_core_static;")
 foreach(ptr ${_SUNDIALS_ALIAS_TARGETS})
   string(REGEX REPLACE "sundials_" "" ptr "${ptr}")
   string(REGEX MATCHALL "([A-Za-z_]+)->([A-Za-z_]+)"
