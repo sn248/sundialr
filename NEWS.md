@@ -1,3 +1,8 @@
+sundialr v0.1.7
+===============
+* Changes in `cmake_install` file to remove warnings with respect to stdout/stderr/fprintf etc in upstream C library
+* Updated the underlying SUNDIALS library to v7.6.0 (Jan 2026)
+
 sundialr v0.1.6
 ================
 Updated build system to use cmake
@@ -10,7 +15,7 @@ Bug fixes:
 sundialr v0.1.4.1
 ================
 Bug fixes:
-* Fixed the linking problem due to multiple defined sybmols
+* Fixed the linking problem due to multiple defined symbols
 
 sundialr v0.1.4
 ================
