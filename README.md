@@ -24,7 +24,7 @@ vignette for more details.
 ## What's new?
 
 ## Comments for version 0.1.7
-+ Changes in `cmake_install` file to remove warnings with respect to stdout/stderr/fprintf etc in upstream C library (with the help of claude)
++ Changes in `/tools/cmake_call.sh` file to remove warnings with respect to stdout/stderr/fprintf etc in upstream C library (with the help of claude)
 + Updated the underlying SUNDIALS library to v7.6.0 (Jan 2026)
 
 ## Comments for version 0.1.6

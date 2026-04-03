@@ -1,6 +1,6 @@
 sundialr v0.1.7
 ===============
-* Changes in `cmake_install` file to remove warnings with respect to stdout/stderr/fprintf etc in upstream C library
+* Changes in `/tools/cmake_call.sh` file to remove warnings with respect to stdout/stderr/fprintf etc in upstream C library
 * Updated the underlying SUNDIALS library to v7.6.0 (Jan 2026)
 
 sundialr v0.1.6
