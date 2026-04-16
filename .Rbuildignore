@@ -7,3 +7,8 @@ cran-comments.md
 ^docs$
 ^pkgdown$
 ^\.github$
+^\.Rhistory$
+^\.claude$
+^\.gitattributes$
+^src/sundials$
+^src/Makevars$

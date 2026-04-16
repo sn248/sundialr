@@ -10,3 +10,12 @@ src/*.dll
 *.a
 inst/doc
 docs
+src/sundials/
+src/sundials-src/
+src/sundials-build/
+src/Makevars
+inst/lib/cmake/
+inst/lib/*.a
+autom4te.cache
+config.log
+config.status
