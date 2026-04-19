@@ -12,3 +12,5 @@ cran-comments.md
 ^\.gitattributes$
 ^src/sundials$
 ^src/Makevars$
+^CRAN-SUBMISSION$
+^CLAUDE\.md$
