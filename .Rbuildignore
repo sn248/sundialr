@@ -14,3 +14,4 @@ cran-comments.md
 ^src/Makevars$
 ^CRAN-SUBMISSION$
 ^CLAUDE\.md$
+^\.positai$

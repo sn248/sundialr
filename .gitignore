@@ -19,3 +19,4 @@ inst/lib/*.a
 autom4te.cache
 config.log
 config.status
+.positai

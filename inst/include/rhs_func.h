@@ -7,6 +7,7 @@
 struct rhs_func{
   Rcpp::Function rhs_eqn;
   Rcpp::NumericVector params;
+  SEXP jac_eqn;        // user-supplied jacobian, if provided, else R_NilValue
 };
 
 int rhs_function(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data);

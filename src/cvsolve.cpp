@@ -184,7 +184,8 @@ using namespace arma;
    //-- assign user input to the struct based on SEXP type of input_function
    if (!input_function){ stop("There is no input function, stopping!"); }
 
-   struct rhs_func my_rhs_function = {input_function, Parameters};
+   // order of input is rhs input function, Parameters and User-supplied Jacobian (optional)
+   struct rhs_func my_rhs_function = {input_function, Parameters, R_NilValue};
 
    // setting the user_data in rhs function
    flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);

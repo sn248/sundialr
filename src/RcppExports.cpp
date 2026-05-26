@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // cvode
-NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, double reltolerance, NumericVector abstolerance);
-RcppExport SEXP _sundialr_cvode(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
+NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, double reltolerance, NumericVector abstolerance, Nullable<Function> jacobian);
+RcppExport SEXP _sundialr_cvode(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP, SEXP jacobianSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -23,7 +23,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type Parameters(ParametersSEXP);
     Rcpp::traits::input_parameter< double >::type reltolerance(reltoleranceSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type abstolerance(abstoleranceSEXP);
-    rcpp_result_gen = Rcpp::wrap(cvode(time_vector, IC, input_function, Parameters, reltolerance, abstolerance));
+    Rcpp::traits::input_parameter< Nullable<Function> >::type jacobian(jacobianSEXP);
+    rcpp_result_gen = Rcpp::wrap(cvode(time_vector, IC, input_function, Parameters, reltolerance, abstolerance, jacobian));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -81,7 +82,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_sundialr_cvode", (DL_FUNC) &_sundialr_cvode, 6},
+    {"_sundialr_cvode", (DL_FUNC) &_sundialr_cvode, 7},
     {"_sundialr_cvodes", (DL_FUNC) &_sundialr_cvodes, 8},
     {"_sundialr_cvsolve", (DL_FUNC) &_sundialr_cvsolve, 7},
     {"_sundialr_ida", (DL_FUNC) &_sundialr_ida, 7},

@@ -45,6 +45,30 @@
 
 using namespace Rcpp;
 
+// This is the function SUNDIALS calls internally whenever it needs the Jacobian. SUNDIALS controls
+// when and how often it's called. You register it once; SUNDIALS calls it as needed.
+// static makes is visible only within this translation unit
+// fy, tmp1, tmp2 and tmp3 are not used but required
+static int jac_cvode(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
+                     void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
+
+  // get user data, manually jacobian is bundled into it
+  struct rhs_func *data = (struct rhs_func*)user_data;
+
+  int n_states = NV_LENGTH_S(y);
+  NumericVector y1(n_states);
+  sunrealtype *y_ptr = N_VGetArrayPointer(y);
+  for (int index = 0; index < n_states; index++) y1[index] = y_ptr[index];
+
+  Function jac_fun(data->jac_eqn);       // Jacobian function in the user-data
+  // jacobian function in R must be function(time, y, params)
+  NumericMatrix Jacobian_R = jac_fun(t, y1, data->params);
+
+  for (int j = 0; j < n_states; j++)
+    for (int i = 0; i < n_states; i++)
+      SM_ELEMENT_D(JAC, i, j) = Jacobian_R(i, j);
+  return 0;
+}
 
 //------------------------------------------------------------------------------
 //'cvode
@@ -56,6 +80,7 @@ using namespace Rcpp;
 //'@param Parameters Parameters input to ODEs
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot (dy/dx), default = 1e-04)
+//'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)} returning an n-by-n matrix where entry [i,j] is d(ydot_i)/d(y_j). Default is NULL and SUNDIALS uses internal finite-difference approximation.
 //'@returns A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
 //'@example /inst/examples/cv_Roberts_dns.r
 // [[Rcpp::export]]
@@ -63,7 +88,8 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC,
                      SEXP input_function,
                      NumericVector Parameters,
                      double reltolerance = 0.0001,
-                     NumericVector abstolerance = 0.0001){
+                     NumericVector abstolerance = 0.0001,
+                     Nullable<Function> jacobian = R_NilValue){
 
    int flag;
 
@@ -131,7 +157,10 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC,
 
    if(TYPEOF(input_function) != CLOSXP) { stop("Incorrect input function type - input function can be an R or Rcpp function"); }
 
-   struct rhs_func my_rhs_function = {input_function, Parameters};
+   // Check if jacobian is not NULL, fill the jac_sexp with input value
+   SEXP jac_sexp = R_NilValue;
+   if (jacobian.isNotNull()) jac_sexp = as<SEXP>(jacobian);
+   struct rhs_func my_rhs_function = {input_function, Parameters, jac_sexp};
 
    // setting the user_data in rhs function
    flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
@@ -156,6 +185,11 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC,
    // Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode
    flag = CVodeSetLinearSolver(cvode_mem, LS, SM);
    if(check_retval(&flag, "CVDlsSetLinearSolver", 1)) { stop("Stopping cvode, something went wrong in setting the linear solver!"); }
+
+   if (jacobian.isNotNull()) {
+     flag = CVodeSetJacFn(cvode_mem, jac_cvode);
+     if(check_retval(&flag, "CVodeSetJacFn", 1)) { stop("Stopping cvode, something went wrong in setting the Jacobian function!"); }
+   }
    // NumericMatrix to store results - filled with 0.0
 
    // Call CVodeInit to initialize the integrator memory and specify the

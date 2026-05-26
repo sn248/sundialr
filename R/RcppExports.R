@@ -10,10 +10,11 @@
 #'@param Parameters Parameters input to ODEs
 #'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 #'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot (dy/dx), default = 1e-04)
+#'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)} returning an n-by-n matrix where entry [i,j] is d(ydot_i)/d(y_j). Default is NULL and SUNDIALS uses internal finite-difference approximation.
 #'@returns A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
 #'@example /inst/examples/cv_Roberts_dns.r
-cvode <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001) {
-    .Call('_sundialr_cvode', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance)
+cvode <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001, jacobian = NULL) {
+    .Call('_sundialr_cvode', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance, jacobian)
 }
 
 #' cvodes

@@ -17,7 +17,6 @@ Imports:
     Rcpp (>= 1.0.12)
 LinkingTo:
     Rcpp, RcppArmadillo
-RoxygenNote: 7.3.3
 Suggests:
     knitr,
     rmarkdown,
@@ -25,3 +24,4 @@ Suggests:
 SystemRequirements: cmake
 NeedsCompilation: yes
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0
