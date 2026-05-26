@@ -45,30 +45,42 @@ separately (which is sometimes non trivial on a Windows machine).*
 As described in the link above, the problem is from chemical kinetics,
 and consists of the following three rate equations:
 
-$$\begin{aligned}
-\frac{dy_{1}}{dt} & {= - .04 \times y_{1} + 10^{4} \times y_{2} \times y_{3}} \\
-\frac{dy_{2}}{dt} & {= .04 \times y_{1} - 10^{4} \times y_{2} \times y_{3} - 3 \times 10^{7} \times y_{2}^{2}} \\
-\frac{dy_{3}}{dt} & {= 3 \times 10^{7} \times y_{2}^{2}}
-\end{aligned}$$
+``` math
+ 
+\begin{aligned}
+\frac{dy_1}{dt} &= -.04 \times y_1 + 10^4 \times y_2 \times y_3  \\ 
+\frac{dy_2}{dt} &= .04 \times y_1 - 10^4 \times y_2 \times y_3 - 3 \times 10^7  \times y_2^2 \\
+\frac{dy_3}{dt} &= 3 \times 10^7 \times y_2^2 
+\end{aligned}
+```
 
-with time interval from $t = 0.0$ to $t = 4 \times 10^{10}$ and initial
-conditions: $$y_{1} = 1.0,\ y_{2} = y_{3} = 0$$
+with time interval from $`t = 0.0`$ to $`t = 4 \times 10^{10}`$ and
+initial conditions:
+``` math
+ y_1  = 1.0 , ~y_2 = y_3 = 0 
+```
 
 **The problem is stiff.**
 
 The original example , While integrating the system, also uses the
 rootfinding feature to find the points at which
 
-$$y_{1} = 1 \times 10^{- 4}$$ or at which $$y_{3} = 0.01$$ but currently
-root-finding is not supported in this version. As in the original
-example, this package also solves the problem with the `BDF` method,
-Newton iteration with the `SUNDENSE` dense linear solver, however,
-without a user-supplied Jacobian routine (unlike the original example).
-The future versions may include an ability to provide Jacobian
+``` math
+ y_1 = 1 \times 10^{-4} 
+```
+or at which
+``` math
+ y_3 = 0.01 
+```
+but currently root-finding is not supported in this version. As in the
+original example, this package also solves the problem with the `BDF`
+method, Newton iteration with the `SUNDENSE` dense linear solver,
+however, without a user-supplied Jacobian routine (unlike the original
+example). The future versions may include an ability to provide Jacobian
 calculated analytically or via automatic differentiation. `CVODE` uses a
 scalar relative tolerance and a vector absolute tolerance (which can be
-provided as an input). Output is printed in decades from $t = 0.4$ to
-$t = 4 \times 10^{10}$ in this example.
+provided as an input). Output is printed in decades from $`t = 0.4`$ to
+$`t = 4 \times 10^{10}`$ in this example.
 
 ## Writing the Differential Equations
 
@@ -78,6 +90,7 @@ Differential equations can be written as an `R` function or as an `Rcpp`
 function. Differential equations function must be written as
 
 ``` r
+
 function(t, y, p){
   # code to write differential equations
   # using parameter vector (p) and state/entity vector (y)
@@ -100,6 +113,7 @@ found
 An example of an `R` function is as follows:
 
 ``` r
+
 ODE_R <- function(t, y, p){
 
    ## initialize the derivative vector
@@ -156,6 +170,7 @@ calculates rates of change) is as follows (also found
 [here](https://github.com/sn248/sundialr/blob/master/inst/examples/cv_Roberts_dns.r)):
 
 ``` r
+
 # ODEs described by an R function
 ODE_R <- function(t, y, p){
 
@@ -236,25 +251,33 @@ An interface to the `IDA` solver is also provided to solve a system of
 Differential-Algebraic equations. A system of differential-algebraic
 equations is a system of equations containing both differential and
 algebraic equations and can be written as
-$$F\left( \dot{x}(t),x(t),t \right) = 0$$ The equations for such a
-system are written in terms of residuals and require both the value of
-$x_{0}$ and ${\dot{x}}_{0}$ as the initial conditions. Writing the
-previously solved equations as a system of DAEs, we have,
-$$\begin{aligned}
-{\dot{y}}_{1} & {= - p_{1}y_{1} + p_{2}y_{2}y_{3}} \\
-{\dot{y}}_{2} & {= p_{1}y_{1} - p_{2}y_{2}y_{3} - p_{3}y_{2}^{2}} \\
-1 & {= y_{1} + y_{2} + y_{3}}
-\end{aligned}$$ The above system of DAEs can be written in terms of
-residuals as
+``` math
+F(\dot{x}(t), x(t), t) = 0
+```
+The equations for such a system are written in terms of residuals and
+require both the value of $`x_0`$ and $`\dot{x}_0`$ as the initial
+conditions. Writing the previously solved equations as a system of DAEs,
+we have,
+``` math
+\begin{aligned}
+\dot{y}_1 &= -p_1y_1 + p_2y_2y_3  \\ 
+\dot{y}_2 &= p_1y_1 - p_2y_2y_3 - p_3y_2^2 \\
+1 &= y_1 + y_2 + y_3
+\end{aligned}
+```
+The above system of DAEs can be written in terms of residuals as
 
-$$\begin{aligned}
-{res_{1}} & {= - p_{1}y_{1} + p_{2}y_{2}y_{3} - {\dot{y}}_{1}} \\
-{res_{2}} & {= p_{1}y_{1} - p_{2}y_{2}y_{3} - p_{3}y_{2}^{2} - {\dot{y}}_{2}} \\
-{res_{3}} & {= y_{1} + y_{2} + y_{3} - 1}
-\end{aligned}$$ Here is the complete code for solving this system of
-DAEs,
+``` math
+\begin{aligned}
+res_1 &= -p_1y_1 + p_2y_2y_3 - \dot{y}_1 \\ 
+res_2 &= p_1y_1 - p_2y_2y_3 - p_3y_2^2 - \dot{y}_2\\
+res_3 &= y_1 + y_2 + y_3 - 1
+\end{aligned}
+```
+Here is the complete code for solving this system of DAEs,
 
 ``` r
+
 DAE_R <- function(t, y, ydot, p){
 
   # vector containing the residuals
@@ -288,11 +311,14 @@ solution. An example of such a system of ODEs would be pharmacokinetics
 of a drug with repeated bolus administration. Let’s look at a simple
 example of multiple doses of a drug with a first-order degradation
 administered intravenously. The ODE system for the drug is
-$$\frac{dC}{dt} = - k_{el}*C$$ where $C$ is the concentration of the
-drug and $k_{el}$ is the elimination rate of the drug. The $R$ code for
-such a system is
+``` math
+\frac{dC}{dt} = -k_{el} * C
+```
+where $`C`$ is the concentration of the drug and $`k_{el}`$ is the
+elimination rate of the drug. The $`R`$ code for such a system is
 
 ``` r
+
 ODErepeated_R <- function(t, y, p){
 
   # vector containing the right hand side gradients
@@ -308,10 +334,11 @@ ODErepeated_R <- function(t, y, p){
 
 We also need to define when the multiple doses are given and the state
 to which they are to be applied (here to be applied to the only state in
-the model, $C$). This is provided via the $Events$ dataframe (here,
-$TDOSE$ or the dosing dataframe).
+the model, $`C`$). This is provided via the $`Events`$ dataframe (here,
+$`TDOSE`$ or the dosing dataframe).
 
 ``` r
+
 TDOSE <- data.frame(ID = 1, TIMES = c(0, 10, 20, 30, 40, 50), VAL = 100)
 TDOSE
 #>   ID TIMES VAL
@@ -343,6 +370,7 @@ state (the only state in this system) at the times specified by the
 The complete code for simulating such a system is
 
 ``` r
+
 # Example of solving a set of ODEs with multiple discontinuities using cvsolve
 # A simple One dimensional equation, y = -0.1 * y
 # ODEs described by an R function
@@ -381,7 +409,7 @@ plot(time, y1, type = "l", lty = 1, main = "An ODE system with discontinuties", 
 ![](my-vignette_files/figure-html/unnamed-chunk-4-1.png)
 
 Note that in the example above, `TSAMP` is the sampling time at which
-the solution is desired. Also, even though an Initial Value of $y_{1}$
+the solution is desired. Also, even though an Initial Value of $`y_1`$
 of 1 is provided by the `IC` parameter, it is overwritten by the value
 of 100 provided in the `TDOSE` data frame. In general, the values in the
 initial conditions are overwritten by values in the `Events` input.
@@ -395,44 +423,46 @@ Sensitivity Analysis from `CVODES` function (see the example
 [here](https://github.com/LLNL/sundials/blob/master/examples/cvodes/serial/cvsRoberts_FSA_dns.c)).
 Briefly, given the ODE system as described below
 
-$$\begin{aligned}
-\frac{dy_{1}}{dt} & {= - p_{1}y_{1} + p_{2}y_{2}y_{3}} \\
-\frac{dy_{2}}{dt} & {= p_{1}y_{1} - p_{2}y_{2}y_{3} - p_{3}y_{2}^{2}} \\
-\frac{dy_{3}}{dt} & {= p_{3}y_{2}^{2}}
-\end{aligned}$$ with the same initial conditions as above (i.e.,
-$y_{1} = 0,y_{2} = y_{3} = 0$) and
-$p_{1} = 0.04,\quad p_{2} = 10^{4},\quad p_{3} = 3 \times 10^{7}$. The
-system of Sensitivity equations (taken from `cvs_guide.pdf`) that is
-solved can be given by $$\begin{array}{r}
-{\frac{ds}{dt} = \begin{bmatrix}
-{- p_{1}} & {p_{2}y_{3}} & {p_{2}y_{2}} \\
-p_{1} & {- p_{2}y_{3} - 2p_{3}y_{2}} & {- p_{2}y_{2}} \\
-0 & {2p_{3}y_{2}} & 0
-\end{bmatrix}s_{i} + \frac{\partial f}{\partial p_{i}},\quad s_{i}\left( t_{0} \right) = \begin{bmatrix}
-0 \\
-0 \\
-0
-\end{bmatrix},\quad i = 1,2,3}
-\end{array}$$ where
-$$\frac{\partial f}{\partial p_{1}} = \begin{bmatrix}
-{- y_{1}} \\
-y_{1} \\
-0
-\end{bmatrix},\quad\frac{\partial f}{\partial p_{2}} = \begin{bmatrix}
-{y_{2}y_{3}} \\
-{- y_{2}y_{3}} \\
-0
-\end{bmatrix},\quad\frac{\partial f}{\partial p_{3}} = \begin{bmatrix}
-0 \\
-{- y_{2}^{2}} \\
-y_{2}^{2}
-\end{bmatrix}$$ In the original `CVODES` interface from `SUNDIALS`, the
-sensitivity equations can either be provided by the user or can be
-calculated using numerical interpolation by the solver. Here, I have
-only included the numerical interpolation version and currently the user
-cannot specify the sensitivity equations. However, in the future
-versions I will provide an ability to specify user-defined Jacobian as
-well as user-defined sensitivity equations.
+``` math
+ 
+\begin{aligned}
+\frac{dy_1}{dt} &= -p_1y_1 + p_2y_2y_3  \\ 
+\frac{dy_2}{dt} &= p_1y_1 - p_2y_2y_3 - p_3y_2^2 \\
+\frac{dy_3}{dt} &= p_3y_2^2 
+\end{aligned}
+```
+with the same initial conditions as above (i.e.,
+$`y_1 = 0, y_2 = y_3 = 0`$) and
+$`p_1 = 0.04, \quad p_2 = 10^4, \quad p_3 = 3\times10^7`$. The system of
+Sensitivity equations (taken from `cvs_guide.pdf`) that is solved can be
+given by
+``` math
+\begin{aligned}
+\frac{ds}{dt} = 
+\left[\begin{array}
+{ccc}
+-p_1 & p_2y_3 & p_2y_2 \\
+p_1 & -p_2y_3-2p_3y_2 & -p_2y_2 \\
+0 & 2p_3y_2 & 0
+\end{array}\right]s_i + \frac{\partial f}{\partial p_i}, 
+\quad s_i(t_0) = 
+\left[\begin{array}  {c} 0 \\ 0 \\ 0 \end{array}\right], \quad i = 1, 2, 3 
+\end{aligned}
+```
+where
+``` math
+\frac{\partial f}{\partial p_1} = \left[\begin{array}  {c} -y_1 \\ y_1 \\ 0 \end{array}\right],
+\quad \frac{\partial f}{\partial p_2} = \left[\begin{array}  {c} y_2y_3 \\ -y_2y_3 \\ 0 \end{array}\right],
+\quad
+\frac{\partial f}{\partial p_3} = \left[\begin{array}  {c} 0 \\ -y_2^2 \\ y_2^2 \end{array}\right]
+```
+In the original `CVODES` interface from `SUNDIALS`, the sensitivity
+equations can either be provided by the user or can be calculated using
+numerical interpolation by the solver. Here, I have only included the
+numerical interpolation version and currently the user cannot specify
+the sensitivity equations. However, in the future versions I will
+provide an ability to specify user-defined Jacobian as well as
+user-defined sensitivity equations.
 
 Also, currently, forward sensitivities are calculated with respect to
 all parameters of the system. I plan to provide in future, an ability to
@@ -449,6 +479,7 @@ found at this
 [link](https://github.com/sn248/sundialr/blob/master/inst/examples/cvs_Roberts_dns.r))
 
 ``` r
+
 df1 <- cvodes(time_vec, IC, ODE_R , params, reltol, abstol,"STG",F)  ## using R
 df2 <- cvodes(time_vec, IC, ODE_Rcpp , params, reltol, abstol,"STG",F)  ## using Rcpp
 ```
@@ -459,14 +490,15 @@ and flag for error control (either `T` or `F`).
 
 The output of `cvodes` is a matrix with number of rows equal to the
 length of the time vector (`time_vec`) and the number of columns being
-equal to length of (`y` $\times$`p` + 1). The first columns is for time.
-Currently, the sensitivity of every enitity is calculated with respect
-to every parameter in model. For example, for the current model with `3`
-entities (ODEs) and `3` parameters, a total of `9` sensitivities are
-calculated at each output time, i.e. `y1` w.r.t `p1`, `p2`, `p3`, `y2`
-w.r.t. `p1`, `p2`, `p3` and so on. The first 3 (`length(y)`) columns
-give sensitivity w.r.t the first parameter, the next 3 (`length(y)`)
-columns give sensitivity w.r.t the second parameter and so on.
+equal to length of (`y` $`\times`$`p` + 1). The first columns is for
+time. Currently, the sensitivity of every enitity is calculated with
+respect to every parameter in model. For example, for the current model
+with `3` entities (ODEs) and `3` parameters, a total of `9`
+sensitivities are calculated at each output time, i.e. `y1` w.r.t `p1`,
+`p2`, `p3`, `y2` w.r.t. `p1`, `p2`, `p3` and so on. The first 3
+(`length(y)`) columns give sensitivity w.r.t the first parameter, the
+next 3 (`length(y)`) columns give sensitivity w.r.t the second parameter
+and so on.
 
 In the Sensitivity Matrix output for the systems of equations described
 above, the first column gives output time, the next `3` columns provide

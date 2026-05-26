@@ -2,6 +2,8 @@
 
 ## sundialr v0.1.7
 
+CRAN release: 2026-04-21
+
 - Changes in `/tools/cmake_call.sh` file to remove warnings with respect
   to stdout/stderr/fprintf etc in upstream C library
 - Updated the underlying SUNDIALS library to v7.6.0 (Jan 2026)

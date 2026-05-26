@@ -11,7 +11,8 @@ cvode(
   input_function,
   Parameters,
   reltolerance = 1e-04,
-  abstolerance = 1e-04
+  abstolerance = 1e-04,
+  jacobian = NULL
 )
 ```
 
@@ -41,6 +42,13 @@ cvode(
 
   Absolute Tolerance (a scalar or vector with length equal to ydot
   (dy/dx), default = 1e-04)
+
+- jacobian:
+
+  (Optional) Jacobian of the RHS with signature `function(t, y, p)`
+  returning an n-by-n matrix where entry \[i,j\] is d(ydot_i)/d(y_j).
+  Default is NULL and SUNDIALS uses internal finite-difference
+  approximation.
 
 ## Value
 
