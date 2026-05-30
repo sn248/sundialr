@@ -29,8 +29,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // cvodes
-NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, double reltolerance, NumericVector abstolerance, std::string SensType, bool ErrCon);
-RcppExport SEXP _sundialr_cvodes(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP, SEXP SensTypeSEXP, SEXP ErrConSEXP) {
+NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, double reltolerance, NumericVector abstolerance, std::string SensType, bool ErrCon, Nullable<Function> jacobian);
+RcppExport SEXP _sundialr_cvodes(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP, SEXP SensTypeSEXP, SEXP ErrConSEXP, SEXP jacobianSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -42,13 +42,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type abstolerance(abstoleranceSEXP);
     Rcpp::traits::input_parameter< std::string >::type SensType(SensTypeSEXP);
     Rcpp::traits::input_parameter< bool >::type ErrCon(ErrConSEXP);
-    rcpp_result_gen = Rcpp::wrap(cvodes(time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType, ErrCon));
+    Rcpp::traits::input_parameter< Nullable<Function> >::type jacobian(jacobianSEXP);
+    rcpp_result_gen = Rcpp::wrap(cvodes(time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType, ErrCon, jacobian));
     return rcpp_result_gen;
 END_RCPP
 }
 // cvsolve
-NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, Nullable<DataFrame> Events, double reltolerance, NumericVector abstolerance);
-RcppExport SEXP _sundialr_cvsolve(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP EventsSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
+NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, Nullable<DataFrame> Events, double reltolerance, NumericVector abstolerance, Nullable<Function> jacobian);
+RcppExport SEXP _sundialr_cvsolve(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP EventsSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP, SEXP jacobianSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -59,13 +60,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Nullable<DataFrame> >::type Events(EventsSEXP);
     Rcpp::traits::input_parameter< double >::type reltolerance(reltoleranceSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type abstolerance(abstoleranceSEXP);
-    rcpp_result_gen = Rcpp::wrap(cvsolve(time_vector, IC, input_function, Parameters, Events, reltolerance, abstolerance));
+    Rcpp::traits::input_parameter< Nullable<Function> >::type jacobian(jacobianSEXP);
+    rcpp_result_gen = Rcpp::wrap(cvsolve(time_vector, IC, input_function, Parameters, Events, reltolerance, abstolerance, jacobian));
     return rcpp_result_gen;
 END_RCPP
 }
 // ida
-NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRes, SEXP input_function, NumericVector Parameters, double reltolerance, NumericVector abstolerance);
-RcppExport SEXP _sundialr_ida(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP IResSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP) {
+NumericMatrix ida(NumericVector time_vector, NumericVector IC, NumericVector IRes, SEXP input_function, NumericVector Parameters, double reltolerance, NumericVector abstolerance, Nullable<Function> jacobian);
+RcppExport SEXP _sundialr_ida(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP IResSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP, SEXP jacobianSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -76,16 +78,17 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type Parameters(ParametersSEXP);
     Rcpp::traits::input_parameter< double >::type reltolerance(reltoleranceSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type abstolerance(abstoleranceSEXP);
-    rcpp_result_gen = Rcpp::wrap(ida(time_vector, IC, IRes, input_function, Parameters, reltolerance, abstolerance));
+    Rcpp::traits::input_parameter< Nullable<Function> >::type jacobian(jacobianSEXP);
+    rcpp_result_gen = Rcpp::wrap(ida(time_vector, IC, IRes, input_function, Parameters, reltolerance, abstolerance, jacobian));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_sundialr_cvode", (DL_FUNC) &_sundialr_cvode, 7},
-    {"_sundialr_cvodes", (DL_FUNC) &_sundialr_cvodes, 8},
-    {"_sundialr_cvsolve", (DL_FUNC) &_sundialr_cvsolve, 7},
-    {"_sundialr_ida", (DL_FUNC) &_sundialr_ida, 7},
+    {"_sundialr_cvodes", (DL_FUNC) &_sundialr_cvodes, 9},
+    {"_sundialr_cvsolve", (DL_FUNC) &_sundialr_cvsolve, 8},
+    {"_sundialr_ida", (DL_FUNC) &_sundialr_ida, 8},
     {NULL, NULL, 0}
 };
 

@@ -39,6 +39,7 @@
 #include <sundials/sundials_math.h>           /* defs. of SUNRabs, SUNRexp, etc.      */
 
 #include <check_retval.h>
+#include <jac_func.h>
 // CRAN fix: replace SUNDIALS' default abort()-based error handler with Rf_error()
 #include <sundials_err_handler.h>
 
@@ -48,6 +49,7 @@ using namespace Rcpp;
 struct res_func{
   Function res_eqn;
   NumericVector params;
+  SEXP jac_eqn;
 };
 
 // function called by IDAInit if user inputs R function
@@ -108,9 +110,27 @@ int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* use
   // everything went smoothly
   return(0);
 }
-//---RHS residual function definition ends ----------------------------------------------
+//---RHS residual function definition ends -------------------------------------
 
+//-- Manual Jacobian -----------------------------------------------------------
+/*IDA's Jacobian callback has a different SUNDIALS signature than CVODE's:
+ * it receives cj (a scalar IDA manages internally) and yp (current y').
+ * The matrix to fill is dF/dy + cj * dF/dy' — the user must return this
+ * combined matrix from their R function
+ * R function signature for IDA Jacobian:
+ * f(t, y, ydot, cj, p) → n×n matrix of dF/dy + cj * dF/dy'
+ * Note the IDA callback type is IDALsJacFn,
+ * which has cj and yp as extra arguments vs. CVLsJacFn:
+*/
+
+static int jac_ida(sunrealtype t, sunrealtype cj,
+                     N_Vector yy, N_Vector yp, N_Vector rr, SUNMatrix JAC,
+                     void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
+    struct res_func *data = (struct res_func*)user_data;
+    return jac_eval_ida(t, cj, yy, yp, JAC, data->jac_eqn, data->params);
+}
 //------------------------------------------------------------------------------
+
 //'ida
 //'
 //' IDA solver to solve stiff DAEs
@@ -121,13 +141,15 @@ int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* use
 //'@param Parameters Parameters input to ODEs
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
+//'@param jacobian (Optional) Jacobian with signature \code{function(t, y, ydot, cj, p)} returning an n×n matrix of \code{dF/dy + cj*dF/dydot}. Default NULL.
 //'@returns A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
 // [[Rcpp::export]]
 NumericMatrix ida(NumericVector time_vector, NumericVector IC,
                   NumericVector IRes, SEXP input_function,
                   NumericVector Parameters,
                   double reltolerance = 0.0001,
-                  NumericVector abstolerance = 0.0001){
+                  NumericVector abstolerance = 0.0001,
+                  Nullable<Function> jacobian = R_NilValue){
 
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
@@ -199,7 +221,9 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
 
   if(TYPEOF(input_function) != CLOSXP) { stop("Incorrect input function type - input function can be an R or Rcpp function"); }
 
-  struct res_func my_res_function = {input_function, Parameters};
+  SEXP jac_sexp = R_NilValue;  // for manual jacobian, if provided
+  if (jacobian.isNotNull()) jac_sexp = as<SEXP>(jacobian);
+  struct res_func my_res_function = {input_function, Parameters, jac_sexp};
 
   // setting the user data in the rhs residual function
   flag = IDASetUserData(ida_mem, (void*)&my_res_function);
@@ -225,6 +249,12 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
   // Create dense SUNLinearSolver object for use by IDA
   SUNLinearSolver LS = SUNLinSol_Dense(yy0, SM, sunctx);
   if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping IDA, something went wrong in setting the linear solver!"); }
+
+  // Add user-provided Jacobian, if not NULL
+  if (jacobian.isNotNull()) {
+    flag = IDASetJacFn(ida_mem, jac_ida);
+    if(check_retval(&flag, "IDASetJacFn", 1)) { stop("Stopping IDA, something went wrong in setting the Jacobian function!"); }
+  }
 
   /* Attach the matrix and linear solver */
   flag = IDASetLinearSolver(ida_mem, LS, SM);

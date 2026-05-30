@@ -40,6 +40,7 @@
 #include <sunmatrix/sunmatrix_dense.h>
 
 #include <check_retval.h>
+#include <jac_func.h>
 // #include "check_retval.cpp"
 // CRAN fix: replace SUNDIALS' default abort()-based error handler with Rf_error()
 #include <sundials_err_handler.h>
@@ -55,6 +56,7 @@ struct rhs_func_sens{
   NumericVector params;
   double rtol;
   NumericVector atol;
+  SEXP jac_eqn;
 };
 
 //struct for tolerance passed for error weight calculations----------------------
@@ -139,6 +141,13 @@ int ewt(N_Vector y, N_Vector w, void *user_data)
 
   return(0);
 }
+
+// Call the jacobian function if manual jacobian is provided
+static int jac_cvodes(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
+                      void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
+    struct rhs_func_sens *data = (struct rhs_func_sens*)user_data;
+    return jac_eval(t, y, JAC, data->jac_eqn, data->params);
+}
 //------------------------------------------------------------------------------
 //' cvodes
 //'
@@ -151,6 +160,7 @@ int ewt(N_Vector y, N_Vector w, void *user_data)
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 //'@param SensType Sensitivity Type - allowed values are "STG" (for Staggered, default) or "SIM" (for Simultaneous)
 //'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
+//'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)}. Default is NULL
 //'@returns A data frame. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector
 //'@example /inst/examples/cvs_Roberts_dns.r
 // [[Rcpp::export]]
@@ -159,7 +169,9 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
                       NumericVector Parameters,
                       double reltolerance = 0.0001,
                       NumericVector abstolerance = 0.0001,
-                      std::string SensType = "STG", bool ErrCon = 'F'){
+                      std::string SensType = "STG",
+                      bool ErrCon = 'F',
+                      Nullable<Function> jacobian = R_NilValue){
 
   int flag;
 
@@ -245,11 +257,15 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   if(TYPEOF(input_function) != CLOSXP) { stop("Incorrect input function type - input function can be an R or Rcpp function"); }
 
   // realtype *params = Parameters.begin();
-
+  // Initialize the struct for user data
+  // Jacobian has initial value of NULL
+  SEXP jac_sexp = R_NilValue;
   struct rhs_func_sens my_rhs_function = {input_function,
                                           Parameters,
                                           // as<std::vector<double> >(Parameters),
-                                          reltol, abstol};
+                                          reltol,
+                                          abstol,
+                                          jac_sexp};
 
   // setting the user_data in rhs function
   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
@@ -275,6 +291,12 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   /* Attach the matrix and linear solver */
   flag = CVodeSetLinearSolver(cvode_mem, LS, SM);
   if (check_retval(&flag, "CVodeSetLinearSolver", 1)) { stop("Stopping cvodes, something went wrong in attaching SUNDenseMatrix and Linear Solver!"); }
+
+  /* If manual Jacobian is provided, use the jacobian */
+  if (jacobian.isNotNull()){
+    flag = CVodeSetJacFn(cvode_mem, jac_cvodes);
+    if(check_retval(&flag, "CVodeSetJacFn", 1)) { stop("Stopping cvodes, something went wrong in setting the Jacobian function!"); }
+  }
 
   if (check_retval((void *)yS, "N_VCloneVectorArray", 0)) { stop("Stopping cvodes, something went wrong in setting Sensitivity Array!"); }
   for (int is=0;is<NP;is++) N_VConst(SUN_RCONST(0.0), yS[is]);

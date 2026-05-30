@@ -24,3 +24,8 @@ params <- c(0.1)
 TDOSE <- data.frame(ID = 1, TIMES = c(0, 10, 20, 30, 40, 50), VAL = 100)
 df1 <- cvsolve(TSAMP, c(1), ODE_R, params)         # solving without any discontinuity
 df2 <- cvsolve(TSAMP, c(1), ODE_R, params, TDOSE)  # solving with discontinuity
+
+## Solving with a manual Jacobian  J[1,1] = d(ydot[1])/d(y[1]) = -p[1]
+JAC_R <- function(t, y, p) matrix(-p[1], nrow = 1, ncol = 1)
+df3 <- cvsolve(TSAMP, IC, ODE_R, params, jacobian = JAC_R)
+df4 <- cvsolve(TSAMP, IC, ODE_R, params, TDOSE, jacobian = JAC_R)

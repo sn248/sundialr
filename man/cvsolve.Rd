@@ -11,7 +11,8 @@ cvsolve(
   Parameters,
   Events = NULL,
   reltolerance = 1e-04,
-  abstolerance = 1e-04
+  abstolerance = 1e-04,
+  jacobian = NULL
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ cvsolve(
 \item{reltolerance}{Relative Tolerance (a scalar, default value  = 1e-04)}
 
 \item{abstolerance}{Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)}
+
+\item{jacobian}{(Optional) Jacobian of the RHS with signature \code{function(t, y, p)} returning an n-by-n matrix where entry [i,j] is d(ydot_i)/d(y_j). Default is NULL and SUNDIALS uses internal finite-difference approximation.}
 }
 \value{
 A data frame. First column is the time-vector, the other columns are values of y in order they are provided.

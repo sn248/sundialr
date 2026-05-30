@@ -39,12 +39,25 @@
 
 #include <check_retval.h>
 #include <rhs_func.h>
+#include <jac_func.h>
+
 // CRAN fix: replace SUNDIALS' default abort()-based error handler with Rf_error()
 #include <sundials_err_handler.h>
 #include "./utils/sortTimes.cpp"
 
 using namespace Rcpp;
 using namespace arma;
+
+//------------------------------------------------------------
+// call the jac_eval from header file included
+// optional arguments tmp1, tmp2, tmp3 need to be included
+static int jac_cvode(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
+                     void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
+
+  struct rhs_func *data = (struct rhs_func*)user_data;
+  return jac_eval(t, y, JAC, data->jac_eqn, data->params);
+}
+
 
 //------------------------------------------------------------------------------
 //'cvsolve
@@ -57,6 +70,7 @@ using namespace arma;
 //'@param Events Discontinuities in the solution (a DataFrame, default value is NULL)
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
+//'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)} returning an n-by-n matrix where entry [i,j] is d(ydot_i)/d(y_j). Default is NULL and SUNDIALS uses internal finite-difference approximation.
 //'@returns A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
 //'@example /inst/examples/cvsolve_1D.r
 // [[Rcpp::export]]
@@ -65,7 +79,8 @@ using namespace arma;
                        NumericVector Parameters,
                        Nullable<DataFrame> Events = R_NilValue,
                        double reltolerance = 0.0001,
-                       NumericVector abstolerance = 0.0001){
+                       NumericVector abstolerance = 0.0001,
+                       Nullable<Function> jacobian = R_NilValue){
 
    int y_len = IC.length();
    int NSTATES = IC.length();
@@ -210,6 +225,12 @@ using namespace arma;
    // Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode
    flag = CVodeSetLinearSolver(cvode_mem, LS, SM);
    if(check_retval(&flag, "CVDlsSetLinearSolver", 1)) { stop("Stopping cvsolve, something went wrong in setting the linear solver!"); }
+
+   // if Jacobian is provided by the user, use that Jacobian
+   if (jacobian.isNotNull()) {
+     flag = CVodeSetJacFn(cvode_mem, jac_cvode);
+     if(check_retval(&flag, "CVodeSetJacFn", 1)) { stop("Stopping cvsolve, something went wrong in setting the Jacobian function!"); }
+   }
 
    // Call CVodeSetConstraints to initialize constraints
    flag = CVodeSetConstraints(cvode_mem, constraints);

@@ -12,7 +12,8 @@ cvodes(
   reltolerance = 1e-04,
   abstolerance = 1e-04,
   SensType = "STG",
-  ErrCon = "F"
+  ErrCon = "F",
+  jacobian = NULL
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ cvodes(
 \item{SensType}{Sensitivity Type - allowed values are "STG" (for Staggered, default) or "SIM" (for Simultaneous)}
 
 \item{ErrCon}{Error Control - allowed values are TRUE or FALSE (default)}
+
+\item{jacobian}{(Optional) Jacobian of the RHS with signature \code{function(t, y, p)}. Default is NULL}
 }
 \value{
 A data frame. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector

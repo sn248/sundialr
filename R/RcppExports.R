@@ -28,10 +28,11 @@ cvode <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.
 #'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 #'@param SensType Sensitivity Type - allowed values are "STG" (for Staggered, default) or "SIM" (for Simultaneous)
 #'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
+#'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)}. Default is NULL
 #'@returns A data frame. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector
 #'@example /inst/examples/cvs_Roberts_dns.r
-cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001, SensType = "STG", ErrCon = 'F') {
-    .Call('_sundialr_cvodes', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType, ErrCon)
+cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001, SensType = "STG", ErrCon = 'F', jacobian = NULL) {
+    .Call('_sundialr_cvodes', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType, ErrCon, jacobian)
 }
 
 #'cvsolve
@@ -44,10 +45,11 @@ cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance = 0
 #'@param Events Discontinuities in the solution (a DataFrame, default value is NULL)
 #'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 #'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
+#'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)} returning an n-by-n matrix where entry [i,j] is d(ydot_i)/d(y_j). Default is NULL and SUNDIALS uses internal finite-difference approximation.
 #'@returns A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
 #'@example /inst/examples/cvsolve_1D.r
-cvsolve <- function(time_vector, IC, input_function, Parameters, Events = NULL, reltolerance = 0.0001, abstolerance = 0.0001) {
-    .Call('_sundialr_cvsolve', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, Events, reltolerance, abstolerance)
+cvsolve <- function(time_vector, IC, input_function, Parameters, Events = NULL, reltolerance = 0.0001, abstolerance = 0.0001, jacobian = NULL) {
+    .Call('_sundialr_cvsolve', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, Events, reltolerance, abstolerance, jacobian)
 }
 
 #'ida
@@ -60,8 +62,9 @@ cvsolve <- function(time_vector, IC, input_function, Parameters, Events = NULL, 
 #'@param Parameters Parameters input to ODEs
 #'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 #'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
+#'@param jacobian (Optional) Jacobian with signature \code{function(t, y, ydot, cj, p)} returning an n×n matrix of \code{dF/dy + cj*dF/dydot}. Default NULL.
 #'@returns A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
-ida <- function(time_vector, IC, IRes, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001) {
-    .Call('_sundialr_ida', PACKAGE = 'sundialr', time_vector, IC, IRes, input_function, Parameters, reltolerance, abstolerance)
+ida <- function(time_vector, IC, IRes, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001, jacobian = NULL) {
+    .Call('_sundialr_ida', PACKAGE = 'sundialr', time_vector, IC, IRes, input_function, Parameters, reltolerance, abstolerance, jacobian)
 }
 

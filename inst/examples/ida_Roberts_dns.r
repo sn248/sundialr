@@ -47,3 +47,26 @@ abstol <- c(1e-8,1e-14,1e-6)
 ## Solving the DAEs using the ida function
 df1 <- ida(time_vec, IC, IRes, DAE_R , params, reltol, abstol)           ## using R
 df2 <- ida(time_vec, IC, IRes, DAE_Rcpp , params, reltol, abstol)        ## using Rcpp
+
+## Solving with a manual Jacobian
+## J[i,j] = dF_i/dy_j + cj * dF_i/dydot_j
+##
+## F1 = -0.04*y1 + 1e4*y2*y3 - ydot1
+## F2 = 0.04*y1 - 1e4*y2*y3 - 3e7*y2^2 - ydot2
+## F3 = y1 + y2 + y3 - 1  (algebraic constraint)
+DAE_jac <- function(t, y, ydot, p) {
+  res <- numeric(length(y))
+  f1     <- -0.04 * y[1] + 10000 * y[2] * y[3]
+  res[1] <- f1 - ydot[1]
+  res[2] <- -f1 - 30000000 * y[2] * y[2] - ydot[2]
+  res[3] <- y[1] + y[2] + y[3] - 1.0
+  res
+}
+JAC_IDA <- function(t, y, ydot, cj, p) {
+  matrix(c(
+    -0.04 - cj,   0.04,    1,
+    10000*y[3],  -10000*y[3] - 60000000*y[2] - cj,   1,
+    10000*y[2],  -10000*y[2],                         1
+  ), nrow = 3, ncol = 3)
+}
+df3 <- ida(time_vec, IC, IRes, DAE_jac, params, reltol, abstol, jacobian = JAC_IDA)

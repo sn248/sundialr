@@ -38,6 +38,8 @@
 
 #include <check_retval.h>
 #include <rhs_func.h>
+#include <jac_func.h>
+
 // CRAN fix: replace SUNDIALS' default abort()-based error handler with Rf_error()
 #include <sundials_err_handler.h>
 
@@ -45,32 +47,18 @@
 
 using namespace Rcpp;
 
-// This is the function SUNDIALS calls internally whenever it needs the Jacobian. SUNDIALS controls
-// when and how often it's called. You register it once; SUNDIALS calls it as needed.
-// static makes is visible only within this translation unit
-// fy, tmp1, tmp2 and tmp3 are not used but required
+
+//------------------------------------------------------------
+// call the jac_eval from header file included
+// optional arguments tmp1, tmp2, tmp3 need to be included
 static int jac_cvode(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
                      void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
 
-  // get user data, manually jacobian is bundled into it
   struct rhs_func *data = (struct rhs_func*)user_data;
-
-  int n_states = NV_LENGTH_S(y);
-  NumericVector y1(n_states);
-  sunrealtype *y_ptr = N_VGetArrayPointer(y);
-  for (int index = 0; index < n_states; index++) y1[index] = y_ptr[index];
-
-  Function jac_fun(data->jac_eqn);       // Jacobian function in the user-data
-  // jacobian function in R must be function(time, y, params)
-  NumericMatrix Jacobian_R = jac_fun(t, y1, data->params);
-
-  for (int j = 0; j < n_states; j++)
-    for (int i = 0; i < n_states; i++)
-      SM_ELEMENT_D(JAC, i, j) = Jacobian_R(i, j);
-  return 0;
+  return jac_eval(t, y, JAC, data->jac_eqn, data->params);
 }
 
-//------------------------------------------------------------------------------
+
 //'cvode
 //'
 //' CVODE solver to solve stiff ODEs
