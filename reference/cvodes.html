@@ -51,7 +51,8 @@
 <span>  reltolerance <span class="op">=</span> <span class="fl">1e-04</span>,</span>
 <span>  abstolerance <span class="op">=</span> <span class="fl">1e-04</span>,</span>
 <span>  SensType <span class="op">=</span> <span class="st">"STG"</span>,</span>
-<span>  ErrCon <span class="op">=</span> <span class="st">"F"</span></span>
+<span>  ErrCon <span class="op">=</span> <span class="st">"F"</span>,</span>
+<span>  jacobian <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -89,6 +90,10 @@
 
 <dt id="arg-errcon">ErrCon<a class="anchor" aria-label="anchor" href="#arg-errcon"></a></dt>
 <dd><p>Error Control - allowed values are TRUE or FALSE (default)</p></dd>
+
+
+<dt id="arg-jacobian">jacobian<a class="anchor" aria-label="anchor" href="#arg-jacobian"></a></dt>
+<dd><p>(Optional) Jacobian of the RHS with signature <code>function(t, y, p)</code>. Default is NULL</p></dd>
 
 </dl></div>
     <div class="section level2">

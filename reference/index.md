@@ -8,4 +8,3 @@
   cvodes
 - [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md) :
   cvsolve
-- [`ida()`](http://sn248.github.io/sundialr/reference/ida.md) : ida

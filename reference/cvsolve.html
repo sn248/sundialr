@@ -50,7 +50,8 @@
 <span>  <span class="va">Parameters</span>,</span>
 <span>  Events <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  reltolerance <span class="op">=</span> <span class="fl">1e-04</span>,</span>
-<span>  abstolerance <span class="op">=</span> <span class="fl">1e-04</span></span>
+<span>  abstolerance <span class="op">=</span> <span class="fl">1e-04</span>,</span>
+<span>  jacobian <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -84,6 +85,10 @@
 
 <dt id="arg-abstolerance">abstolerance<a class="anchor" aria-label="anchor" href="#arg-abstolerance"></a></dt>
 <dd><p>Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)</p></dd>
+
+
+<dt id="arg-jacobian">jacobian<a class="anchor" aria-label="anchor" href="#arg-jacobian"></a></dt>
+<dd><p>(Optional) Jacobian of the RHS with signature <code>function(t, y, p)</code> returning an n-by-n matrix where entry [i,j] is d(ydot_i)/d(y_j). Default is NULL and SUNDIALS uses internal finite-difference approximation.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -13,7 +13,8 @@ cvodes(
   reltolerance = 1e-04,
   abstolerance = 1e-04,
   SensType = "STG",
-  ErrCon = "F"
+  ErrCon = "F",
+  jacobian = NULL
 )
 ```
 
@@ -52,6 +53,11 @@ cvodes(
 - ErrCon:
 
   Error Control - allowed values are TRUE or FALSE (default)
+
+- jacobian:
+
+  (Optional) Jacobian of the RHS with signature `function(t, y, p)`.
+  Default is NULL
 
 ## Value
 
