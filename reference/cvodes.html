@@ -98,7 +98,7 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector</p>
+    <p>A Matrix. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector</p>
     </div>
 
     <div class="section level2">
@@ -159,6 +159,16 @@
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Check that both solutions are identical</span></span></span>
 <span class="r-in"><span><span class="co"># identical(df1, df2)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Solving with a manual Jacobian  J[i,j] = d(ydot_i)/d(y_j)</span></span></span>
+<span class="r-in"><span><span class="va">JAC_R</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">t</span>, <span class="va">y</span>, <span class="va">p</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="op">-</span><span class="va">p</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,         <span class="va">p</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,                        <span class="fl">0</span>,</span></span>
+<span class="r-in"><span>     <span class="va">p</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">*</span><span class="va">y</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span>,   <span class="op">-</span><span class="va">p</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">*</span><span class="va">y</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span> <span class="op">-</span> <span class="fl">2</span><span class="op">*</span><span class="va">p</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span><span class="op">*</span><span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,   <span class="fl">2</span><span class="op">*</span><span class="va">p</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span><span class="op">*</span><span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>     <span class="va">p</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">*</span><span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,   <span class="op">-</span><span class="va">p</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">*</span><span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,                  <span class="fl">0</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">3</span>, ncol <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span><span class="va">df3</span> <span class="op">&lt;-</span> <span class="fu">cvodes</span><span class="op">(</span><span class="va">time_vec</span>, <span class="va">IC</span>, <span class="va">ODE_R</span>, <span class="va">params</span>, <span class="va">reltol</span>, <span class="va">abstol</span>, <span class="st">"STG"</span>, <span class="cn">FALSE</span>, jacobian <span class="op">=</span> <span class="va">JAC_R</span><span class="op">)</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

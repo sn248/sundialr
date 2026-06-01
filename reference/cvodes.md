@@ -61,9 +61,9 @@ cvodes(
 
 ## Value
 
-A data frame. First column is the time-vector, the next y \* p columns
-are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all
-parameters etc. y is the state vector, p is the parameter vector
+A Matrix. First column is the time-vector, the next y \* p columns are
+sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters
+etc. y is the state vector, p is the parameter vector
 
 ## Examples
 
@@ -124,4 +124,14 @@ df2 <- cvodes(time_vec, IC, ODE_Rcpp , params, reltol, abstol,"STG",FALSE)      
 
 ## Check that both solutions are identical
 # identical(df1, df2)
+
+## Solving with a manual Jacobian  J[i,j] = d(ydot_i)/d(y_j)
+JAC_R <- function(t, y, p) {
+  matrix(c(
+    -p[1],         p[1],                        0,
+     p[2]*y[3],   -p[2]*y[3] - 2*p[3]*y[2],   2*p[3]*y[2],
+     p[2]*y[2],   -p[2]*y[2],                  0
+  ), nrow = 3, ncol = 3)
+}
+df3 <- cvodes(time_vec, IC, ODE_R, params, reltol, abstol, "STG", FALSE, jacobian = JAC_R)
 ```

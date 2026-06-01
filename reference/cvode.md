@@ -52,8 +52,8 @@ cvode(
 
 ## Value
 
-A data frame. First column is the time-vector, the other columns are
-values of y in order they are provided.
+A Matrix. First column is the time-vector, the other columns are values
+of y in order they are provided.
 
 ## Examples
 
@@ -114,4 +114,14 @@ df2 <- cvode(time_vec, IC, ODE_Rcpp , params, reltol, abstol)        ## using Rc
 
 ## Check that both solutions are identical
 # identical(df1, df2)
+
+## Solving with a manual Jacobian  J[i,j] = d(ydot_i)/d(y_j)
+JAC_R <- function(t, y, p) {
+  matrix(c(
+    -p[1],         p[1],                        0,
+     p[2]*y[3],   -p[2]*y[3] - 2*p[3]*y[2],   2*p[3]*y[2],
+     p[2]*y[2],   -p[2]*y[2],                  0
+  ), nrow = 3, ncol = 3)
+}
+df3 <- cvode(time_vec, IC, ODE_R, params, reltol, abstol, jacobian = JAC_R)
 ```
