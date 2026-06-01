@@ -4,7 +4,7 @@
 // Prerequisites: Rcpp.h, nvector_serial.h, sunmatrix_dense.h
 
 // Used by cvode, cvodes, cvsolve.
-// R function signature: f(t, y, p)  ->  n×n matrix of d(ydot_i)/d(y_j)
+// R function signature: f(t, y, p)  ->  n-by-n matrix of d(ydot_i)/d(y_j)
 static inline int jac_eval(sunrealtype t, N_Vector y, SUNMatrix JAC,
                            SEXP jac_eqn, Rcpp::NumericVector params) {
   int n = NV_LENGTH_S(y);
@@ -22,7 +22,7 @@ static inline int jac_eval(sunrealtype t, N_Vector y, SUNMatrix JAC,
 }
 
 // Used by ida only.
-// R function signature: f(t, y, ydot, cj, p)  ->  n×n matrix of dF/dy + cj * dF/dydot
+// R function signature: f(t, y, ydot, cj, p)  ->  n-by-n matrix of dF/dy + cj * dF/dydot
 static inline int jac_eval_ida(sunrealtype t, sunrealtype cj,
                                N_Vector y, N_Vector yp, SUNMatrix JAC,
                                SEXP jac_eqn, Rcpp::NumericVector params) {

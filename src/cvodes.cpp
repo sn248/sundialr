@@ -161,7 +161,7 @@ static int jac_cvodes(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
 //'@param SensType Sensitivity Type - allowed values are "STG" (for Staggered, default) or "SIM" (for Simultaneous)
 //'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
 //'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)}. Default is NULL
-//'@returns A data frame. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector
+//'@returns A Matrix. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector
 //'@example /inst/examples/cvs_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
@@ -260,6 +260,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   // Initialize the struct for user data
   // Jacobian has initial value of NULL
   SEXP jac_sexp = R_NilValue;
+  if (jacobian.isNotNull()) jac_sexp = as<SEXP>(jacobian);
   struct rhs_func_sens my_rhs_function = {input_function,
                                           Parameters,
                                           // as<std::vector<double> >(Parameters),

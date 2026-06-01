@@ -115,10 +115,10 @@ int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* use
 //-- Manual Jacobian -----------------------------------------------------------
 /*IDA's Jacobian callback has a different SUNDIALS signature than CVODE's:
  * it receives cj (a scalar IDA manages internally) and yp (current y').
- * The matrix to fill is dF/dy + cj * dF/dy' — the user must return this
+ * The matrix to fill is dF/dy + cj * dF/dy' - the user must return this
  * combined matrix from their R function
  * R function signature for IDA Jacobian:
- * f(t, y, ydot, cj, p) → n×n matrix of dF/dy + cj * dF/dy'
+ * f(t, y, ydot, cj, p) -> n-by-n matrix of dF/dy + cj * dF/dy'
  * Note the IDA callback type is IDALsJacFn,
  * which has cj and yp as extra arguments vs. CVLsJacFn:
 */
@@ -141,8 +141,9 @@ static int jac_ida(sunrealtype t, sunrealtype cj,
 //'@param Parameters Parameters input to ODEs
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
-//'@param jacobian (Optional) Jacobian with signature \code{function(t, y, ydot, cj, p)} returning an n×n matrix of \code{dF/dy + cj*dF/dydot}. Default NULL.
-//'@returns A data frame. First column is the time-vector, the other columns are values of y in order they are provided.
+//'@param jacobian (Optional) Jacobian with signature \code{function(t, y, ydot, cj, p)} returning an n-by-n matrix of \code{dF/dy + cj*dF/dydot}. Default NULL.
+//'@returns A Matrix. First column is the time-vector, the other columns are values of y in order they are provided.
+//'@example /inst/examples/ida_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix ida(NumericVector time_vector, NumericVector IC,
                   NumericVector IRes, SEXP input_function,
@@ -250,19 +251,15 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
   SUNLinearSolver LS = SUNLinSol_Dense(yy0, SM, sunctx);
   if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping IDA, something went wrong in setting the linear solver!"); }
 
+  /* Attach the matrix and linear solver */
+  flag = IDASetLinearSolver(ida_mem, LS, SM);
+  if(check_retval(&flag, "IDASetLinearSolver", 1))  { stop("Stopping IDA, something went wrong in setting the linear solver!"); }
+
   // Add user-provided Jacobian, if not NULL
   if (jacobian.isNotNull()) {
     flag = IDASetJacFn(ida_mem, jac_ida);
     if(check_retval(&flag, "IDASetJacFn", 1)) { stop("Stopping IDA, something went wrong in setting the Jacobian function!"); }
   }
-
-  /* Attach the matrix and linear solver */
-  flag = IDASetLinearSolver(ida_mem, LS, SM);
-  if(check_retval(&flag, "IDASetLinearSolver", 1))  { stop("Stopping IDA, something went wrong in setting the linear solver!"); }
-
-  // /* Set the user-supplied Jacobian routine */
-  // retval = IDASetJacFn(mem, jacrob);
-  // if(check_retval(&retval, "IDASetJacFn", 1)) return(1);
 
   /* Create Newton SUNNonlinearSolver object. IDA uses a
    * Newton SUNNonlinearSolver by default, so it is unecessary

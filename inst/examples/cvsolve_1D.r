@@ -23,7 +23,7 @@ params <- c(0.1)
 # times and Values at discontinuity.
 TDOSE <- data.frame(ID = 1, TIMES = c(0, 10, 20, 30, 40, 50), VAL = 100)
 df1 <- cvsolve(TSAMP, c(1), ODE_R, params)         # solving without any discontinuity
-df2 <- cvsolve(TSAMP, c(1), ODE_R, params, TDOSE)  # solving with discontinuity
+df2 <- cvsolve(TSAMP, c(1), ODE_R, params, TDOSE, 0.001, 0.001, NULL)  # solving with discontinuity
 
 ## Solving with a manual Jacobian  J[1,1] = d(ydot[1])/d(y[1]) = -p[1]
 JAC_R <- function(t, y, p) matrix(-p[1], nrow = 1, ncol = 1)
