@@ -1,3 +1,7 @@
+## Comments for version 0.1.8
++ Updated the upstream `SUNDIALS` to version 7.8.0
++ CRAN-compliance patches (removal of `abort()`, `stdout`/`stderr` writes and `sprintf` from the bundled library) moved to a dedicated, self-verifying script
+
 ## Comments for version 0.1.6
 + Updated the upstream `SUNDIALS` to version 7.2.0
 + Complete overall of the build system to use `cmake` based installation

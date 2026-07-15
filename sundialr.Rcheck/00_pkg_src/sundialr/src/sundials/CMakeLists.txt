@@ -1,0 +1,60 @@
+# ---------------------------------------------------------------
+# Programmer(s): David J. Gardner, Slaven Peles, and
+#                Cody Balos @ LLNL
+# ---------------------------------------------------------------
+# SUNDIALS Copyright Start
+# Copyright (c) 2025-2026, Lawrence Livermore National Security,
+# University of Maryland Baltimore County, and the SUNDIALS contributors.
+# Copyright (c) 2013-2025, Lawrence Livermore National Security
+# and Southern Methodist University.
+# Copyright (c) 2002-2013, Lawrence Livermore National Security.
+# All rights reserved.
+#
+# See the top-level LICENSE and NOTICE files for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# SUNDIALS Copyright End
+# ---------------------------------------------------------------
+# src level CMakeLists.txt for SUNDIALS
+# ---------------------------------------------------------------
+
+# Add all of the shared SUNDIALS components
+add_subdirectory(sundials)
+add_subdirectory(nvector)
+add_subdirectory(sunmatrix)
+add_subdirectory(sunlinsol)
+add_subdirectory(sunnonlinsol)
+add_subdirectory(sunmemory)
+add_subdirectory(sunadaptcontroller)
+add_subdirectory(sunadjointcheckpointscheme)
+add_subdirectory(sundomeigest)
+
+# ARKODE library
+if(SUNDIALS_ENABLE_ARKODE)
+  add_subdirectory(arkode)
+endif()
+
+# CVODE library
+if(SUNDIALS_ENABLE_CVODE)
+  add_subdirectory(cvode)
+endif()
+
+# CVODES library
+if(SUNDIALS_ENABLE_CVODES)
+  add_subdirectory(cvodes)
+endif()
+
+# IDA library
+if(SUNDIALS_ENABLE_IDA)
+  add_subdirectory(ida)
+endif()
+
+# IDAS library
+if(SUNDIALS_ENABLE_IDAS)
+  add_subdirectory(idas)
+endif()
+
+# KINSOL library
+if(SUNDIALS_ENABLE_KINSOL)
+  add_subdirectory(kinsol)
+endif()

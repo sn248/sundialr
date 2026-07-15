@@ -46,14 +46,12 @@
  * Define SUNDIALS version numbers
  * -----------------------------------------------------------------*/
 
-
-#define SUNDIALS_VERSION "7.6.0"
+#define SUNDIALS_VERSION "7.8.0"
 #define SUNDIALS_VERSION_MAJOR 7
-#define SUNDIALS_VERSION_MINOR 6
+#define SUNDIALS_VERSION_MINOR 8
 #define SUNDIALS_VERSION_PATCH 0
 #define SUNDIALS_VERSION_LABEL ""
 #define SUNDIALS_GIT_VERSION ""
-
 
 /* ------------------------------------------------------------------
  * SUNDIALS build information
@@ -98,13 +96,13 @@
 #define SUNDIALS_HAVE_POSIX_TIMERS
 
 /* BUILD CVODE with fused kernel functionality */
-/* #undef SUNDIALS_BUILD_PACKAGE_FUSED_KERNELS */
+/* #undef SUNDIALS_ENABLE_PACKAGE_FUSED_KERNELS */
 
 /* BUILD SUNDIALS with monitoring functionalities */
-/* #undef SUNDIALS_BUILD_WITH_MONITORING */
+/* #undef SUNDIALS_ENABLE_MONITORING */
 
 /* BUILD SUNDIALS with profiling functionalities */
-/* #undef SUNDIALS_BUILD_WITH_PROFILING */
+/* #undef SUNDIALS_ENABLE_PROFILING */
 
 /* Enable error checking within SUNDIALS */
 /* #undef SUNDIALS_ENABLE_ERROR_CHECKS */
@@ -115,7 +113,7 @@
 /* Build metadata */
 #define SUN_C_COMPILER "GNU"
 #define SUN_C_COMPILER_VERSION "13.3.0"
-#define SUN_C_COMPILER_FLAGS " -fpic -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-JCUh2C/r-base-4.6.0=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-JCUh2C/r-base-4.6.0=/usr/src/r-base-4.6.0-4.2404.0 -Wdate-time -D_FORTIFY_SOURCE=3 -Wno-deprecated-declarations"
+#define SUN_C_COMPILER_FLAGS " -fpic -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-z8Gqxj/r-base-4.6.1=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-z8Gqxj/r-base-4.6.1=/usr/src/r-base-4.6.1-1.2404.1 -Wdate-time -D_FORTIFY_SOURCE=3 -Wno-deprecated-declarations"
 
 #define SUN_CXX_COMPILER ""
 #define SUN_CXX_COMPILER_VERSION ""
@@ -127,8 +125,8 @@
 
 #define SUN_BUILD_TYPE "Release"
 
-#define SUN_JOB_ID "20260531222145"
-#define SUN_JOB_START_TIME "20260531222145"
+#define SUN_JOB_ID "20260715090106"
+#define SUN_JOB_START_TIME "20260715090106"
 
 #define SUN_TPL_LIST ""
 #define SUN_TPL_LIST_SIZE ""
@@ -305,5 +303,27 @@
 #define SUNDIALS_SUNNONLINSOL_NEWTON 1
 #define SUNDIALS_SUNNONLINSOL_FIXEDPOINT 1
 
+
+/* ------------------------------------------------------------------
+ * SUNDIALS deprecated macros
+ * -----------------------------------------------------------------*/
+
+/* DEPRECATION NOTICE: SUNDIALS_BUILD_PACKAGE_FUSED_KERNELS will be removed in
+ * the next major release. Use SUNDIALS_ENABLE_PACKAGE_FUSED_KERNELS instead. */
+#ifdef SUNDIALS_ENABLE_PACKAGE_FUSED_KERNELS
+#define SUNDIALS_BUILD_PACKAGE_FUSED_KERNELS
+#endif
+
+/* DEPRECATION NOTICE: SUNDIALS_BUILD_WITH_MONITORING will be removed in the
+ * next major release. Use SUNDIALS_ENABLE_MONITORING instead. */
+#ifdef SUNDIALS_ENABLE_MONITORING
+#define SUNDIALS_BUILD_WITH_MONITORING
+#endif
+
+/* DEPRECATION NOTICE: SUNDIALS_BUILD_WITH_PROFILING will be removed in the next
+ * major release. Use SUNDIALS_ENABLE_PROFILING instead. */
+#ifdef SUNDIALS_ENABLE_PROFILING
+#define SUNDIALS_BUILD_WITH_PROFILING
+#endif
 
 #endif /* _SUNDIALS_CONFIG_H */

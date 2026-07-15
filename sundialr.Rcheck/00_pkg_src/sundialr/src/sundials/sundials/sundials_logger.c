@@ -1,0 +1,620 @@
+/* -----------------------------------------------------------------
+ * Programmer: Cody J. Balos @ LLNL
+ * -----------------------------------------------------------------
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2025-2026, Lawrence Livermore National Security,
+ * University of Maryland Baltimore County, and the SUNDIALS contributors.
+ * Copyright (c) 2013-2025, Lawrence Livermore National Security
+ * and Southern Methodist University.
+ * Copyright (c) 2002-2013, Lawrence Livermore National Security.
+ * All rights reserved.
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
+ * -----------------------------------------------------------------*/
+
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <sundials/sundials_config.h>
+#include <sundials/sundials_errors.h>
+#include <sundials/sundials_logger.h>
+
+#include <sundials/priv/sundials_errors_impl.h>
+#include "sundials_logger_impl.h"
+
+#include "sundials/sundials_errors.h"
+#include "sundials/sundials_types.h"
+
+#if SUNDIALS_MPI_ENABLED
+#include <mpi.h>
+#endif
+
+/* Forward declaration of function used to destroy any data allocated for Python */
+#if defined(SUNDIALS_ENABLE_PYTHON)
+void SUNLoggerFunctionTable_Destroy(void* ptr);
+#endif
+
+#include "sundials_hashmap_impl.h"
+#include "sundials_macros.h"
+#include "sundials_utils.h"
+
+#if SUNDIALS_LOGGING_LEVEL > 0
+
+/*
+  This function creates a log message payload string in the correct format.
+  It allocates the payload parameter, which must be freed by the caller.
+
+  :param rank: the MPI rank of the caller
+  :param txt: descriptive text for the log message in the form of a format string
+  :param args: format string substitutions
+  :param payload: on output this is an allocated string containing the log message
+
+  :return: void
+*/
+
+static void sunCreateLogPayload(int rank, const char* txt, va_list args,
+                                char** payload)
+{
+  int msg_length = sunvasnprintf(payload, txt, args);
+  if (msg_length < 0)
+  {
+    /* CRAN: fprintf(stderr) removed; fatal logger error silenced */
+  }
+}
+
+/*
+  This function creates a log message string in the correct format.
+  It allocates the log_msg parameter, which must be freed by the caller.
+  The format of the log message is:
+
+    [ERROR][rank <rank>][<scope>][<label>] <payload>
+
+  :param prefix: the logging level (ERROR, WARNING, INFO, DEBUG)
+  :param rank: the MPI rank of the caller
+  :param scope: the scope part of the log message
+  :param label: the label part of the log message
+  :param payload: the formatted message
+  :param log_msg: on output, an allocated string containing the log message
+
+  :return: void
+*/
+
+static void sunCreateLogMessage(const char* prefix, int rank, const char* scope,
+                                const char* label, const char* payload,
+                                char** log_msg)
+{
+  int msg_length = snprintf(NULL, 0, "[%s][rank %d][%s][%s] %s\n", prefix, rank,
+                            scope, label, payload);
+  *log_msg       = (char*)malloc(msg_length + 1);
+  snprintf(*log_msg, msg_length + 1, "[%s][rank %d][%s][%s] %s\n", prefix, rank,
+           scope, label, payload);
+}
+
+/* default number of files that we allocate space for */
+#define SUN_DEFAULT_LOGFILE_HANDLES_ 8
+
+static FILE* sunOpenLogFile(const char* fname, const char* mode)
+{
+  FILE* fp = NULL;
+
+  if (fname)
+  {
+    fp = fopen(fname, mode); /* CRAN: stdout/stderr mappings removed */
+  }
+
+  return fp;
+}
+
+static void sunCloseLogFile(void* fp)
+{
+  if (fp) { fclose((FILE*)fp); } /* CRAN: stdout/stderr refs removed */
+}
+
+static SUNErrCode sunLoggerGetFilePointer(SUNLogger logger, SUNLogLevel lvl,
+                                          FILE** fp)
+{
+  switch (lvl)
+  {
+  case SUN_LOGLEVEL_DEBUG: *fp = logger->debug_fp; break;
+  case SUN_LOGLEVEL_WARNING: *fp = logger->warning_fp; break;
+  case SUN_LOGLEVEL_INFO: *fp = logger->info_fp; break;
+  case SUN_LOGLEVEL_ERROR: *fp = logger->error_fp; break;
+  default: return SUN_ERR_UNREACHABLE;
+  }
+
+  return SUN_SUCCESS;
+}
+
+static sunbooleantype sunLoggerIsOutputRank(SUNDIALS_MAYBE_UNUSED SUNLogger logger,
+                                            int* rank_ref)
+{
+  sunbooleantype retval;
+
+#if SUNDIALS_MPI_ENABLED
+  int rank = 0;
+
+  if (logger->comm != SUN_COMM_NULL)
+  {
+    MPI_Comm_rank(logger->comm, &rank);
+
+    if (logger->output_rank < 0)
+    {
+      if (rank_ref) { *rank_ref = rank; }
+      retval = SUNTRUE; /* output all ranks */
+    }
+    else
+    {
+      if (rank_ref) { *rank_ref = rank; }
+      retval = logger->output_rank == rank;
+    }
+  }
+  else { retval = SUNTRUE; /* output all ranks */ }
+#else
+  if (rank_ref) { *rank_ref = 0; }
+  retval = SUNTRUE;
+#endif
+
+  return retval;
+}
+
+static SUNErrCode sunQueueLogMessage(SUNLogger logger, SUNLogLevel lvl,
+                                     const char* prefix, int rank,
+                                     const char* scope, const char* label,
+                                     const char* payload,
+                                     SUNDIALS_MAYBE_UNUSED void* content)
+{
+  FILE* fp          = NULL;
+  SUNErrCode retval = sunLoggerGetFilePointer(logger, lvl, &fp);
+  // The caller already validates lvl and fp!=NULL, so this is a secondary check
+  if (retval == SUN_SUCCESS && fp != NULL)
+  {
+    char* log_msg = NULL;
+    sunCreateLogMessage(prefix, rank, scope, label, payload, &log_msg);
+    fprintf(fp, "%s", log_msg);
+    free(log_msg);
+  }
+
+  return retval;
+}
+
+static SUNErrCode sunFlushLogMessage(SUNLogger logger, SUNLogLevel lvl,
+                                     SUNDIALS_MAYBE_UNUSED void* content)
+{
+  SUNErrCode retval = SUN_SUCCESS;
+
+  if (lvl == SUN_LOGLEVEL_ALL)
+  {
+    if (logger->debug_fp) { fflush(logger->debug_fp); }
+    if (logger->warning_fp) { fflush(logger->warning_fp); }
+    if (logger->info_fp) { fflush(logger->info_fp); }
+    if (logger->error_fp) { fflush(logger->error_fp); }
+  }
+  else
+  {
+    FILE* fp = NULL;
+    retval   = sunLoggerGetFilePointer(logger, lvl, &fp);
+    if (retval == SUN_SUCCESS && fp) { fflush(fp); }
+  }
+
+  return retval;
+}
+
+static SUNErrCode sunLoggerSetFilename(SUNLogger logger, const char* filename,
+                                       FILE** fp)
+{
+  if (!sunLoggerIsOutputRank(logger, NULL)) { return SUN_SUCCESS; }
+
+  /* An empty or NULL filename disables output for this stream. */
+  if (sunIsNullOrEmpty(filename))
+  {
+    /* Don't close the file here, that is managed by the underlying hashmap */
+    *fp = NULL;
+    return SUN_SUCCESS;
+  }
+
+  int64_t err = SUNHashMap_GetValue(logger->filenames, filename, (void**)fp);
+  if (err == SUNHASHMAP_ERROR) { return SUN_ERR_FILE_OPEN; }
+  else if (err == SUNHASHMAP_KEYNOTFOUND)
+  {
+    *fp = sunOpenLogFile(filename, "w+");
+    if (*fp == NULL) { return SUN_ERR_FILE_OPEN; }
+
+    err = SUNHashMap_Insert(logger->filenames, filename, (void*)*fp);
+    if (err != 0) { return SUN_ERR_FILE_OPEN; }
+  }
+
+  return SUN_SUCCESS;
+}
+
+static SUNErrCode sunLoggerSetFilePointer(SUNLogger logger, FILE* file_ptr,
+                                          FILE** fp)
+{
+  if (!sunLoggerIsOutputRank(logger, NULL)) { return SUN_SUCCESS; }
+  *fp = file_ptr;
+  return SUN_SUCCESS;
+}
+
+static SUNErrCode sunLoggerFreeKeyValue(SUNHashMapKeyValue* kv_ptr)
+{
+  if (!kv_ptr || !(*kv_ptr)) { return SUN_SUCCESS; }
+  sunCloseLogFile((*kv_ptr)->value);
+  free((*kv_ptr)->key);
+  free(*kv_ptr);
+  return SUN_SUCCESS;
+}
+
+#endif
+
+SUNErrCode SUNLogger_Create(SUNComm comm, int output_rank, SUNLogger* logger_ptr)
+{
+  *logger_ptr      = NULL;
+  SUNLogger logger = (SUNLogger)malloc(sizeof(struct SUNLogger_));
+  if (logger == NULL) { return SUN_ERR_MALLOC_FAIL; }
+
+  /* Attach the comm, duplicating it if MPI is used. */
+#if SUNDIALS_MPI_ENABLED
+  logger->comm = SUN_COMM_NULL;
+  if (comm != SUN_COMM_NULL) { MPI_Comm_dup(comm, &logger->comm); }
+#else
+  logger->comm = SUN_COMM_NULL;
+  if (comm != SUN_COMM_NULL)
+  {
+    free(logger);
+    return SUN_ERR_ARG_CORRUPT;
+  }
+#endif
+  logger->output_rank = output_rank;
+  logger->content     = NULL;
+  logger->python      = NULL;
+
+  /* use default routines */
+#if SUNDIALS_LOGGING_LEVEL > 0
+  logger->queue_msg = sunQueueLogMessage;
+  logger->flush_msg = sunFlushLogMessage;
+#else
+  logger->queue_msg = NULL;
+  logger->flush_msg = NULL;
+#endif
+
+  /* set the output file handles */
+  logger->filenames  = NULL;
+  logger->error_fp   = NULL; /* CRAN: stdout/stderr not allowed */
+  logger->warning_fp = NULL; /* CRAN: stdout/stderr not allowed */
+  logger->debug_fp   = NULL; /* CRAN: stdout/stderr not allowed */
+  logger->info_fp    = NULL; /* CRAN: stdout/stderr not allowed */
+#if SUNDIALS_LOGGING_LEVEL > 0
+  if (sunLoggerIsOutputRank(logger, NULL))
+  {
+    /* We store the FILE* in a hash map so that we can ensure
+       that we do not open a file twice if the same file is used
+       for multiple output levels */
+    SUNHashMap_New(SUN_DEFAULT_LOGFILE_HANDLES_, sunLoggerFreeKeyValue,
+                   &logger->filenames);
+  }
+#endif
+
+  *logger_ptr = logger;
+  return SUN_SUCCESS;
+}
+
+SUNErrCode SUNLogger_CreateFromEnv(SUNComm comm, SUNLogger* logger_out)
+{
+  SUNErrCode err   = SUN_SUCCESS;
+  SUNLogger logger = NULL;
+
+  const char* output_rank_env   = getenv("SUNLOGGER_OUTPUT_RANK");
+  int output_rank               = (output_rank_env) ? atoi(output_rank_env) : 0;
+  const char* error_fname_env   = getenv("SUNLOGGER_ERROR_FILENAME");
+  const char* warning_fname_env = getenv("SUNLOGGER_WARNING_FILENAME");
+  const char* info_fname_env    = getenv("SUNLOGGER_INFO_FILENAME");
+  const char* debug_fname_env   = getenv("SUNLOGGER_DEBUG_FILENAME");
+
+  if (SUNLogger_Create(comm, output_rank, &logger)) { return SUN_ERR_CORRUPT; }
+
+  do {
+    /* Only override the default logging if the env var is defined */
+    if (error_fname_env != NULL)
+    {
+      err = SUNLogger_SetErrorFilename(logger, error_fname_env);
+      if (err) { break; }
+    }
+
+    if (warning_fname_env != NULL)
+    {
+      err = SUNLogger_SetWarningFilename(logger, warning_fname_env);
+      if (err) { break; }
+    }
+
+    if (debug_fname_env != NULL)
+    {
+      err = SUNLogger_SetDebugFilename(logger, debug_fname_env);
+      if (err) { break; }
+    }
+
+    if (info_fname_env != NULL)
+    {
+      err = SUNLogger_SetInfoFilename(logger, info_fname_env);
+      if (err) { break; }
+    }
+  }
+  while (0);
+
+  if (err) { SUNLogger_Destroy(&logger); }
+  else { *logger_out = logger; }
+
+  return err;
+}
+
+SUNErrCode SUNLogger_SetErrorFilename(SUNLogger logger, const char* error_filename)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+
+#if SUNDIALS_LOGGING_LEVEL >= SUNDIALS_LOGGING_ERROR
+  return sunLoggerSetFilename(logger, error_filename, &logger->error_fp);
+#else
+  ((void)error_filename);
+  return SUN_SUCCESS;
+#endif
+}
+
+SUNErrCode SUNLogger_SetErrorFile(SUNLogger logger, FILE* error_fp)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+
+#if SUNDIALS_LOGGING_LEVEL >= SUNDIALS_LOGGING_ERROR
+  return sunLoggerSetFilePointer(logger, error_fp, &logger->error_fp);
+#else
+  ((void)error_fp);
+  return SUN_SUCCESS;
+#endif
+}
+
+SUNErrCode SUNLogger_GetErrorFile(SUNLogger logger, FILE** error_fp)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+  *error_fp = logger->error_fp;
+  return SUN_SUCCESS;
+}
+
+SUNErrCode SUNLogger_SetWarningFilename(SUNLogger logger,
+                                        const char* warning_filename)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+
+#if SUNDIALS_LOGGING_LEVEL >= SUNDIALS_LOGGING_WARNING
+  return sunLoggerSetFilename(logger, warning_filename, &logger->warning_fp);
+#else
+  ((void)warning_filename);
+  return SUN_SUCCESS;
+#endif
+}
+
+SUNErrCode SUNLogger_SetWarningFile(SUNLogger logger, FILE* warning_fp)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+
+#if SUNDIALS_LOGGING_LEVEL >= SUNDIALS_LOGGING_WARNING
+  return sunLoggerSetFilePointer(logger, warning_fp, &logger->warning_fp);
+#else
+  ((void)warning_fp);
+  return SUN_SUCCESS;
+#endif
+}
+
+SUNErrCode SUNLogger_GetWarningFile(SUNLogger logger, FILE** warning_fp)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+  *warning_fp = logger->warning_fp;
+  return SUN_SUCCESS;
+}
+
+SUNErrCode SUNLogger_SetInfoFilename(SUNLogger logger, const char* info_filename)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+
+#if SUNDIALS_LOGGING_LEVEL >= SUNDIALS_LOGGING_INFO
+  return sunLoggerSetFilename(logger, info_filename, &logger->info_fp);
+#else
+  ((void)info_filename);
+  return SUN_SUCCESS;
+#endif
+}
+
+SUNErrCode SUNLogger_SetInfoFile(SUNLogger logger, FILE* info_fp)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+
+#if SUNDIALS_LOGGING_LEVEL >= SUNDIALS_LOGGING_INFO
+  return sunLoggerSetFilePointer(logger, info_fp, &logger->info_fp);
+#else
+  ((void)info_fp);
+  return SUN_SUCCESS;
+#endif
+}
+
+SUNErrCode SUNLogger_GetInfoFile(SUNLogger logger, FILE** info_fp)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+  *info_fp = logger->info_fp;
+  return SUN_SUCCESS;
+}
+
+SUNErrCode SUNLogger_SetDebugFilename(SUNLogger logger, const char* debug_filename)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+
+#if SUNDIALS_LOGGING_LEVEL >= SUNDIALS_LOGGING_DEBUG
+  return sunLoggerSetFilename(logger, debug_filename, &logger->debug_fp);
+#else
+  ((void)debug_filename);
+  return SUN_SUCCESS;
+#endif
+}
+
+SUNErrCode SUNLogger_SetDebugFile(SUNLogger logger, FILE* debug_fp)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+
+#if SUNDIALS_LOGGING_LEVEL >= SUNDIALS_LOGGING_DEBUG
+  return sunLoggerSetFilePointer(logger, debug_fp, &logger->debug_fp);
+#else
+  ((void)debug_fp);
+  return SUN_SUCCESS;
+#endif
+}
+
+SUNErrCode SUNLogger_GetDebugFile(SUNLogger logger, FILE** debug_fp)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+  *debug_fp = logger->debug_fp;
+  return SUN_SUCCESS;
+}
+
+SUNErrCode SUNLogger_SetQueueAndFlushMsgFns(SUNLogger logger,
+                                            SUNLoggerQueueMsgFn queue_msg,
+                                            SUNLoggerFlushMsgFn flush_msg,
+                                            void* lptr)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+#if SUNDIALS_LOGGING_LEVEL > 0
+  if (queue_msg)
+  {
+    logger->queue_msg = queue_msg;
+    logger->flush_msg = flush_msg;
+    logger->content   = lptr;
+  }
+  else
+  {
+    logger->queue_msg = sunQueueLogMessage;
+    logger->flush_msg = sunFlushLogMessage;
+    logger->content   = NULL;
+  }
+#else
+  ((void)queue_msg);
+  ((void)flush_msg);
+  ((void)lptr);
+#endif
+  return SUN_SUCCESS;
+}
+
+SUNErrCode SUNLogger_QueueMsg(SUNLogger logger, SUNLogLevel lvl,
+                              const char* scope, const char* label,
+                              const char* msg_txt, ...)
+{
+  SUNErrCode retval = SUN_SUCCESS;
+  if (!logger)
+  {
+    retval = SUN_ERR_ARG_CORRUPT;
+    return retval;
+  }
+
+#if SUNDIALS_LOGGING_LEVEL > 0
+  {
+    if (logger->queue_msg == NULL) { return retval; }
+
+    int rank = 0;
+    if (!sunLoggerIsOutputRank(logger, &rank)) { return retval; }
+
+    FILE* fp;
+    retval = sunLoggerGetFilePointer(logger, lvl, &fp);
+    if (retval != SUN_SUCCESS || fp == NULL) { return retval; }
+
+    const char* prefix = NULL;
+    if (lvl == SUN_LOGLEVEL_DEBUG) { prefix = "DEBUG"; }
+    else if (lvl == SUN_LOGLEVEL_WARNING) { prefix = "WARNING"; }
+    else if (lvl == SUN_LOGLEVEL_INFO) { prefix = "INFO"; }
+    else if (lvl == SUN_LOGLEVEL_ERROR) { prefix = "ERROR"; }
+
+    char* payload = NULL;
+    va_list args;
+    va_start(args, msg_txt);
+    sunCreateLogPayload(rank, msg_txt, args, &payload);
+    va_end(args);
+
+    retval = logger->queue_msg(logger, lvl, prefix, rank, scope, label, payload,
+                               logger->content);
+
+    free(payload);
+  }
+#else
+  /* silence warnings when all logging is disabled */
+  ((void)logger);
+  ((void)lvl);
+  ((void)scope);
+  ((void)label);
+  ((void)msg_txt);
+#endif
+
+  return retval;
+}
+
+SUNErrCode SUNLogger_Flush(SUNLogger logger, SUNLogLevel lvl)
+{
+  SUNErrCode retval = SUN_SUCCESS;
+
+  if (!logger)
+  {
+    retval = SUN_ERR_ARG_CORRUPT;
+    return retval;
+  }
+
+#if SUNDIALS_LOGGING_LEVEL > 0
+  /* Default implementation */
+  if (sunLoggerIsOutputRank(logger, NULL))
+  {
+    if (logger->flush_msg)
+    {
+      retval = logger->flush_msg(logger, lvl, logger->content);
+    }
+  }
+#else
+  /* silence warnings when all logging is disabled */
+  ((void)lvl);
+#endif
+
+  return retval;
+}
+
+SUNErrCode SUNLogger_GetOutputRank(SUNLogger logger, int* output_rank)
+{
+  if (!logger) { return SUN_ERR_ARG_CORRUPT; }
+  *output_rank = logger->output_rank;
+  return SUN_SUCCESS;
+}
+
+SUNErrCode SUNLogger_Destroy(SUNLogger* logger_ptr)
+{
+  SUNErrCode retval = SUN_SUCCESS;
+
+  if (!logger_ptr) { return SUN_SUCCESS; }
+
+  SUNLogger logger = *logger_ptr;
+  if (logger)
+  {
+#if SUNDIALS_LOGGING_LEVEL > 0
+    if (sunLoggerIsOutputRank(logger, NULL))
+    {
+      SUNHashMap_Destroy(&logger->filenames);
+    }
+#endif
+
+#if defined(SUNDIALS_ENABLE_PYTHON)
+    SUNLoggerFunctionTable_Destroy(logger->python);
+#endif
+    logger->python = NULL;
+
+#if SUNDIALS_MPI_ENABLED
+    if (logger->comm != SUN_COMM_NULL) { MPI_Comm_free(&logger->comm); }
+#endif
+
+    free(logger);
+    *logger_ptr = NULL;
+  }
+
+  return retval;
+}

@@ -1,0 +1,358 @@
+
+R version 4.6.1 (2026-06-24) -- "Happy Hop"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> pkgname <- "sundialr"
+> source(file.path(R.home("share"), "R", "examples-header.R"))
+> options(warn = 1)
+> base::assign(".ExTimings", "sundialr-Ex.timings", pos = 'CheckExEnv')
+> base::cat("name\tuser\tsystem\telapsed\n", file=base::get(".ExTimings", pos = 'CheckExEnv'))
+> base::assign(".format_ptime",
++ function(x) {
++   if(!is.na(x[4L])) x[1L] <- x[1L] + x[4L]
++   if(!is.na(x[5L])) x[2L] <- x[2L] + x[5L]
++   options(OutDec = '.')
++   format(x[1L:3L], digits = 7L)
++ },
++ pos = 'CheckExEnv')
+> 
+> ### * </HEADER>
+> library('sundialr')
+> 
+> base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
+> base::assign(".old_wd", base::getwd(), pos = 'CheckExEnv')
+> cleanEx()
+> nameEx("cvode")
+> ### * cvode
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: cvode
+> ### Title: cvode
+> ### Aliases: cvode
+> 
+> ### ** Examples
+> 
+> # Example of solving a set of ODEs with cvode function
+> # ODEs described by an R function
+> ODE_R <- function(t, y, p){
++ 
++   # vector containing the right hand side gradients
++   ydot = vector(mode = "numeric", length = length(y))
++ 
++   # R indices start from 1
++   ydot[1] = -p[1]*y[1] + p[2]*y[2]*y[3]
++   ydot[2] = p[1]*y[1] - p[2]*y[2]*y[3] - p[3]*y[2]*y[2]
++   ydot[3] = p[3]*y[2]*y[2]
++ 
++   # ydot[1] = -0.04 * y[1] + 10000 * y[2] * y[3]
++   # ydot[3] = 30000000 * y[2] * y[2]
++   # ydot[2] = -ydot[1] - ydot[3]
++ 
++   ydot
++ 
++ }
+> 
+> # ODEs can also be described using Rcpp
+> Rcpp::sourceCpp(code = '
++ 
++                 #include <Rcpp.h>
++                 using namespace Rcpp;
++ 
++                 // ODE functions defined using Rcpp
++                 // [[Rcpp::export]]
++                 NumericVector ODE_Rcpp (double t, NumericVector y, NumericVector p){
++ 
++                 // Initialize ydot filled with zeros
++                 NumericVector ydot(y.length());
++ 
++                 ydot[0] = -p[0]*y[0] + p[1]*y[1]*y[2];
++                 ydot[1] = p[0]*y[0] - p[1]*y[1]*y[2] - p[2]*y[1]*y[1];
++                 ydot[2] = p[2]*y[1]*y[1];
++ 
++                 return ydot;
++ 
++                 }')
+> 
+> 
+> 
+> # R code to genrate time vector, IC and solve the equations
+> time_vec <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
+> IC <- c(1,0,0)
+> params <- c(0.04, 10000, 30000000)
+> reltol <- 1e-04
+> abstol <- c(1e-8,1e-14,1e-6)
+> 
+> ## Solving the ODEs using cvode function
+> df1 <- cvode(time_vec, IC, ODE_R , params, reltol, abstol)           ## using R
+> df2 <- cvode(time_vec, IC, ODE_Rcpp , params, reltol, abstol)        ## using Rcpp
+> 
+> ## Check that both solutions are identical
+> # identical(df1, df2)
+> 
+> ## Solving with a manual Jacobian  J[i,j] = d(ydot_i)/d(y_j)
+> JAC_R <- function(t, y, p) {
++   matrix(c(
++     -p[1],         p[1],                        0,
++      p[2]*y[3],   -p[2]*y[3] - 2*p[3]*y[2],   2*p[3]*y[2],
++      p[2]*y[2],   -p[2]*y[2],                  0
++   ), nrow = 3, ncol = 3)
++ }
+> df3 <- cvode(time_vec, IC, ODE_R, params, reltol, abstol, jacobian = JAC_R)
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("cvode", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("cvodes")
+> ### * cvodes
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: cvodes
+> ### Title: cvodes
+> ### Aliases: cvodes
+> 
+> ### ** Examples
+> 
+> # Example of solving a set sensitivity equations for ODEs with cvodes function
+> # ODEs described by an R function
+> ODE_R <- function(t, y, p){
++ 
++   # vector containing the right hand side gradients
++   ydot = vector(mode = "numeric", length = length(y))
++ 
++   # R indices start from 1
++   ydot[1] = -p[1]*y[1] + p[2]*y[2]*y[3]
++   ydot[2] = p[1]*y[1] - p[2]*y[2]*y[3] - p[3]*y[2]*y[2]
++   ydot[3] = p[3]*y[2]*y[2]
++ 
++   # ydot[1] = -0.04 * y[1] + 10000 * y[2] * y[3]
++   # ydot[3] = 30000000 * y[2] * y[2]
++   # ydot[2] = -ydot[1] - ydot[3]
++ 
++   ydot
++ 
++ }
+> 
+> # ODEs can also be described using Rcpp
+> Rcpp::sourceCpp(code = '
++ 
++                 #include <Rcpp.h>
++                 using namespace Rcpp;
++ 
++                 // ODE functions defined using Rcpp
++                 // [[Rcpp::export]]
++                 NumericVector ODE_Rcpp (double t, NumericVector y, NumericVector p){
++ 
++                 // Initialize ydot filled with zeros
++                 NumericVector ydot(y.length());
++ 
++                 ydot[0] = -p[0]*y[0] + p[1]*y[1]*y[2];
++                 ydot[1] = p[0]*y[0] - p[1]*y[1]*y[2] - p[2]*y[1]*y[1];
++                 ydot[2] = p[2]*y[1]*y[1];
++ 
++                 return ydot;
++ 
++                 }')
+> 
+> 
+> 
+> # R code to genrate time vector, IC and solve the equations
+> time_vec <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
+> IC <- c(1,0,0)
+> params <- c(0.04, 10000, 30000000)
+> reltol <- 1e-04
+> abstol <- c(1e-8,1e-14,1e-6)
+> 
+> ## Solving the ODEs and Sensitivities using cvodes function
+> df1 <- cvodes(time_vec, IC, ODE_R , params, reltol, abstol,"STG",FALSE)           ## using R
+> df2 <- cvodes(time_vec, IC, ODE_Rcpp , params, reltol, abstol,"STG",FALSE)        ## using Rcpp
+> 
+> ## Check that both solutions are identical
+> # identical(df1, df2)
+> 
+> ## Solving with a manual Jacobian  J[i,j] = d(ydot_i)/d(y_j)
+> JAC_R <- function(t, y, p) {
++   matrix(c(
++     -p[1],         p[1],                        0,
++      p[2]*y[3],   -p[2]*y[3] - 2*p[3]*y[2],   2*p[3]*y[2],
++      p[2]*y[2],   -p[2]*y[2],                  0
++   ), nrow = 3, ncol = 3)
++ }
+> df3 <- cvodes(time_vec, IC, ODE_R, params, reltol, abstol, "STG", FALSE, jacobian = JAC_R)
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("cvodes", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("cvsolve")
+> ### * cvsolve
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: cvsolve
+> ### Title: cvsolve
+> ### Aliases: cvsolve
+> 
+> ### ** Examples
+> 
+> # Example of solving a set of ODEs with multiple discontinuities using cvsolve
+> # A simple One dimensional equation, y = -0.1 * y
+> # ODEs described by an R function
+> ODE_R <- function(t, y, p){
++ 
++   # vector containing the right hand side gradients
++   ydot = vector(mode = "numeric", length = length(y))
++ 
++   # R indices start from 1
++   ydot[1] = -p[1]*y[1]
++ 
++   ydot
++ 
++ }
+> 
+> # R code to generate time vector, IC and solve the equations
+> TSAMP <- seq(from = 0, to = 100, by = 0.1)      # sampling time points
+> IC <- c(1)
+> params <- c(0.1)
+> 
+> # A dataset describing the dosing at times at which additions to y[1] are to be done
+> # Names of the columns don't matter, but they MUST be in the order of state index,
+> # times and Values at discontinuity.
+> TDOSE <- data.frame(ID = 1, TIMES = c(0, 10, 20, 30, 40, 50), VAL = 100)
+> df1 <- cvsolve(TSAMP, c(1), ODE_R, params)         # solving without any discontinuity
+> df2 <- cvsolve(TSAMP, c(1), ODE_R, params, TDOSE, 0.001, 0.001, NULL)  # solving with discontinuity
+> 
+> ## Solving with a manual Jacobian  J[1,1] = d(ydot[1])/d(y[1]) = -p[1]
+> JAC_R <- function(t, y, p) matrix(-p[1], nrow = 1, ncol = 1)
+> df3 <- cvsolve(TSAMP, IC, ODE_R, params, jacobian = JAC_R)
+> df4 <- cvsolve(TSAMP, IC, ODE_R, params, TDOSE, jacobian = JAC_R)
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("cvsolve", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("ida")
+> ### * ida
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: ida
+> ### Title: ida
+> ### Aliases: ida
+> 
+> ### ** Examples
+> 
+> # Example of solving a set of Differential Algebraic Equations (DAEs)
+> # with IDA function
+> # DAEs (residuals) described by an R function
+> DAE_R <- function(t, y, ydot, p){
++ 
++   # vector containing the residuals
++   res = vector(mode = "numeric", length = length(y))
++ 
++   # R indices start from 1
++   res[1] <- -0.04 * y[1] + 10000 * y[2] * y[3] - ydot[1]
++   res[2] <- -res[1] - 30000000 * y[2] * y[2] - ydot[2]
++   res[3] <- y[1] + y[2] + y[3] - 1.0
++ 
++   res
++ }
+> 
+> # DAEs can also be described using Rcpp
+> Rcpp::sourceCpp(code = '
++ 
++                 #include <Rcpp.h>
++                 using namespace Rcpp;
++ 
++                 // ODE functions defined using Rcpp
++                 // [[Rcpp::export]]
++                 NumericVector DAE_Rcpp (double t, NumericVector y, NumericVector ydot, NumericVector p){
++ 
++                 // Initialize ydot filled with zeros
++                 NumericVector res(y.length());
++ 
++                 res[0] = -0.04 * y[0] + 10000 * y[1] * y[2];
++                 res[1] = -res[0] - 30000000 * y[1] * y[1] - ydot[1];
++                 res[0] = res[0] - ydot[0];
++                 res[2] = y[0] + y[1] + y[2] - 1.0;
++ 
++                 return res;
++ 
++                 }')
+> 
+> # R code to genrate time vector, IC and solve the equations
+> time_vec <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
+> IC <- c(1,0,0)
+> IRes <- c(-0.4, 0.4, 0)
+> params <- c(0.04, 10000, 30000000)
+> reltol <- 1e-04
+> abstol <- c(1e-8,1e-14,1e-6)
+> 
+> ## Solving the DAEs using the ida function
+> df1 <- ida(time_vec, IC, IRes, DAE_R , params, reltol, abstol)           ## using R
+> df2 <- ida(time_vec, IC, IRes, DAE_Rcpp , params, reltol, abstol)        ## using Rcpp
+> 
+> ## Solving with a manual Jacobian
+> ## J[i,j] = dF_i/dy_j + cj * dF_i/dydot_j
+> ##
+> ## F1 = -0.04*y1 + 1e4*y2*y3 - ydot1
+> ## F2 = 0.04*y1 - 1e4*y2*y3 - 3e7*y2^2 - ydot2
+> ## F3 = y1 + y2 + y3 - 1  (algebraic constraint)
+> DAE_jac <- function(t, y, ydot, p) {
++   res <- numeric(length(y))
++   f1     <- -0.04 * y[1] + 10000 * y[2] * y[3]
++   res[1] <- f1 - ydot[1]
++   res[2] <- -f1 - 30000000 * y[2] * y[2] - ydot[2]
++   res[3] <- y[1] + y[2] + y[3] - 1.0
++   res
++ }
+> JAC_IDA <- function(t, y, ydot, cj, p) {
++   matrix(c(
++     -0.04 - cj,   0.04,    1,
++     10000*y[3],  -10000*y[3] - 60000000*y[2] - cj,   1,
++     10000*y[2],  -10000*y[2],                         1
++   ), nrow = 3, ncol = 3)
++ }
+> df3 <- ida(time_vec, IC, IRes, DAE_jac, params, reltol, abstol, jacobian = JAC_IDA)
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("ida", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> ### * <FOOTER>
+> ###
+> cleanEx()
+> options(digits = 7L)
+> base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
+Time elapsed:  0.631 0.025 9.063 8.643 3.849 
+> grDevices::dev.off()
+null device 
+          1 
+> ###
+> ### Local variables: ***
+> ### mode: outline-minor ***
+> ### outline-regexp: "\\(> \\)?### [*]+" ***
+> ### End: ***
+> quit('no')

@@ -1,0 +1,30 @@
+Package: sundialr
+Type: Package
+Title: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE)
+        Solvers
+Version: 0.1.8
+Authors@R: c(
+    person("Satyaprakash", "Nayak", email = "satyaprakash.nayak@gmail.com", role = c("aut", "cre","cph"), comment = c(ORCID = "0000-0001-7225-1317")),
+    person("Lawrence Livermore National Security", role =  c("cph")),
+    person("Southern Methodist University", role =  c("cph"))
+    )
+Maintainer: Satyaprakash Nayak <satyaprakash.nayak@gmail.com>
+URL: https://github.com/sn248/sundialr,
+        http://sn248.github.io/sundialr/
+BugReports: https://github.com/sn248/sundialr/issues
+Description: Provides a way to call the functions in 'SUNDIALS' C ODE solving library (<https://computing.llnl.gov/projects/sundials>). Currently the serial version of ODE solver, 'CVODE', sensitivity calculator 'CVODES' and differential algebraic solver 'IDA' from the 'SUNDIALS' library are implemented. The package requires ODE to be written as an 'R' or 'Rcpp' function and does not require the 'SUNDIALS' library to be installed on the local machine.
+License: BSD_3_clause + file LICENSE
+Copyright: file COPYRIGHTS
+Imports: Rcpp (>= 1.0.12)
+LinkingTo: Rcpp, RcppArmadillo
+Suggests: knitr, rmarkdown, testthat
+SystemRequirements: cmake
+NeedsCompilation: yes
+VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0
+Packaged: 2026-07-15 13:05:09 UTC; quantilogy
+Author: Satyaprakash Nayak [aut, cre, cph] (ORCID:
+    <https://orcid.org/0000-0001-7225-1317>),
+  Lawrence Livermore National Security [cph],
+  Southern Methodist University [cph]
+Built: R 4.6.1; x86_64-pc-linux-gnu; 2026-07-15 13:06:17 UTC; unix
