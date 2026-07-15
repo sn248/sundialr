@@ -1,5 +1,14 @@
 # Changelog
 
+## sundialr v0.1.8
+
+- Updated the underlying SUNDIALS library to v7.8.0 (Jun 2026)
+- CRAN-compliance patches moved to a dedicated script
+  (`src/scripts/cran_patches.sh`) which now verifies that no flagged
+  call survives patching
+- Added `tools/strip_sundials_tarball.sh` to reproducibly strip the
+  bundled SUNDIALS tarball of examples, docs, tests and benchmarks
+
 ## sundialr v0.1.7
 
 CRAN release: 2026-04-21

@@ -24,6 +24,12 @@ See the vignette for more details.
 
 ## What’s new?
 
+## Comments for version 0.1.8
+
+- Updated the underlying SUNDIALS library to v7.8.0 (Jun 2026)
+- CRAN-compliance patches moved to a dedicated, self-verifying script
+  (`src/scripts/cran_patches.sh`)
+
 ## Comments for version 0.1.7
 
 - Changes in `/tools/cmake_call.sh` file to remove warnings with respect
