@@ -40,8 +40,10 @@
 #include <check_retval.h>
 #include <rhs_func.h>
 #include <jac_func.h>
+#include <sundials_scope_guard.h>
 
-// CRAN fix: replace SUNDIALS' default abort()-based error handler with Rf_error()
+// CRAN fix: replace SUNDIALS' default abort()-based error handler with one that
+// records the error for the solver to raise via stop() (see the header)
 #include <sundials_err_handler.h>
 #include "./utils/sortTimes.cpp"
 
@@ -92,10 +94,36 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
     stop("Absolute tolerance must be a scalar or a vector of same length as IC \n");
   }
 
-  SUNContext sunctx;
+  // Receives SUNDIALS errors. Declared before the guard so that it is
+  // destroyed after it - the SUNContext freed there holds a pointer to it.
+  sundials_err_record sun_err;
+
+  // SUNDIALS objects, released by the guard below on every exit path
+  SUNContext sunctx      = NULL;
+  void *cvode_mem        = NULL;
+  N_Vector y0            = NULL;
+  N_Vector abstol        = NULL;
+  N_Vector constraints   = NULL;
+  SUNMatrix SM           = NULL;
+  SUNLinearSolver LS     = NULL;
+
+  // Free in the same order the trailing free calls used to; runs on the
+  // normal return and on the exceptions thrown by stop() below. constraints
+  // was previously never freed at all, on any path.
+  auto sundials_cleanup = make_scope_guard([&]{
+    if (y0)          N_VDestroy(y0);
+    if (abstol)      N_VDestroy(abstol);
+    if (constraints) N_VDestroy(constraints);
+    if (cvode_mem)   CVodeFree(&cvode_mem);
+    if (LS)          SUNLinSolFree(LS);
+    if (SM)          SUNMatDestroy(SM);
+    if (sunctx)      SUNContext_Free(&sunctx);
+  });
+
   SUNContext_Create(SUN_COMM_NULL, &sunctx);
   // CRAN fix: redirect SUNDIALS fatal errors to R instead of calling abort()
-  SUNContext_PushErrHandler(sunctx, sundials_r_err_handler, NULL);
+  SUNContext_PushErrHandler(sunctx, sundials_r_err_handler, &sun_err);
+  sundials_check(sun_err);   // context creation is not otherwise checked
 
   int flag;
   sunrealtype reltol = reltolerance;
@@ -109,7 +137,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
   // NOTE: sized by y_len (not abstol_len) because the scalar-abstolerance
   // branch below writes y_len entries into abstol_ptr regardless of
   // abstol_len; sizing by abstol_len (== 1 in that branch) overflows the heap.
-  N_Vector abstol = N_VNew_Serial(y_len, sunctx);
+  abstol = N_VNew_Serial(y_len, sunctx);
   sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
@@ -182,22 +210,20 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
   int NOUT = TCOMB.nrow();
 
   // Set the initial conditions-------------------------------------------------
-  N_Vector y0 = N_VNew_Serial(y_len, sunctx);
+  y0 = N_VNew_Serial(y_len, sunctx);
   sunrealtype *y0_ptr = N_VGetArrayPointer(y0);
   for (int i = 0; i<y_len; i++){
     y0_ptr[i] = ICchanged[i];
   }
 
   // Set constraints to all 1's for non-negative solution values.----------------
-  N_Vector constraints = N_VNew_Serial(y_len, sunctx);
+  constraints = N_VNew_Serial(y_len, sunctx);
+  sundials_check(sun_err);   // vector allocations are not otherwise checked
   N_VConst(1, constraints);
 
   // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
-  void *cvode_mem;
-  cvode_mem = NULL;
-
   cvode_mem = CVodeCreate(CV_BDF, sunctx);
-  if (check_retval((void *) cvode_mem, "CVodeCreate", 0)) { stop("Stopping cvsolve!"); }
+  if (check_retval((void *) cvode_mem, "CVodeCreate", 0)) { sundials_stop(sun_err, "CVodeCreate", "Stopping cvsolve!"); }
 
   //-- assign user input to the struct based on SEXP type of input_function
   if (!input_function){ stop("Something is wrong with input function, stopping!"); }
@@ -210,36 +236,36 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
 
   // setting the user_data in rhs function
   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
-  if (check_retval(&flag, "CVodeSetUserData", 1)) { stop("Stopping cvsolve, something went wrong in setting user data!"); }
+  if (check_retval(&flag, "CVodeSetUserData", 1)) { sundials_stop(sun_err, "CVodeSetUserData", "Stopping cvsolve, something went wrong in setting user data!"); }
 
   flag = CVodeInit(cvode_mem, rhs_function, T0, y0);
-  if (check_retval(&flag, "CVodeInit", 1)) { stop("Stopping cvsolve, something went wrong in initializing CVODE!"); }
+  if (check_retval(&flag, "CVodeInit", 1)) { sundials_stop(sun_err, "CVodeInit", "Stopping cvsolve, something went wrong in initializing CVODE!"); }
 
   // Call CVodeSVtolerances to specify the scalar relative tolerance and vector absolute tol
   flag = CVodeSVtolerances(cvode_mem, reltol, abstol);
-  if (check_retval(&flag, "CVodeSVtolerances", 1)) { stop("Stopping cvsolve, something went wrong in setting solver tolerances!"); }
+  if (check_retval(&flag, "CVodeSVtolerances", 1)) { sundials_stop(sun_err, "CVodeSVtolerances", "Stopping cvsolve, something went wrong in setting solver tolerances!"); }
 
   // Create dense SUNMatrix for use in linear solves
   sunindextype y_len_M = y_len;
-  SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
-  if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping cvsolve, something went wrong in setting the dense matrix!"); }
+  SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
+  if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { sundials_stop(sun_err, "SUNDenseMatrix", "Stopping cvsolve, something went wrong in setting the dense matrix!"); }
 
   // Create dense SUNLinearSolver object for use by CVode
-  SUNLinearSolver LS = SUNLinSol_Dense(y0, SM, sunctx);
-  if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping cvsolve, something went wrong in setting the linear solver!"); }
+  LS = SUNLinSol_Dense(y0, SM, sunctx);
+  if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { sundials_stop(sun_err, "SUNLinSol_Dense", "Stopping cvsolve, something went wrong in setting the linear solver!"); }
 
-  // Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode
+  // Call CVodeSetLinearSolver to attach the matrix and linear solver to CVode
   flag = CVodeSetLinearSolver(cvode_mem, LS, SM);
-  if(check_retval(&flag, "CVDlsSetLinearSolver", 1)) { stop("Stopping cvsolve, something went wrong in setting the linear solver!"); }
+  if(check_retval(&flag, "CVodeSetLinearSolver", 1)) { sundials_stop(sun_err, "CVodeSetLinearSolver", "Stopping cvsolve, something went wrong in setting the linear solver!"); }
 
   if (jacobian.isNotNull()) {
     flag = CVodeSetJacFn(cvode_mem, jac_cvsolve);
-    if(check_retval(&flag, "CVodeSetJacFn", 1)) { stop("Stopping cvsolve, something went wrong in setting the Jacobian function!"); }
+    if(check_retval(&flag, "CVodeSetJacFn", 1)) { sundials_stop(sun_err, "CVodeSetJacFn", "Stopping cvsolve, something went wrong in setting the Jacobian function!"); }
   }
 
   // Call CVodeSetConstraints to initialize constraints
   flag = CVodeSetConstraints(cvode_mem, constraints);
-  if(check_retval(&flag, "CVodeSetConstraints", 1)) { stop("Stopping cvsolve, something went wrong in setting constraints!"); }
+  if(check_retval(&flag, "CVodeSetConstraints", 1)) { sundials_stop(sun_err, "CVodeSetConstraints", "Stopping cvsolve, something went wrong in setting constraints!"); }
 
   sunrealtype tout;  // For output times
 
@@ -267,7 +293,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
 
       // integrate upto the next time point (whether a sampling time or a discontinuity)
       flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
-      if (check_retval(&flag, "CVode", 1)) { stop("Stopping cvsolve, something went wrong in solving the system of ODEs!"); break; }
+      if (check_retval(&flag, "CVode", 1)) { sundials_stop(sun_err, "CVode", "Stopping cvsolve, something went wrong in solving the system of ODEs!"); break; }
 
       // check whether the this records is sampling or discontinuity using the
       // fourth column of the TCOMB matrix to confirm discontinuity
@@ -295,7 +321,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
 
         // re-initialize the solver
         flag = CVodeReInit(cvode_mem, tout, y0);
-        if (check_retval((void *)&flag, "CVodeReInit", 1)) { stop("Stopping cvsolve, something went wrong in reinitializing the ODE system!"); break; }
+        if (check_retval((void *)&flag, "CVodeReInit", 1)) { sundials_stop(sun_err, "CVodeReInit", "Stopping cvsolve, something went wrong in reinitializing the ODE system!"); break; }
 
       } else {                                     // store results for the sampling record
 
@@ -312,18 +338,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
 
   }
 
-  // free the vectors
-  N_VDestroy(y0);
-  N_VDestroy(abstol);
-
-  // free integrator memory
-  CVodeFree(&cvode_mem);
-  // free the linear solver memory
-  SUNLinSolFree(LS);
-  // Free the matrix memory
-  SUNMatDestroy(SM);
-
-  SUNContext_Free(&sunctx);
+  // SUNDIALS objects are released by sundials_cleanup on scope exit
 
   return soln;
 

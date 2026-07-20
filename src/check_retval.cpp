@@ -39,6 +39,12 @@
  *            retval < 0
  *   opt == 2 means function allocates memory so check if returned
  *            NULL pointer
+ *
+ * This only reports whether the call failed; it does not print anything. The
+ * caller raises the failure with sundials_stop(), which reports the message
+ * recorded by the SUNDIALS error handler - naming the function, file, line and
+ * cause - so printing here as well would duplicate that. funcname is kept in
+ * the signature because it documents the call site.
  */
 
 int check_retval(void *returnvalue, const char *funcname, int opt)
@@ -46,24 +52,15 @@ int check_retval(void *returnvalue, const char *funcname, int opt)
   int *retval;
 
   /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
-  if (opt == 0 && returnvalue == NULL) {
-    Rprintf("\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
-            funcname);
-    return(1); }
+  if (opt == 0 && returnvalue == NULL) { return(1); }
 
   /* Check if retval < 0 */
   else if (opt == 1) {
     retval = (int *) returnvalue;
-    if (*retval < 0) {
-      Rprintf("\nSUNDIALS_ERROR: %s() failed with retval = %d\n\n",
-              funcname, *retval);
-      return(1); }}
+    if (*retval < 0) { return(1); }}
 
   /* Check if function returned NULL pointer - no memory allocated */
-  else if (opt == 2 && returnvalue == NULL) {
-    Rprintf("\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n",
-            funcname);
-    return(1); }
+  else if (opt == 2 && returnvalue == NULL) { return(1); }
 
   return(0);
 }

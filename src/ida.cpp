@@ -40,7 +40,9 @@
 
 #include <check_retval.h>
 #include <jac_func.h>
-// CRAN fix: replace SUNDIALS' default abort()-based error handler with Rf_error()
+#include <sundials_scope_guard.h>
+// CRAN fix: replace SUNDIALS' default abort()-based error handler with one that
+// records the error for the solver to raise via stop() (see the header)
 #include <sundials_err_handler.h>
 
 using namespace Rcpp;
@@ -154,7 +156,34 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
 
   int time_vec_len = time_vector.length();
   int y_len = IC.length();
-  SUNContext sunctx;
+  // Receives SUNDIALS errors. Declared before the guard so that it is
+  // destroyed after it - the SUNContext freed there holds a pointer to it.
+  sundials_err_record sun_err;
+
+  // SUNDIALS objects, released by the guard below on every exit path
+  SUNContext sunctx        = NULL;
+  void *ida_mem            = NULL;
+  N_Vector yy0             = NULL;
+  N_Vector yp0             = NULL;
+  N_Vector abstol          = NULL;
+  SUNMatrix SM             = NULL;
+  SUNLinearSolver LS       = NULL;
+  SUNNonlinearSolver NLS   = NULL;
+
+  // Free in the same order the trailing free calls used to; runs on the
+  // normal return and on the exceptions thrown by stop() below - including
+  // the two input checks immediately after the context is created.
+  auto sundials_cleanup = make_scope_guard([&]{
+    if (ida_mem) IDAFree(&ida_mem);
+    if (NLS)     SUNNonlinSolFree(NLS);
+    if (LS)      SUNLinSolFree(LS);
+    if (SM)      SUNMatDestroy(SM);
+    if (abstol)  N_VDestroy(abstol);
+    if (yy0)     N_VDestroy(yy0);
+    if (yp0)     N_VDestroy(yp0);
+    if (sunctx)  SUNContext_Free(&sunctx);
+  });
+
   SUNContext_Create(SUN_COMM_NULL, &sunctx);
 
   if(y_len != IRes.length()){ stop("IC (Initial Conditions) and IRes (Residuals) should be of same length"); }
@@ -167,7 +196,8 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
   }
 
   // CRAN fix: redirect SUNDIALS fatal errors to R instead of calling abort()
-  SUNContext_PushErrHandler(sunctx, sundials_r_err_handler, NULL);
+  SUNContext_PushErrHandler(sunctx, sundials_r_err_handler, &sun_err);
+  sundials_check(sun_err);   // context creation is not otherwise checked
 
   int flag;
   sunrealtype reltol = reltolerance;
@@ -181,7 +211,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
   // NOTE: sized by y_len (not abstol_len) because the scalar-abstolerance
   // branch below writes y_len entries into abstol_ptr regardless of
   // abstol_len; sizing by abstol_len (== 1 in that branch) overflows the heap.
-  N_Vector abstol = N_VNew_Serial(y_len, sunctx);
+  abstol = N_VNew_Serial(y_len, sunctx);
   sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
@@ -198,27 +228,25 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
 
   //----------------------------------------------------------------------------
   // // Set the initial values of y -----------------------------------------------
-  N_Vector yy0 = N_VNew_Serial(y_len, sunctx);          // declared as yy0 to be consistent with example C code
+  yy0 = N_VNew_Serial(y_len, sunctx);          // declared as yy0 to be consistent with example C code
   sunrealtype *yy0_ptr = N_VGetArrayPointer(yy0);
   for (int i = 0; i<y_len; i++){
     yy0_ptr[i] = IC[i];
   }
 
   // // Set the initial values of ydot --------------------------------------------
-  N_Vector yp0 = N_VNew_Serial(y_len, sunctx);         // declared as yp0 to be consistent with example C code
+  yp0 = N_VNew_Serial(y_len, sunctx);         // declared as yp0 to be consistent with example C code
+  sundials_check(sun_err);   // vector allocations are not otherwise checked
   sunrealtype *yp0_ptr = N_VGetArrayPointer(yp0);
   for (int i = 0; i<y_len; i++){
     yp0_ptr[i] = IRes[i];
   }
 
   // //----------------------------------------------------------------------------
-  void *ida_mem;
-  ida_mem = NULL;
-
   /* Call IDACreate and IDAInit to initialize IDA memory */
   ida_mem = IDACreate(sunctx);
 
-  if(check_retval((void *)ida_mem, "IDACreate", 0)) { stop("Stopping IDA, something went wrong in allocating memory!"); }
+  if(check_retval((void *)ida_mem, "IDACreate", 0)) { sundials_stop(sun_err, "IDACreate", "Stopping IDA, something went wrong in allocating memory!"); }
 
   // -- assign user input to the struct based on SEXP type of input_function
   if(!input_function){ stop("Something is wrong with the input function, stopping!"); }
@@ -231,14 +259,14 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
 
   // setting the user data in the rhs residual function
   flag = IDASetUserData(ida_mem, (void*)&my_res_function);
-  if (check_retval(&flag, "CVodeSetUserData", 1)) { stop("Stopping IDA, something went wrong in setting user data!"); }
+  if (check_retval(&flag, "IDASetUserData", 1)) { sundials_stop(sun_err, "IDASetUserData", "Stopping IDA, something went wrong in setting user data!"); }
 
   flag = IDAInit(ida_mem, res_function, T0, yy0, yp0);
-  if(check_retval(&flag, "IDAInit", 1)) { stop("Stopping, something went wrong in initializing IDA!"); };
+  if(check_retval(&flag, "IDAInit", 1)) { sundials_stop(sun_err, "IDAInit", "Stopping, something went wrong in initializing IDA!"); };
 
   /* Call IDASVtolerances to set tolerances */
   flag = IDASVtolerances(ida_mem, reltol, abstol);
-  if(check_retval(&flag, "IDASVtolerances", 1)) { stop("Stopping, something went wrong in setting tolerances!"); };
+  if(check_retval(&flag, "IDASVtolerances", 1)) { sundials_stop(sun_err, "IDASVtolerances", "Stopping, something went wrong in setting tolerances!"); };
 
   /* Call IDARootInit to specify the root function grob with 2 components */
   // retval = IDARootInit(mem, 2, grob);
@@ -246,33 +274,33 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
 
   /* Create dense SUNMatrix for use in linear solves */
   sunindextype y_len_M = y_len;
-  SUNMatrix SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
-  if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { stop("Stopping IDA, something went wrong in setting the dense matrix!"); }
+  SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
+  if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { sundials_stop(sun_err, "SUNDenseMatrix", "Stopping IDA, something went wrong in setting the dense matrix!"); }
 
 
   // Create dense SUNLinearSolver object for use by IDA
-  SUNLinearSolver LS = SUNLinSol_Dense(yy0, SM, sunctx);
-  if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { stop("Stopping IDA, something went wrong in setting the linear solver!"); }
+  LS = SUNLinSol_Dense(yy0, SM, sunctx);
+  if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { sundials_stop(sun_err, "SUNLinSol_Dense", "Stopping IDA, something went wrong in setting the linear solver!"); }
 
   /* Attach the matrix and linear solver */
   flag = IDASetLinearSolver(ida_mem, LS, SM);
-  if(check_retval(&flag, "IDASetLinearSolver", 1))  { stop("Stopping IDA, something went wrong in setting the linear solver!"); }
+  if(check_retval(&flag, "IDASetLinearSolver", 1))  { sundials_stop(sun_err, "IDASetLinearSolver", "Stopping IDA, something went wrong in setting the linear solver!"); }
 
   // Add user-provided Jacobian, if not NULL
   if (jacobian.isNotNull()) {
     flag = IDASetJacFn(ida_mem, jac_ida);
-    if(check_retval(&flag, "IDASetJacFn", 1)) { stop("Stopping IDA, something went wrong in setting the Jacobian function!"); }
+    if(check_retval(&flag, "IDASetJacFn", 1)) { sundials_stop(sun_err, "IDASetJacFn", "Stopping IDA, something went wrong in setting the Jacobian function!"); }
   }
 
   /* Create Newton SUNNonlinearSolver object. IDA uses a
    * Newton SUNNonlinearSolver by default, so it is unecessary
    * to create it and attach it. */
-  SUNNonlinearSolver NLS = SUNNonlinSol_Newton(yy0, sunctx);
-  if(check_retval((void *)NLS, "SUNNonlinSol_Newton", 0))  { stop("Stopping IDA, something went wrong in creating the Non-linear Solver in IDA!"); }
+  NLS = SUNNonlinSol_Newton(yy0, sunctx);
+  if(check_retval((void *)NLS, "SUNNonlinSol_Newton", 0))  { sundials_stop(sun_err, "SUNNonlinSol_Newton", "Stopping IDA, something went wrong in creating the Non-linear Solver in IDA!"); }
 
   /* Attach the nonlinear solver */
   flag = IDASetNonlinearSolver(ida_mem, NLS);
-  if(check_retval(&flag, "IDASetNonlinearSolver", 1)) { stop("Stopping IDA, something went wrong in attaching the Non-linear Solver in IDA!"); }
+  if(check_retval(&flag, "IDASetNonlinearSolver", 1)) { sundials_stop(sun_err, "IDASetNonlinearSolver", "Stopping IDA, something went wrong in attaching the Non-linear Solver in IDA!"); }
 
   /* In loop, call IDASolve, print results, and test for error.
    Break out of loop when NOUT preset output times have been reached. */
@@ -301,8 +329,8 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
 
     flag = IDASolve(ida_mem, tout, &time, yy0, yp0, IDA_NORMAL);
 
-    if (check_retval(&flag, "CVode", 1)) {
-      stop("Stopping IDA, something went wrong in solving the system of DAEs!"); break;
+    if (check_retval(&flag, "IDASolve", 1)) {
+      sundials_stop(sun_err, "IDASolve", "Stopping IDA, something went wrong in solving the system of DAEs!"); break;
     } // Something went wrong in solving it!
 
     if (flag == IDA_SUCCESS) {
@@ -315,15 +343,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
     }
   }
 
-  /* Free memory */
-  IDAFree(&ida_mem);
-  SUNNonlinSolFree(NLS);
-  SUNLinSolFree(LS);
-  SUNMatDestroy(SM);
-  N_VDestroy(abstol);
-  N_VDestroy(yy0);
-  N_VDestroy(yp0);
-  SUNContext_Free(&sunctx);
+  /* SUNDIALS objects are released by sundials_cleanup on scope exit */
 
   return soln;
 
