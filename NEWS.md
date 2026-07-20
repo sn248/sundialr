@@ -3,6 +3,7 @@ sundialr v0.1.8
 * Updated the underlying SUNDIALS library to v7.8.0 (Jun 2026)
 * CRAN-compliance patches moved to a dedicated script (`src/scripts/cran_patches.sh`) which now verifies that no flagged call survives patching
 * Added `tools/strip_sundials_tarball.sh` to reproducibly strip the bundled SUNDIALS tarball of examples, docs, tests and benchmarks
+* Fixed a bug in `ida()` and `cvsolve()` where a scalar `abstolerance` (the default) allocated a length-1 tolerance vector instead of one entry per state. On systems with more than one state this read and wrote past the end of that vector, and the solvers failed immediately with a corrector convergence error at the initial time. Passing `abstolerance` as a vector of the same length as `IC` was unaffected, as were `cvode()` and `cvodes()`
 
 sundialr v0.1.7
 ===============

@@ -1,6 +1,7 @@
 ## Comments for version 0.1.8
 + Updated the upstream `SUNDIALS` to version 7.8.0
 + CRAN-compliance patches (removal of `abort()`, `stdout`/`stderr` writes and `sprintf` from the bundled library) moved to a dedicated, self-verifying script
++ Fixed an out-of-bounds read/write in `ida()` and `cvsolve()`: a scalar `abstolerance` (the default) allocated a length-1 tolerance vector but one entry per state was written to and read from it. With more than one state both solvers failed at the initial time. The vector `abstolerance` form was unaffected, as were `cvode()` and `cvodes()`
 
 ## Comments for version 0.1.6
 + Updated the upstream `SUNDIALS` to version 7.2.0

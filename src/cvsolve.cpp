@@ -106,7 +106,10 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
 
   // Set the vector absolute tolerance -----------------------------------------
   // abstol must be same length as IC
-  N_Vector abstol = N_VNew_Serial(abstol_len, sunctx);
+  // NOTE: sized by y_len (not abstol_len) because the scalar-abstolerance
+  // branch below writes y_len entries into abstol_ptr regardless of
+  // abstol_len; sizing by abstol_len (== 1 in that branch) overflows the heap.
+  N_Vector abstol = N_VNew_Serial(y_len, sunctx);
   sunrealtype *abstol_ptr = N_VGetArrayPointer(abstol);
   if(abstol_len == 1){
     // if a scalar is provided - use it to make a vector with same values
