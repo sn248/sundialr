@@ -42,7 +42,7 @@ cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance = 0
 #'@param IC Initial Conditions
 #'@param input_function Right Hand Side function of ODEs
 #'@param Parameters Parameters input to ODEs
-#'@param Events Discontinuities in the solution (a DataFrame, default value is NULL)
+#'@param Events Discontinuities in the solution (a DataFrame, default value is NULL). Three columns, names ignored: the 1-based index of the state, the time of the discontinuity, and the value to add to that state at that time. The value is always added to the current value of the state, including at the initial time, so the initial conditions in \code{IC} are the starting point and an event at t = 0 adds to them.
 #'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 #'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 #'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)} returning an n-by-n matrix where entry [i,j] is d(ydot_i)/d(y_j). Default is NULL and SUNDIALS uses internal finite-difference approximation.

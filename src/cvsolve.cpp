@@ -72,7 +72,7 @@ static int jac_cvsolve(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
 //'@param IC Initial Conditions
 //'@param input_function Right Hand Side function of ODEs
 //'@param Parameters Parameters input to ODEs
-//'@param Events Discontinuities in the solution (a DataFrame, default value is NULL)
+//'@param Events Discontinuities in the solution (a DataFrame, default value is NULL). Three columns, names ignored: the 1-based index of the state, the time of the discontinuity, and the value to add to that state at that time. The value is always added to the current value of the state, including at the initial time, so the initial conditions in \code{IC} are the starting point and an event at t = 0 adds to them.
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 //'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)} returning an n-by-n matrix where entry [i,j] is d(ydot_i)/d(y_j). Default is NULL and SUNDIALS uses internal finite-difference approximation.
@@ -166,8 +166,8 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
   // Column 2 - Time of discontinuity or sampling
   // Column 3 - Value at the time of discontinuity, 0 for sampling
   // Column 4 - 0 for sampling and 1 for discontinuity time point
-  // If IC of a state is specified by both IC and Events, then the IC value is
-  // overwritten by the Events value
+  // An event at t = 0 adds to the IC, the same way events at later times add
+  // to the current state
   NumericMatrix TCOMB(time_vector.length(), 4); // a matrix with 1 column
   NumericMatrix::Column col1 = TCOMB(_, 1);     /// reference to the second column (containing time points)
   col1 = time_vector;                           // set to be equal to initial time vector
@@ -211,10 +211,16 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
     for(int i = 0; i < TCOMB.nrow(); i++){
       TCOMB(i,0) = TCOMB(i,0) - 1;
     }
-    // Change IC such that IC at time = 0 are overwritten by values in TCOMB at t = 0
+    // Apply the events at t = 0 to the initial conditions. These ADD to the
+    // IC, exactly as events at every later time add to the current state, so
+    // the IC the user supplied is always the starting point and several events
+    // at t = 0 on one state accumulate. Before 0.1.8 an event at t = 0
+    // replaced the IC instead, which silently discarded it and made t = 0
+    // behave differently from every other time.
     for(int i = 0; i < TCOMB.nrow();  i++){
       if(TCOMB(i,1) == 0 && TCOMB(i,3) == 1){
-        ICchanged(TCOMB(i,0)) = TCOMB(i,2);
+        int disc_index = static_cast<int>(TCOMB(i,0));
+        ICchanged(disc_index) = ICchanged(disc_index) + TCOMB(i,2);
       }
     }
   }
@@ -312,7 +318,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
       if(TCOMB(iout+1,3) == 1){
 
         // include the discontinuity, i.e. ADD to the solution
-        // Change y0 such that IC at time = 0 are overwritten by values in TCOMB at t = 0
+        // add the event value to the current value of the state
         for(int i = 0; i < TCOMB.nrow();  i++){
 
           if(TCOMB(i,1) == tout && TCOMB(i,3) == 1){

@@ -24,7 +24,7 @@ cvsolve(
 
 \item{Parameters}{Parameters input to ODEs}
 
-\item{Events}{Discontinuities in the solution (a DataFrame, default value is NULL)}
+\item{Events}{Discontinuities in the solution (a DataFrame, default value is NULL). Three columns, names ignored: the 1-based index of the state, the time of the discontinuity, and the value to add to that state at that time. The value is always added to the current value of the state, including at the initial time, so the initial conditions in \code{IC} are the starting point and an event at t = 0 adds to them.}
 
 \item{reltolerance}{Relative Tolerance (a scalar, default value  = 1e-04)}
 

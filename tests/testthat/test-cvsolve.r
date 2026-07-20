@@ -69,6 +69,28 @@ test_that("An event adds its value to the state at the event time", {
 
 })
 
+test_that("An event at t = 0 adds to the initial condition", {
+
+  ## t = 0 is not a special case: the event adds to the IC the user supplied,
+  ## exactly as events at later times add to the current state. Before 0.1.8
+  ## an event here replaced the IC, discarding it.
+  dose  <- 10
+  TDOSE <- data.frame(state = 1, time = 0, value = dose)
+  df1   <- cvsolve(TSAMP, IC, ODE_R, params, TDOSE, reltol, abstol)
+
+  expect_equal(df1[1, 2], IC[1] + dose)
+
+  ## and the whole trajectory decays from that starting value
+  expect_lt(max(abs(df1[, 2] - (IC[1] + dose) * exp(-params[1] * df1[, 1]))), 1e-6)
+
+  ## several events at t = 0 on the same state accumulate
+  df2 <- cvsolve(TSAMP, IC, ODE_R, params,
+                 data.frame(state = 1, time = c(0, 0), value = c(10, 5)),
+                 reltol, abstol)
+  expect_equal(df2[1, 2], IC[1] + 15)
+
+})
+
 test_that("Repeated events accumulate", {
 
   TDOSE <- data.frame(state = 1, time = c(5, 15), value = 10)
