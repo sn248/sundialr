@@ -181,10 +181,19 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
 
     Rcpp::DataFrame Events_DF(Events);
 
-    // Check that the first column index is less or equal to the no. of states
+    // Check the state index in the first column.
+    // It is converted to a 0-based index below and then used to subscript the
+    // state vector directly (ICchanged(...) and y0_ptr[...]), so a value that
+    // is out of range, fractional or NA is not merely wrong - it reads and
+    // writes outside the state vector. Reject anything that is not a whole
+    // number in 1..y_len.
     Rcpp::NumericVector EventsDF_state_col = Events_DF[0];
-    if(Rcpp::max(EventsDF_state_col) > y_len) {
-      stop("The state intex in first column of Events dataframe cannot be higher than number of states");
+    for(int i = 0; i < EventsDF_state_col.length(); i++){
+      double state_i = EventsDF_state_col[i];
+      if(ISNAN(state_i) || state_i < 1 || state_i > y_len ||
+         state_i != std::floor(state_i)){
+        stop("The state index in the first column of the Events dataframe must be a whole number between 1 and the number of states");
+      }
     }
 
     // Check that the highest event time is less than or equal to the last time point

@@ -128,6 +128,25 @@ test_that("Invalid input is rejected", {
                        data.frame(state = 5, time = 9, value = 10),
                        reltol, abstol))
 
+  ## The state index is turned into a 0-based subscript into the state
+  ## vector, so anything that is not a whole number in 1..n would index
+  ## outside it. Each of these must be rejected rather than corrupting memory.
+  IC3 <- c(1, 0, 0)
+  p3  <- c(0.5, 0.2)
+  bad_state <- function(s) {
+    cvsolve(TSAMP, IC3, ODE_3, p3, data.frame(state = s, time = 9, value = 10),
+            reltol, 1e-10)
+  }
+  expect_error(bad_state(0))    # 0-based typo -> subscript -1
+  expect_error(bad_state(-1))   # negative    -> subscript -2
+  expect_error(bad_state(1.5))  # fractional  -> silently truncated to state 1
+  expect_error(bad_state(NA))   # NA          -> undefined subscript
+  expect_error(bad_state(4))    # above n     -> subscript past the end
+
+  ## the valid boundaries are still accepted
+  expect_silent(bad_state(1))
+  expect_silent(bad_state(3))
+
   ## an event cannot happen after the last output time
   expect_error(cvsolve(TSAMP, IC, ODE_R, params,
                        data.frame(state = 1, time = 999, value = 10),
