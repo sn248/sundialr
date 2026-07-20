@@ -57,7 +57,10 @@ static int jac_cvsolve(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
                        void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
 
   struct rhs_func *data = (struct rhs_func*)user_data;
-  return jac_eval(t, y, JAC, data->jac_eqn, data->params);
+  if (!data) { return -1; }
+  return sundials_callback_guard(data->err, [&]() -> int {
+    return jac_eval(t, y, JAC, data->jac_eqn, data->params);
+  });
 }
 
 
@@ -241,7 +244,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
   if (!input_function){ stop("There is no input function, stopping!"); }
 
   // order of input is rhs input function, Parameters and User-supplied Jacobian (optional)
-  struct rhs_func my_rhs_function = {input_function, Parameters, jac_sexp};
+  struct rhs_func my_rhs_function = {input_function, Parameters, jac_sexp, &sun_err};
 
   // setting the user_data in rhs function
   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);

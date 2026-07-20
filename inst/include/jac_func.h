@@ -15,6 +15,11 @@ static inline int jac_eval(sunrealtype t, N_Vector y, SUNMatrix JAC,
   Rcpp::Function jac_fun(jac_eqn);
   Rcpp::NumericMatrix J = jac_fun(t, y1, params);
 
+  if (J.nrow() != n || J.ncol() != n) {
+    Rcpp::stop("The Jacobian function must return a %d-by-%d matrix; got %d-by-%d",
+               n, n, J.nrow(), J.ncol());
+  }
+
   for (int j = 0; j < n; j++)
     for (int i = 0; i < n; i++)
       SM_ELEMENT_D(JAC, i, j) = J(i, j);
@@ -34,6 +39,11 @@ static inline int jac_eval_ida(sunrealtype t, sunrealtype cj,
 
   Rcpp::Function jac_fun(jac_eqn);
   Rcpp::NumericMatrix J = jac_fun(t, y1, yp1, cj, params);
+
+  if (J.nrow() != n || J.ncol() != n) {
+    Rcpp::stop("The Jacobian function must return a %d-by-%d matrix; got %d-by-%d",
+               n, n, J.nrow(), J.ncol());
+  }
 
   for (int j = 0; j < n; j++)
     for (int i = 0; i < n; i++)

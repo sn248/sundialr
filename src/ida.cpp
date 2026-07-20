@@ -52,65 +52,69 @@ struct res_func{
   Function res_eqn;
   NumericVector params;
   SEXP jac_eqn;
+  sundials_err_record *err;   // collects errors raised inside the callbacks
 };
 
 // function called by IDAInit if user inputs R function
+// Called by SUNDIALS from its own C code, so the body runs under
+// sundials_callback_guard; see the note on rhs_function in rhs_func.cpp.
 int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data){
-
-  // convert y to NumericVector y1
-  int yy_len = NV_LENGTH_S(yy);
-
-  // NumericVector analog of yy
-  NumericVector yy1(yy_len);                      // filled with zeros
-  sunrealtype *yy_ptr = N_VGetArrayPointer(yy);
-  for (int i = 0; i < yy_len; i++){
-    yy1[i] = yy_ptr[i];                           // Ith(y,i+1);
-  }
-
-  int yp_len = NV_LENGTH_S(yp);
-  // NumericVector analog of yp
-  NumericVector yp1(yp_len);                      // filled with zeros
-  sunrealtype *yp_ptr = N_VGetArrayPointer(yp);
-  for (int i = 0; i < yp_len; i++){
-    yp1[i] = yp_ptr[i];                           // Ith(y,i+1);
-  }
-
-  // NumericVector analog of rr
-  int rr_len = NV_LENGTH_S(rr);
-  NumericVector rr1(rr_len);                      // filled with zeros
-
-  if(!user_data){
-    stop("Something went wrong, stopping!");
-  }
 
   // cast void pointer to pointer to struct and assign rhs residual to a Function
   struct res_func *my_res_fun = (struct res_func*)user_data;
 
-  if(my_res_fun){
+  // nothing to record against, so just report the failure to SUNDIALS
+  if(!my_res_fun){ return(-1); }
+
+  return sundials_callback_guard(my_res_fun->err, [&]() -> int {
+
+    // convert y to NumericVector y1
+    int yy_len = NV_LENGTH_S(yy);
+
+    // NumericVector analog of yy
+    NumericVector yy1(yy_len);                      // filled with zeros
+    sunrealtype *yy_ptr = N_VGetArrayPointer(yy);
+    for (int i = 0; i < yy_len; i++){
+      yy1[i] = yy_ptr[i];                           // Ith(y,i+1);
+    }
+
+    int yp_len = NV_LENGTH_S(yp);
+    // NumericVector analog of yp
+    NumericVector yp1(yp_len);                      // filled with zeros
+    sunrealtype *yp_ptr = N_VGetArrayPointer(yp);
+    for (int i = 0; i < yp_len; i++){
+      yp1[i] = yp_ptr[i];                           // Ith(y,i+1);
+    }
+
+    // NumericVector analog of rr
+    int rr_len = NV_LENGTH_S(rr);
+    NumericVector rr1(rr_len);                      // filled with zeros
 
     Function res_fun = (*my_res_fun).res_eqn;           // function
     NumericVector p_values = (*my_res_fun).params;      // rate parameters
 
-    if (res_fun && (TYPEOF(res_fun) == CLOSXP)){
-      // use the function to calculate value of RHS ----
-      rr1 = res_fun(t, yy1, yp1, p_values);
+    if (!res_fun || (TYPEOF(res_fun) != CLOSXP)){
+      stop("The residual function is not an R or Rcpp function, stopping!");
     }
-    else{
-      stop("Something went wrong in evaluating the residual function, stopping!");
+
+    // use the function to calculate value of RHS ----
+    rr1 = res_fun(t, yy1, yp1, p_values);
+
+    // guards the element-by-element copy below against a short return
+    if (rr1.length() != rr_len){
+      stop("The residual function must return a vector of the same length as the state vector: expected %d, got %d",
+           rr_len, rr1.length());
     }
-  }
-  else {
-    stop("Something went wrong in accessing the residual function, stopping!");
-  }
 
-  // convert NumericVector rr1 to N_Vector rr
-  sunrealtype *rr_ptr = N_VGetArrayPointer(rr);
-  for (int i = 0; i <  rr_len; i++){
-    rr_ptr[i] = rr1[i];
-  }
+    // convert NumericVector rr1 to N_Vector rr
+    sunrealtype *rr_ptr = N_VGetArrayPointer(rr);
+    for (int i = 0; i <  rr_len; i++){
+      rr_ptr[i] = rr1[i];
+    }
 
-  // everything went smoothly
-  return(0);
+    // everything went smoothly
+    return(0);
+  });
 }
 //---RHS residual function definition ends -------------------------------------
 
@@ -129,7 +133,10 @@ static int jac_ida(sunrealtype t, sunrealtype cj,
                      N_Vector yy, N_Vector yp, N_Vector rr, SUNMatrix JAC,
                      void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
     struct res_func *data = (struct res_func*)user_data;
-    return jac_eval_ida(t, cj, yy, yp, JAC, data->jac_eqn, data->params);
+    if (!data) { return -1; }
+    return sundials_callback_guard(data->err, [&]() -> int {
+      return jac_eval_ida(t, cj, yy, yp, JAC, data->jac_eqn, data->params);
+    });
 }
 //------------------------------------------------------------------------------
 
@@ -255,7 +262,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
 
   SEXP jac_sexp = R_NilValue;  // for manual jacobian, if provided
   if (jacobian.isNotNull()) jac_sexp = as<SEXP>(jacobian);
-  struct res_func my_res_function = {input_function, Parameters, jac_sexp};
+  struct res_func my_res_function = {input_function, Parameters, jac_sexp, &sun_err};
 
   // setting the user data in the rhs residual function
   flag = IDASetUserData(ida_mem, (void*)&my_res_function);

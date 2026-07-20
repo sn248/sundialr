@@ -59,6 +59,7 @@ struct rhs_func_sens{
   double rtol;
   NumericVector atol;
   SEXP jac_eqn;
+  sundials_err_record *err;   // collects errors raised inside the callbacks
 };
 
 //struct for tolerance passed for error weight calculations----------------------
@@ -70,52 +71,54 @@ struct rhs_func_sens{
 // int ewt(N_Vector y, N_Vector w, void *user_data);
 
 // function called by CVodeInit if user inputs R function
+// Called by SUNDIALS from its own C code, so the body runs under
+// sundials_callback_guard; see the note on rhs_function in rhs_func.cpp.
 int rhs_function_sens(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data){
-
-  // convert y (N_Vector) to NumericVector y1
-  int y_len = NV_LENGTH_S(y);
-
-  NumericVector y1(y_len);    // filled with zeros
-  sunrealtype *y_ptr = N_VGetArrayPointer(y);
-  for (int i = 0; i < y_len; i++){
-    y1[i] = y_ptr[i];
-  }
-
-  NumericVector ydot1(y_len);    // filled with zeros
-
-  if(!user_data){
-    stop("Something went wrong in setting initial values, stopping!");
-  }
 
   // cast void pointer to pointer to struct and assign rhs to a Function
   struct rhs_func_sens *my_rhs_fun = (struct rhs_func_sens*)user_data;
 
-  if(my_rhs_fun){
+  // nothing to record against, so just report the failure to SUNDIALS
+  if(!my_rhs_fun){ return(-1); }
+
+  return sundials_callback_guard(my_rhs_fun->err, [&]() -> int {
+
+    // convert y (N_Vector) to NumericVector y1
+    int y_len = NV_LENGTH_S(y);
+
+    NumericVector y1(y_len);    // filled with zeros
+    sunrealtype *y_ptr = N_VGetArrayPointer(y);
+    for (int i = 0; i < y_len; i++){
+      y1[i] = y_ptr[i];
+    }
+
+    NumericVector ydot1(y_len);    // filled with zeros
+
     Function rhs_fun = (*my_rhs_fun).rhs_eqn;                // function
     NumericVector p_values = (*my_rhs_fun).params;           // rate parameters
-    // std::vector<double> p_values = (*my_rhs_fun).params;
 
-    if (rhs_fun && (TYPEOF(rhs_fun) == CLOSXP)){
-      // use the function to calculate value of RHS ----
-      ydot1 = rhs_fun(t, y1, p_values);
+    if (!rhs_fun || (TYPEOF(rhs_fun) != CLOSXP)){
+      stop("The RHS function is not an R or Rcpp function, stopping!");
     }
-    else{
-      stop("Something went wrong in calculating derivatives, stopping!");
+
+    // use the function to calculate value of RHS ----
+    ydot1 = rhs_fun(t, y1, p_values);
+
+    // guards the element-by-element copy below against a short return
+    if (ydot1.length() != y_len){
+      stop("The RHS function must return a vector of the same length as the state vector: expected %d, got %d",
+           y_len, ydot1.length());
     }
-  }
-  else {
-    stop("Something went wrong in accessing the derivatives, stopping!");
-  }
 
-  // convert NumericVector ydot1 to N_Vector ydot
-  sunrealtype *ydot_ptr = N_VGetArrayPointer(ydot);
-  for (int i = 0; i<  y_len; i++){
-    ydot_ptr[i] = ydot1[i];
-    // Rcout << ydot_ptr[i] << "\n";
-  }
+    // convert NumericVector ydot1 to N_Vector ydot
+    sunrealtype *ydot_ptr = N_VGetArrayPointer(ydot);
+    for (int i = 0; i<  y_len; i++){
+      ydot_ptr[i] = ydot1[i];
+    }
 
-  // If everything went smoothly, return 0
-  return(0);
+    // If everything went smoothly, return 0
+    return(0);
+  });
 }
 
 // EwtSet Function. Computes the error weights at the current solution.
@@ -125,6 +128,7 @@ int ewt(N_Vector y, N_Vector w, void *user_data)
   NumericVector atol;
 
   struct rhs_func_sens *my_rhs_fun = (struct rhs_func_sens*)user_data;
+  if(!my_rhs_fun){ return(-1); }
 
   rtol = my_rhs_fun->rtol;
   atol = my_rhs_fun->atol;
@@ -148,7 +152,10 @@ int ewt(N_Vector y, N_Vector w, void *user_data)
 static int jac_cvodes(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
                       void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
     struct rhs_func_sens *data = (struct rhs_func_sens*)user_data;
-    return jac_eval(t, y, JAC, data->jac_eqn, data->params);
+    if (!data) { return -1; }
+    return sundials_callback_guard(data->err, [&]() -> int {
+      return jac_eval(t, y, JAC, data->jac_eqn, data->params);
+    });
 }
 //------------------------------------------------------------------------------
 //' cvodes
@@ -291,7 +298,8 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
                                           // as<std::vector<double> >(Parameters),
                                           reltol,
                                           abstol,
-                                          jac_sexp};
+                                          jac_sexp,
+                                          &sun_err};
 
   // setting the user_data in rhs function
   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
