@@ -30,7 +30,6 @@
 
 #include <Rcpp.h>
 #include <algorithm>                   // to convert SensType to upper case - input cleaning
-#include <iostream>                    // to compare SensType strings
 
 #include <cvodes/cvodes.h>
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector            */
@@ -42,7 +41,6 @@
 #include <check_retval.h>
 #include <jac_func.h>
 #include <sundials_scope_guard.h>
-// #include "check_retval.cpp"
 // CRAN fix: replace SUNDIALS' default abort()-based error handler with one that
 // records the error for the solver to raise via stop() (see the header)
 #include <sundials_err_handler.h>
@@ -61,14 +59,6 @@ struct rhs_func_sens{
   SEXP jac_eqn;
   sundials_err_record *err;   // collects errors raised inside the callbacks
 };
-
-//struct for tolerance passed for error weight calculations----------------------
-// typedef struct {
-//   double rtol;
-//   NumericVector atol;
-// } errorStruct;
-
-// int ewt(N_Vector y, N_Vector w, void *user_data);
 
 // function called by CVodeInit if user inputs R function
 // Called by SUNDIALS from its own C code, so the body runs under
@@ -125,13 +115,16 @@ int rhs_function_sens(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data)
 int ewt(N_Vector y, N_Vector w, void *user_data)
 {
   sunrealtype yy, ww, rtol;
-  NumericVector atol;
 
   struct rhs_func_sens *my_rhs_fun = (struct rhs_func_sens*)user_data;
   if(!my_rhs_fun){ return(-1); }
 
   rtol = my_rhs_fun->rtol;
-  atol = my_rhs_fun->atol;
+
+  // Read the tolerances through a pointer rather than copying the vector.
+  // CVODES calls this on every internal step, far more often than the RHS,
+  // so a copy here is on the hottest path in the solve.
+  const double *atol = my_rhs_fun->atol.begin();
 
   sunindextype y_len = N_VGetLength_Serial(y);
 
@@ -295,7 +288,6 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   if (jacobian.isNotNull()) jac_sexp = as<SEXP>(jacobian);
   struct rhs_func_sens my_rhs_function = {input_function,
                                           Parameters,
-                                          // as<std::vector<double> >(Parameters),
                                           reltol,
                                           abstol,
                                           jac_sexp,
@@ -386,7 +378,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
     tout = time_vector[iout+1];
 
     flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
-    if (check_retval(&flag, "CVode", 1)) { sundials_stop(sun_err, "CVode", "Stopping cvodes, something went wrong in solving the system using CVODE!"); break; } // Something went wrong in solving it!
+    if (check_retval(&flag, "CVode", 1)) { sundials_stop(sun_err, "CVode", "Stopping cvodes, something went wrong in solving the system using CVODE!"); } // Something went wrong in solving it!
     if (flag == CV_SUCCESS) {
 
       // store results in soln matrix
@@ -397,14 +389,14 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
     }
 
     flag = CVodeGetSens(cvode_mem, &time, yS);
-    if (check_retval(&flag, "CVodeGetSens", 1)) { sundials_stop(sun_err, "CVodeGetSens", "Stopping cvodes, something went wrong in calculating Sensitivities!"); break; }
+    if (check_retval(&flag, "CVodeGetSens", 1)) { sundials_stop(sun_err, "CVodeGetSens", "Stopping cvodes, something went wrong in calculating Sensitivities!"); }
 
     if (flag == CV_SUCCESS) {
+      sens(iout+1, 0) = time;               // first column is for time
       for (int i = 0; i < NP; i++){
         yS_ptr = N_VGetArrayPointer(yS[i]);   // sensitivities w.r.t. param i
         for(int j = 0; j < y_len; j++){
           // store results in soln matrix
-          sens(iout+1, 0) = time;           // first column is for time
           sens(iout+1, y_len*i+j+1) = yS_ptr[j]; // sensitivities of y1 ... yJ w.r.t param i
         }
       }

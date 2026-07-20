@@ -45,7 +45,7 @@
 // CRAN fix: replace SUNDIALS' default abort()-based error handler with one that
 // records the error for the solver to raise via stop() (see the header)
 #include <sundials_err_handler.h>
-#include "./utils/sortTimes.cpp"
+#include "sortTimes.h"
 
 using namespace Rcpp;
 using namespace arma;
@@ -305,7 +305,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
 
       // integrate upto the next time point (whether a sampling time or a discontinuity)
       flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
-      if (check_retval(&flag, "CVode", 1)) { sundials_stop(sun_err, "CVode", "Stopping cvsolve, something went wrong in solving the system of ODEs!"); break; }
+      if (check_retval(&flag, "CVode", 1)) { sundials_stop(sun_err, "CVode", "Stopping cvsolve, something went wrong in solving the system of ODEs!"); }
 
       // check whether the this records is sampling or discontinuity using the
       // fourth column of the TCOMB matrix to confirm discontinuity
@@ -333,7 +333,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
 
         // re-initialize the solver
         flag = CVodeReInit(cvode_mem, tout, y0);
-        if (check_retval((void *)&flag, "CVodeReInit", 1)) { sundials_stop(sun_err, "CVodeReInit", "Stopping cvsolve, something went wrong in reinitializing the ODE system!"); break; }
+        if (check_retval((void *)&flag, "CVodeReInit", 1)) { sundials_stop(sun_err, "CVodeReInit", "Stopping cvsolve, something went wrong in reinitializing the ODE system!"); }
 
       } else {                                     // store results for the sampling record
 

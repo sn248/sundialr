@@ -275,10 +275,6 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
   flag = IDASVtolerances(ida_mem, reltol, abstol);
   if(check_retval(&flag, "IDASVtolerances", 1)) { sundials_stop(sun_err, "IDASVtolerances", "Stopping, something went wrong in setting tolerances!"); };
 
-  /* Call IDARootInit to specify the root function grob with 2 components */
-  // retval = IDARootInit(mem, 2, grob);
-  // if (check_retval(&retval, "IDARootInit", 1)) return(1);
-
   /* Create dense SUNMatrix for use in linear solves */
   sunindextype y_len_M = y_len;
   SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
@@ -337,7 +333,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
     flag = IDASolve(ida_mem, tout, &time, yy0, yp0, IDA_NORMAL);
 
     if (check_retval(&flag, "IDASolve", 1)) {
-      sundials_stop(sun_err, "IDASolve", "Stopping IDA, something went wrong in solving the system of DAEs!"); break;
+      sundials_stop(sun_err, "IDASolve", "Stopping IDA, something went wrong in solving the system of DAEs!");
     } // Something went wrong in solving it!
 
     if (flag == IDA_SUCCESS) {

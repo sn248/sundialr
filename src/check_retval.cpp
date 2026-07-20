@@ -45,6 +45,25 @@
  * recorded by the SUNDIALS error handler - naming the function, file, line and
  * cause - so printing here as well would duplicate that. funcname is kept in
  * the signature because it documents the call site.
+ *
+ * CAUTION when adding a call: opt must match the TYPE of the value passed, and
+ * nothing enforces that. Getting it wrong fails silently, in both directions:
+ *
+ *   check_retval(&flag, "X", 0)      asks whether &flag is NULL. It never is,
+ *                                    so a genuine failure is ignored.
+ *   check_retval((void *)SM, "X", 1) reads the first bytes of a SUNMatrix as a
+ *                                    return code, and dereferences NULL in
+ *                                    exactly the case the check exists to catch.
+ *
+ * Both are one character away from the correct call. Every call site in this
+ * package was audited and is correct: 31 pass &flag with opt = 1, 15 pass an
+ * object pointer with opt = 0, and opt = 2 is never used. Keep it that way.
+ *
+ * The durable fix, if this is revisited, is to drop opt in favour of two
+ * overloads - check_retval(int flag, const char*) and
+ * check_retval(const void*, const char*) - so the compiler dispatches and a
+ * mismatch stops compiling. It is deferred only because it touches every call
+ * site and there is no live defect.
  */
 
 int check_retval(void *returnvalue, const char *funcname, int opt)
