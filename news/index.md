@@ -8,6 +8,17 @@
   call survives patching
 - Added `tools/strip_sundials_tarball.sh` to reproducibly strip the
   bundled SUNDIALS tarball of examples, docs, tests and benchmarks
+- **Behaviour change**: an `Events` record at time 0 in
+  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  now adds its value to the initial condition instead of replacing it,
+  so the `IC` supplied by the caller is always the starting state and t
+  = 0 behaves like every other event time. Several events at t = 0 on
+  one state now accumulate rather than the last one winning. Results
+  change for any call that doses at time 0: with `IC = c(1)` and a value
+  of 100 at t = 0 the state now starts at 101 rather than 100, and
+  `inst/examples/cvsolve_1D.r` starts at 101 accordingly. To reproduce
+  the old numbers, subtract the initial condition from the value of any
+  event at time 0
 - Fixed a bug in
   [`ida()`](http://sn248.github.io/sundialr/reference/ida.md) and
   [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
@@ -37,6 +48,33 @@
   [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
   never freed its constraints vector on any path, including successful
   ones
+- [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  now rejects an invalid state index in the first column of `Events`.
+  The index is converted to a position in the state vector and used to
+  subscript it directly, so a value outside `1:length(IC)` wrote outside
+  that vector: an index of `0`, the natural mistake when counting from
+  zero, corrupted the heap and could abort the `R` session. Fractional
+  and `NA` indices are rejected for the same reason, a fractional index
+  having previously been truncated to a different state without warning
+- An error raised inside a user-supplied `R` function is now returned to
+  the solver as a failure code rather than being thrown out through
+  SUNDIALS’ own C code, which lets SUNDIALS unwind its internal state
+  instead of being abandoned part-way through a step. The `R` error
+  itself is unchanged: the original condition still reaches the caller,
+  so [`tryCatch()`](https://rdrr.io/r/base/conditions.html) on a
+  specific condition class continues to work
+- A user-supplied `R` function returning the wrong number of values is
+  now reported instead of being read past the end. Previously a
+  right-hand side or residual function returning fewer values than there
+  are states, or a Jacobian function returning a matrix of the wrong
+  shape, was copied out element by element regardless and the solve
+  continued on uninitialised memory
+- Added test coverage for
+  [`ida()`](http://sn248.github.io/sundialr/reference/ida.md) and
+  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md),
+  which previously had none, including a check that a scalar and an
+  equivalent vector `abstolerance` give identical results, and for the
+  callback error handling above
 - Error messages now name the SUNDIALS routine that actually failed.
   Where SUNDIALS reports a reason of its own, that message is passed
   through in full, giving the routine, source location and cause instead

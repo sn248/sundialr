@@ -76,7 +76,7 @@
 
 
 <dt id="arg-events">Events<a class="anchor" aria-label="anchor" href="#arg-events"></a></dt>
-<dd><p>Discontinuities in the solution (a DataFrame, default value is NULL)</p></dd>
+<dd><p>Discontinuities in the solution (a DataFrame, default value is NULL). Three columns, names ignored: the 1-based index of the state, the time of the discontinuity, and the value to add to that state at that time. The value is always added to the current value of the state, including at the initial time, so the initial conditions in <code>IC</code> are the starting point and an event at t = 0 adds to them.</p></dd>
 
 
 <dt id="arg-reltolerance">reltolerance<a class="anchor" aria-label="anchor" href="#arg-reltolerance"></a></dt>
