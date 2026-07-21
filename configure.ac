@@ -1,6 +1,6 @@
 ## setup configure.ac for the package
 AC_PREREQ([2.70])
-AC_INIT([sundialr],[0.1.8])
+AC_INIT([sundialr],[0.2.0])
 ## Set R_HOME, respecting an environment variable if set
 : ${R_HOME=$(R RHOME)}
 if test -z "${R_HOME}"; then

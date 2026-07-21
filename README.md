@@ -122,7 +122,7 @@ vignette.
 
 ## What's new?
 
-### Version 0.1.8
+### Version 0.2.0
 + **New**: all four solvers accept an optional `jacobian` argument for supplying the Jacobian analytically instead of letting `SUNDIALS` approximate it by finite differences. It defaults to `NULL`, so existing code is unaffected. See the quick start above for `cvode`; `ida` takes a different form, documented in `?ida`
 + Updated the underlying `SUNDIALS` library to v7.8.0 (Jun 2026)
 + **Behaviour change**: in `cvsolve`, an event at time 0 now adds its value to the initial conditions rather than replacing them, so the initial conditions are always the starting state and time 0 behaves like every other event time. Results change for any call that applies an event at time 0

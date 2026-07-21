@@ -1,4 +1,4 @@
-## Comments for version 0.1.8
+## Comments for version 0.2.0
 + New feature: `cvode()`, `cvodes()`, `ida()` and `cvsolve()` gain an optional `jacobian` argument for supplying the Jacobian of the system analytically instead of relying on the finite-difference approximation. It is the last argument of each function and defaults to `NULL`, so existing calls, including positional ones, are unaffected
 + Updated the upstream `SUNDIALS` to version 7.8.0
 + CRAN-compliance patches (removal of `abort()`, `stdout`/`stderr` writes and `sprintf` from the bundled library) moved to a dedicated, self-verifying script

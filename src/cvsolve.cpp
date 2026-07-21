@@ -220,7 +220,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
     // Apply the events at t = 0 to the initial conditions. These ADD to the
     // IC, exactly as events at every later time add to the current state, so
     // the IC the user supplied is always the starting point and several events
-    // at t = 0 on one state accumulate. Before 0.1.8 an event at t = 0
+    // at t = 0 on one state accumulate. Before 0.2.0 an event at t = 0
     // replaced the IC instead, which silently discarded it and made t = 0
     // behave differently from every other time.
     for(int i = 0; i < TCOMB.nrow();  i++){

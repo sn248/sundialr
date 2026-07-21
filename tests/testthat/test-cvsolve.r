@@ -72,7 +72,7 @@ test_that("An event adds its value to the state at the event time", {
 test_that("An event at t = 0 adds to the initial condition", {
 
   ## t = 0 is not a special case: the event adds to the IC the user supplied,
-  ## exactly as events at later times add to the current state. Before 0.1.8
+  ## exactly as events at later times add to the current state. Before 0.2.0
   ## an event here replaced the IC, discarding it.
   dose  <- 10
   TDOSE <- data.frame(state = 1, time = 0, value = dose)
@@ -94,7 +94,7 @@ test_that("An event at t = 0 adds to the initial condition", {
 test_that("The initial time is taken from the time vector, not assumed to be 0", {
 
   ## The solve starts at time_vector[0]. An event there must be applied to the
-  ## initial condition exactly as one at t = 0 is; before 0.1.8 the initial
+  ## initial condition exactly as one at t = 0 is; before 0.2.0 the initial
   ## time was hard-coded as 0, so with a time vector starting elsewhere the
   ## event was silently dropped and the dose vanished without an error.
   TS    <- seq(5, 20, by = 5)
