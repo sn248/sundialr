@@ -21,6 +21,22 @@
   `function(t, y, ydot, cj, p)` and returns `dF/dy + cj * dF/dydot`,
   `cj` being a scalar supplied by the solver. Supplying the Jacobian is
   usually faster and more accurate on stiff systems
+- **New feature**:
+  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
+  accepts an optional `sensitivity` argument, an `R` function giving the
+  sensitivity right-hand side analytically. When it is not supplied,
+  which remains the default, `SUNDIALS` approximates the sensitivity
+  equations by finite differences of the state right-hand side as
+  before, so existing code is unaffected. The function has signature
+  `function(t, y, ydot, iS, yS, p)` and returns
+  `d(yS_iS)/dt = J %*% yS_iS + df/dp_iS` as a numeric vector of
+  `length(y)`, where `iS` is the 1-based index of the parameter. It is
+  independent of the `jacobian` argument — the caller embeds the
+  Jacobian inside their own `sensitivity` function — so supplying one
+  does not require supplying the other. Providing the sensitivity
+  right-hand side is usually faster and more accurate than the
+  finite-difference default, which evaluates the state right-hand side
+  an extra `length(p)` times per internal step
 - Updated the underlying SUNDIALS library to v7.8.0 (Jun 2026)
 - CRAN-compliance patches moved to a dedicated script
   (`src/scripts/cran_patches.sh`) which now verifies that no flagged

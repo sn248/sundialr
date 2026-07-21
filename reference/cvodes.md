@@ -14,7 +14,8 @@ cvodes(
   abstolerance = 1e-04,
   SensType = "STG",
   ErrCon = "F",
-  jacobian = NULL
+  jacobian = NULL,
+  sensitivity = NULL
 )
 ```
 
@@ -58,6 +59,15 @@ cvodes(
 
   (Optional) Jacobian of the RHS with signature `function(t, y, p)`.
   Default is NULL
+
+- sensitivity:
+
+  (Optional) Sensitivity right-hand side with signature
+  `function(t, y, ydot, iS, yS, p)` returning the derivative
+  `d(yS_iS)/dt = J %*% yS_iS + df/dp_iS` as a numeric vector of
+  `length(y)`, where `iS` is the 1-based parameter index. Default is
+  NULL, in which case the sensitivity equations are approximated by
+  finite differences of the RHS
 
 ## Value
 

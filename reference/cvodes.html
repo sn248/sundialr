@@ -52,7 +52,8 @@
 <span>  abstolerance <span class="op">=</span> <span class="fl">1e-04</span>,</span>
 <span>  SensType <span class="op">=</span> <span class="st">"STG"</span>,</span>
 <span>  ErrCon <span class="op">=</span> <span class="st">"F"</span>,</span>
-<span>  jacobian <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  jacobian <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sensitivity <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -94,6 +95,10 @@
 
 <dt id="arg-jacobian">jacobian<a class="anchor" aria-label="anchor" href="#arg-jacobian"></a></dt>
 <dd><p>(Optional) Jacobian of the RHS with signature <code>function(t, y, p)</code>. Default is NULL</p></dd>
+
+
+<dt id="arg-sensitivity">sensitivity<a class="anchor" aria-label="anchor" href="#arg-sensitivity"></a></dt>
+<dd><p>(Optional) Sensitivity right-hand side with signature <code>function(t, y, ydot, iS, yS, p)</code> returning the derivative <code>d(yS_iS)/dt = J %*% yS_iS + df/dp_iS</code> as a numeric vector of <code>length(y)</code>, where <code>iS</code> is the 1-based parameter index. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS</p></dd>
 
 </dl></div>
     <div class="section level2">
