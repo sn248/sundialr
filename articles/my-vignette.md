@@ -417,7 +417,7 @@ the `TDOSE` data frame at $`t = 0`$ is added to it, so $`y_1`$ starts at
 101. The initial conditions are never discarded, and several events at
 the same time on one state accumulate.
 
-Prior to version 0.1.8 an event at $`t = 0`$*replaced* the initial
+Prior to version 0.2.0 an event at $`t = 0`$*replaced* the initial
 condition rather than adding to it, so the same value meant different
 things at $`t = 0`$ and at later times. Solutions that dose at time zero
 therefore differ from earlier versions by the initial condition.

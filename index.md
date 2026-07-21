@@ -134,7 +134,7 @@ the vignette.
 
 ## What’s new?
 
-### Version 0.1.8
+### Version 0.2.0
 
 - **New**: all four solvers accept an optional `jacobian` argument for
   supplying the Jacobian analytically instead of letting `SUNDIALS`

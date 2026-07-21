@@ -1,6 +1,6 @@
 # Changelog
 
-## sundialr v0.1.8
+## sundialr v0.2.0
 
 - **New feature**:
   [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md),

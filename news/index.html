@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">sundialr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,7 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.8" id="sundialr-v018">sundialr v0.1.8<a class="anchor" aria-label="anchor" href="#sundialr-v018"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.2.0" id="sundialr-v020">sundialr v0.2.0<a class="anchor" aria-label="anchor" href="#sundialr-v020"></a></h2>
 <ul><li>
 <strong>New feature</strong>: <code><a href="../reference/cvode.html">cvode()</a></code>, <code><a href="../reference/cvodes.html">cvodes()</a></code>, <code><a href="../reference/ida.html">ida()</a></code> and <code><a href="../reference/cvsolve.html">cvsolve()</a></code> accept an optional <code>jacobian</code> argument, an <code>R</code> function giving the Jacobian of the system analytically. When it is not supplied, which remains the default, <code>SUNDIALS</code> approximates the Jacobian by finite differences as before, so existing code is unaffected. For <code><a href="../reference/cvode.html">cvode()</a></code>, <code><a href="../reference/cvodes.html">cvodes()</a></code> and <code><a href="../reference/cvsolve.html">cvsolve()</a></code> the function has the same signature as the system itself, <code>function(t, y, p)</code>, and returns an n-by-n matrix whose <code>[i, j]</code> entry is <code>d(ydot[i])/d(y[j])</code>. For <code><a href="../reference/ida.html">ida()</a></code> it is <code>function(t, y, ydot, cj, p)</code> and returns <code>dF/dy + cj * dF/dydot</code>, <code>cj</code> being a scalar supplied by the solver. Supplying the Jacobian is usually faster and more accurate on stiff systems</li>
 <li>
