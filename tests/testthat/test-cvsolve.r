@@ -91,6 +91,77 @@ test_that("An event at t = 0 adds to the initial condition", {
 
 })
 
+test_that("The initial time is taken from the time vector, not assumed to be 0", {
+
+  ## The solve starts at time_vector[0]. An event there must be applied to the
+  ## initial condition exactly as one at t = 0 is; before 0.1.8 the initial
+  ## time was hard-coded as 0, so with a time vector starting elsewhere the
+  ## event was silently dropped and the dose vanished without an error.
+  TS    <- seq(5, 20, by = 5)
+  dose  <- 100
+  df1   <- cvsolve(TS, IC, ODE_R, params,
+                   data.frame(state = 1, time = 5, value = dose), reltol, abstol)
+
+  expect_equal(df1[1, 2], IC[1] + dose)
+  ## relative, not absolute: the state starts at 101 here, so an absolute
+  ## bound would really be testing the magnitude rather than the accuracy
+  expected <- (IC[1] + dose) * exp(-params[1] * (TS - 5))
+  expect_lt(max(abs(df1[, 2] - expected) / expected), 1e-6)
+
+  ## an event later in the same window is unaffected
+  df2 <- cvsolve(TS, IC, ODE_R, params,
+                 data.frame(state = 1, time = 10, value = dose), reltol, abstol)
+  expect_lt(abs(df2[2, 2] - (IC[1] * exp(-params[1] * 5) + dose)), 1e-6)
+
+})
+
+test_that("Events outside the output window are rejected", {
+
+  TS <- seq(0, 20, by = 5)
+
+  ## before the first output time: the solve starts there, so it cannot be
+  ## applied. This used to emit a row of zeros and drop the event.
+  expect_error(cvsolve(TS, IC, ODE_R, params,
+                       data.frame(state = 1, time = -5, value = 100),
+                       reltol, abstol),
+               "between the first and last time points")
+
+  ## after the last output time
+  expect_error(cvsolve(TS, IC, ODE_R, params,
+                       data.frame(state = 1, time = 99, value = 100),
+                       reltol, abstol),
+               "between the first and last time points")
+
+  expect_error(cvsolve(TS, IC, ODE_R, params,
+                       data.frame(state = 1, time = NA, value = 100),
+                       reltol, abstol),
+               "between the first and last time points")
+
+  ## both ends of the window are valid
+  expect_silent(cvsolve(TS, IC, ODE_R, params,
+                        data.frame(state = 1, time = 0, value = 100), reltol, abstol))
+  expect_silent(cvsolve(TS, IC, ODE_R, params,
+                        data.frame(state = 1, time = 20, value = 100), reltol, abstol))
+
+})
+
+test_that("No output row is left unfilled when events share a time", {
+
+  ## Records that do not advance the solution - one at the initial time, or one
+  ## at the same time as the previous record - used to be skipped without
+  ## storing anything, leaving the row zero-filled.
+  df <- cvsolve(seq(0, 10, by = 2), IC, ODE_R, params,
+                data.frame(state = 1, time = c(0, 0), value = c(10, 5)),
+                reltol, abstol)
+
+  expect_false(any(df[, 2] == 0))
+  expect_equal(df[1, 2], IC[1] + 15)
+  ## the duplicate row at the same time carries the same state
+  expect_equal(df[2, 1], 0)
+  expect_equal(df[2, 2], df[1, 2])
+
+})
+
 test_that("Repeated events accumulate", {
 
   TDOSE <- data.frame(state = 1, time = c(5, 15), value = 10)

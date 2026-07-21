@@ -199,10 +199,16 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
       }
     }
 
-    // Check that the highest event time is less than or equal to the last time point
+    // Check the event times in the second column lie inside the output window.
+    // An event before the first output time cannot be applied - the solve
+    // starts at time_vector[0] - and previously produced a row of zeros while
+    // the event itself was silently dropped.
     Rcpp::NumericVector EventsDF_time_col = Events_DF[1];
-    if(Rcpp::max(EventsDF_time_col) > Rcpp::max(time_vector)) {
-      stop("Event cannot happen after the last time point. See the third column of the Events dataframe.");
+    for(int i = 0; i < EventsDF_time_col.length(); i++){
+      double time_i = EventsDF_time_col[i];
+      if(ISNAN(time_i) || time_i < time_vector[0] || time_i > Rcpp::max(time_vector)){
+        stop("The event time in the second column of the Events dataframe must lie between the first and last time points");
+      }
     }
 
     // Sort the Event DataFrame to combine discontinuities and sampling data points
@@ -218,7 +224,7 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
     // replaced the IC instead, which silently discarded it and made t = 0
     // behave differently from every other time.
     for(int i = 0; i < TCOMB.nrow();  i++){
-      if(TCOMB(i,1) == 0 && TCOMB(i,3) == 1){
+      if(TCOMB(i,1) == time_vector[0] && TCOMB(i,3) == 1){
         int disc_index = static_cast<int>(TCOMB(i,0));
         ICchanged(disc_index) = ICchanged(disc_index) + TCOMB(i,2);
       }
@@ -304,9 +310,17 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
     // output times start from the index after initial time
     tout = TCOMB(iout + 1, 1);
 
-    // tout 0 is taken care of by initial conditions, if tout equal to previous time
-    // then is taken care by the dosing record at the same time point
-    if (tout == 0.0 || tout == tprev){ continue; }
+    // A record at the initial time is already accounted for by the initial
+    // conditions, and one at the same time as the previous record was already
+    // applied there. Neither advances the solution, so carry the current state
+    // into the row rather than leaving it zero-filled.
+    if (tout == time_vector[0] || tout == tprev){
+      soln(iout+1, 0) = tout;
+      for (int i = 0; i<y_len; i++){
+        soln(iout+1, i+1) = y0_ptr[i];
+      }
+      continue;
+    }
     else {
 
       // integrate upto the next time point (whether a sampling time or a discontinuity)
