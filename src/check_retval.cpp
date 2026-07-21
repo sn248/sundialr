@@ -30,57 +30,41 @@
 
 #include <Rcpp.h>
 
-// --- Function definition for check_flag() ------------------------------------
+// --- Function definition for check_retval() ----------------------------------
 /*
- * Check function return value...
- *   opt == 0 means SUNDIALS function allocates memory so check if
- *            returned NULL pointer
- *   opt == 1 means SUNDIALS function returns an integer value so check if
- *            retval < 0
- *   opt == 2 means function allocates memory so check if returned
- *            NULL pointer
+ * Check a SUNDIALS call's outcome. Two overloads, one per kind of return value:
  *
- * This only reports whether the call failed; it does not print anything. The
- * caller raises the failure with sundials_stop(), which reports the message
- * recorded by the SUNDIALS error handler - naming the function, file, line and
- * cause - so printing here as well would duplicate that. funcname is kept in
- * the signature because it documents the call site.
+ *   check_retval(int flag,          const char*)  fails when flag < 0
+ *                                                 (functions returning a code)
+ *   check_retval(const void *ptr,   const char*)  fails when ptr == NULL
+ *                                                 (allocating functions)
  *
- * CAUTION when adding a call: opt must match the TYPE of the value passed, and
- * nothing enforces that. Getting it wrong fails silently, in both directions:
+ * Both return 1 on failure and 0 otherwise. Neither prints anything: the caller
+ * raises the failure with sundials_stop(), which reports the message recorded by
+ * the SUNDIALS error handler - naming the function, file, line and cause - so
+ * printing here as well would duplicate that. funcname is kept in the signature
+ * because it documents the call site.
  *
- *   check_retval(&flag, "X", 0)      asks whether &flag is NULL. It never is,
- *                                    so a genuine failure is ignored.
- *   check_retval((void *)SM, "X", 1) reads the first bytes of a SUNMatrix as a
- *                                    return code, and dereferences NULL in
- *                                    exactly the case the check exists to catch.
- *
- * Both are one character away from the correct call. Every call site in this
- * package was audited and is correct: 31 pass &flag with opt = 1, 15 pass an
- * object pointer with opt = 0, and opt = 2 is never used. Keep it that way.
- *
- * The durable fix, if this is revisited, is to drop opt in favour of two
- * overloads - check_retval(int flag, const char*) and
- * check_retval(const void*, const char*) - so the compiler dispatches and a
- * mismatch stops compiling. It is deferred only because it touches every call
- * site and there is no live defect.
+ * The compiler dispatches on the argument's type, so the two kinds of check can
+ * no longer be confused. This replaced an earlier single function that took an
+ * `int opt` selecting the check; opt had to match the TYPE of the value passed
+ * and nothing enforced it, so a wrong pairing failed silently in both
+ * directions - passing a pointer where a code was expected dereferenced it, and
+ * passing &flag for the NULL check tested an address that is never NULL. Pass
+ * the flag or the pointer itself; do not take its address or cast it.
  */
 
-int check_retval(void *returnvalue, const char *funcname, int opt)
+int check_retval(int flag, const char *funcname)
 {
-  int *retval;
+  /* An integer return code signals failure when negative. */
+  if (flag < 0) { return(1); }
+  return(0);
+}
 
-  /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
-  if (opt == 0 && returnvalue == NULL) { return(1); }
-
-  /* Check if retval < 0 */
-  else if (opt == 1) {
-    retval = (int *) returnvalue;
-    if (*retval < 0) { return(1); }}
-
-  /* Check if function returned NULL pointer - no memory allocated */
-  else if (opt == 2 && returnvalue == NULL) { return(1); }
-
+int check_retval(const void *returnvalue, const char *funcname)
+{
+  /* An allocating call signals failure by returning a NULL pointer. */
+  if (returnvalue == NULL) { return(1); }
   return(0);
 }
 

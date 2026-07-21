@@ -268,7 +268,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
 
   // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
   cvode_mem = CVodeCreate(CV_BDF, sunctx);
-  if (check_retval((void *) cvode_mem, "CVodeCreate", 0)) { sundials_stop(sun_err, "CVodeCreate", "Stopping cvodes, cannot allocate memory for CVODES!"); }
+  if (check_retval(cvode_mem, "CVodeCreate")) { sundials_stop(sun_err, "CVodeCreate", "Stopping cvodes, cannot allocate memory for CVODES!"); }
 
   //-- assign user input to the struct based on SEXP type of input_function
   if (!input_function){
@@ -295,36 +295,36 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
 
   // setting the user_data in rhs function
   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
-  if (check_retval(&flag, "CVodeSetUserData", 1)) { sundials_stop(sun_err, "CVodeSetUserData", "Stopping cvodes, something went wrong in setting user data!"); }
+  if (check_retval(flag, "CVodeSetUserData")) { sundials_stop(sun_err, "CVodeSetUserData", "Stopping cvodes, something went wrong in setting user data!"); }
 
   /* Allocate space for CVODES */
   flag = CVodeInit(cvode_mem, rhs_function_sens, T0, y0);
-  if (check_retval(&flag, "CVodeInit", 1)) { sundials_stop(sun_err, "CVodeInit", "Stopping cvodes, something went wrong in allocating space for CVODES!"); }
+  if (check_retval(flag, "CVodeInit")) { sundials_stop(sun_err, "CVodeInit", "Stopping cvodes, something went wrong in allocating space for CVODES!"); }
 
   /* Use private function to compute error weights */
   flag = CVodeWFtolerances(cvode_mem, ewt);
-  if (check_retval(&flag, "CVodeWFtolerances", 1)) { sundials_stop(sun_err, "CVodeWFtolerances", "Stopping cvodes, something went wrong in computing error weights!"); }
+  if (check_retval(flag, "CVodeWFtolerances")) { sundials_stop(sun_err, "CVodeWFtolerances", "Stopping cvodes, something went wrong in computing error weights!"); }
 
   /* Create dense SUNMatrix */
   sunindextype y_len_M = y_len;
   SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
-  if (check_retval((void *)SM, "SUNDenseMatrix", 0)) { sundials_stop(sun_err, "SUNDenseMatrix", "Stopping cvodes, something went wrong in setting SUNDenseMatrix!"); }
+  if (check_retval(SM, "SUNDenseMatrix")) { sundials_stop(sun_err, "SUNDenseMatrix", "Stopping cvodes, something went wrong in setting SUNDenseMatrix!"); }
 
   /* Create dense SUNLinearSolver */
   LS = SUNLinSol_Dense(y0, SM, sunctx);
-  if (check_retval((void *)LS, "SUNLinSol_Dense", 0)) { sundials_stop(sun_err, "SUNLinSol_Dense", "Stopping cvodes, something went wrong in setting Linear Solver!"); }
+  if (check_retval(LS, "SUNLinSol_Dense")) { sundials_stop(sun_err, "SUNLinSol_Dense", "Stopping cvodes, something went wrong in setting Linear Solver!"); }
 
   /* Attach the matrix and linear solver */
   flag = CVodeSetLinearSolver(cvode_mem, LS, SM);
-  if (check_retval(&flag, "CVodeSetLinearSolver", 1)) { sundials_stop(sun_err, "CVodeSetLinearSolver", "Stopping cvodes, something went wrong in attaching SUNDenseMatrix and Linear Solver!"); }
+  if (check_retval(flag, "CVodeSetLinearSolver")) { sundials_stop(sun_err, "CVodeSetLinearSolver", "Stopping cvodes, something went wrong in attaching SUNDenseMatrix and Linear Solver!"); }
 
   /* If manual Jacobian is provided, use the jacobian */
   if (jacobian.isNotNull()){
     flag = CVodeSetJacFn(cvode_mem, jac_cvodes);
-    if(check_retval(&flag, "CVodeSetJacFn", 1)) { sundials_stop(sun_err, "CVodeSetJacFn", "Stopping cvodes, something went wrong in setting the Jacobian function!"); }
+    if(check_retval(flag, "CVodeSetJacFn")) { sundials_stop(sun_err, "CVodeSetJacFn", "Stopping cvodes, something went wrong in setting the Jacobian function!"); }
   }
 
-  if (check_retval((void *)yS, "N_VCloneVectorArray", 0)) { sundials_stop(sun_err, "N_VCloneVectorArray", "Stopping cvodes, something went wrong in setting Sensitivity Array!"); }
+  if (check_retval(yS, "N_VCloneVectorArray")) { sundials_stop(sun_err, "N_VCloneVectorArray", "Stopping cvodes, something went wrong in setting Sensitivity Array!"); }
   for (int is=0;is<NP;is++) N_VConst(SUN_RCONST(0.0), yS[is]);
 
   /* Call CVodeSensInit1 to activate forward sensitivity computations
@@ -364,13 +364,13 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   int ism = CV_STAGGERED;
   if (SensType.compare("SIM") == 0) ism = CV_SIMULTANEOUS;
   flag = CVodeSensInit1(cvode_mem, NP, ism, NULL, yS);
-  if(check_retval(&flag, "CVodeSensInit1", 1)) { sundials_stop(sun_err, "CVodeSensInit1", "Stopping cvodes, something went wrong in calculating Sensitivities!"); }
+  if(check_retval(flag, "CVodeSensInit1")) { sundials_stop(sun_err, "CVodeSensInit1", "Stopping cvodes, something went wrong in calculating Sensitivities!"); }
 
   /* Call CVodeSensEEtolerances to estimate tolerances for sensitivity
    variables based on the rolerances supplied for states variables and
    the scaling factor pbar */
   flag = CVodeSensEEtolerances(cvode_mem);
-  if(check_retval(&flag, "CVodeSensEEtolerances", 1)) { sundials_stop(sun_err, "CVodeSensEEtolerances", "Stopping cvodes, something went wrong in estimating tolerances for sensitivities!"); }
+  if(check_retval(flag, "CVodeSensEEtolerances")) { sundials_stop(sun_err, "CVodeSensEEtolerances", "Stopping cvodes, something went wrong in estimating tolerances for sensitivities!"); }
 
   /* Call CVodeSetSensParams to specify problem parameter information for
    sensitivity calculations */
@@ -379,7 +379,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   // Rcout << (my_rhs_function.params).begin() << "\n";
   // Rcout << &(ptr->params[0]);
   flag = CVodeSetSensParams(cvode_mem, (my_rhs_function.params).begin(), Parameters.begin(), NULL);  // double *y = x.begin()
-  if (check_retval(&flag, "CVodeSetSensParams", 1)) { sundials_stop(sun_err, "CVodeSetSensParams", "Stopping cvodes, something went wrong in setting Sensitivity Parameters!"); }
+  if (check_retval(flag, "CVodeSetSensParams")) { sundials_stop(sun_err, "CVodeSetSensParams", "Stopping cvodes, something went wrong in setting Sensitivity Parameters!"); }
 
   // First row for initial conditions, First column is for time
   int y_len_1 = y_len + 1;
@@ -407,7 +407,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
     tout = time_vector[iout+1];
 
     flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
-    if (check_retval(&flag, "CVode", 1)) { sundials_stop(sun_err, "CVode", "Stopping cvodes, something went wrong in solving the system using CVODE!"); } // Something went wrong in solving it!
+    if (check_retval(flag, "CVode")) { sundials_stop(sun_err, "CVode", "Stopping cvodes, something went wrong in solving the system using CVODE!"); } // Something went wrong in solving it!
     if (flag == CV_SUCCESS) {
 
       // store results in soln matrix
@@ -418,7 +418,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
     }
 
     flag = CVodeGetSens(cvode_mem, &time, yS);
-    if (check_retval(&flag, "CVodeGetSens", 1)) { sundials_stop(sun_err, "CVodeGetSens", "Stopping cvodes, something went wrong in calculating Sensitivities!"); }
+    if (check_retval(flag, "CVodeGetSens")) { sundials_stop(sun_err, "CVodeGetSens", "Stopping cvodes, something went wrong in calculating Sensitivities!"); }
 
     if (flag == CV_SUCCESS) {
       sens(iout+1, 0) = time;               // first column is for time

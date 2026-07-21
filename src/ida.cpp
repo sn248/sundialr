@@ -253,7 +253,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
   /* Call IDACreate and IDAInit to initialize IDA memory */
   ida_mem = IDACreate(sunctx);
 
-  if(check_retval((void *)ida_mem, "IDACreate", 0)) { sundials_stop(sun_err, "IDACreate", "Stopping IDA, something went wrong in allocating memory!"); }
+  if(check_retval(ida_mem, "IDACreate")) { sundials_stop(sun_err, "IDACreate", "Stopping IDA, something went wrong in allocating memory!"); }
 
   // -- assign user input to the struct based on SEXP type of input_function
   if(!input_function){ stop("Something is wrong with the input function, stopping!"); }
@@ -266,44 +266,44 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
 
   // setting the user data in the rhs residual function
   flag = IDASetUserData(ida_mem, (void*)&my_res_function);
-  if (check_retval(&flag, "IDASetUserData", 1)) { sundials_stop(sun_err, "IDASetUserData", "Stopping IDA, something went wrong in setting user data!"); }
+  if (check_retval(flag, "IDASetUserData")) { sundials_stop(sun_err, "IDASetUserData", "Stopping IDA, something went wrong in setting user data!"); }
 
   flag = IDAInit(ida_mem, res_function, T0, yy0, yp0);
-  if(check_retval(&flag, "IDAInit", 1)) { sundials_stop(sun_err, "IDAInit", "Stopping, something went wrong in initializing IDA!"); };
+  if(check_retval(flag, "IDAInit")) { sundials_stop(sun_err, "IDAInit", "Stopping, something went wrong in initializing IDA!"); };
 
   /* Call IDASVtolerances to set tolerances */
   flag = IDASVtolerances(ida_mem, reltol, abstol);
-  if(check_retval(&flag, "IDASVtolerances", 1)) { sundials_stop(sun_err, "IDASVtolerances", "Stopping, something went wrong in setting tolerances!"); };
+  if(check_retval(flag, "IDASVtolerances")) { sundials_stop(sun_err, "IDASVtolerances", "Stopping, something went wrong in setting tolerances!"); };
 
   /* Create dense SUNMatrix for use in linear solves */
   sunindextype y_len_M = y_len;
   SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
-  if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { sundials_stop(sun_err, "SUNDenseMatrix", "Stopping IDA, something went wrong in setting the dense matrix!"); }
+  if(check_retval(SM, "SUNDenseMatrix")) { sundials_stop(sun_err, "SUNDenseMatrix", "Stopping IDA, something went wrong in setting the dense matrix!"); }
 
 
   // Create dense SUNLinearSolver object for use by IDA
   LS = SUNLinSol_Dense(yy0, SM, sunctx);
-  if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { sundials_stop(sun_err, "SUNLinSol_Dense", "Stopping IDA, something went wrong in setting the linear solver!"); }
+  if(check_retval(LS, "SUNLinSol_Dense")) { sundials_stop(sun_err, "SUNLinSol_Dense", "Stopping IDA, something went wrong in setting the linear solver!"); }
 
   /* Attach the matrix and linear solver */
   flag = IDASetLinearSolver(ida_mem, LS, SM);
-  if(check_retval(&flag, "IDASetLinearSolver", 1))  { sundials_stop(sun_err, "IDASetLinearSolver", "Stopping IDA, something went wrong in setting the linear solver!"); }
+  if(check_retval(flag, "IDASetLinearSolver"))  { sundials_stop(sun_err, "IDASetLinearSolver", "Stopping IDA, something went wrong in setting the linear solver!"); }
 
   // Add user-provided Jacobian, if not NULL
   if (jacobian.isNotNull()) {
     flag = IDASetJacFn(ida_mem, jac_ida);
-    if(check_retval(&flag, "IDASetJacFn", 1)) { sundials_stop(sun_err, "IDASetJacFn", "Stopping IDA, something went wrong in setting the Jacobian function!"); }
+    if(check_retval(flag, "IDASetJacFn")) { sundials_stop(sun_err, "IDASetJacFn", "Stopping IDA, something went wrong in setting the Jacobian function!"); }
   }
 
   /* Create Newton SUNNonlinearSolver object. IDA uses a
    * Newton SUNNonlinearSolver by default, so it is unecessary
    * to create it and attach it. */
   NLS = SUNNonlinSol_Newton(yy0, sunctx);
-  if(check_retval((void *)NLS, "SUNNonlinSol_Newton", 0))  { sundials_stop(sun_err, "SUNNonlinSol_Newton", "Stopping IDA, something went wrong in creating the Non-linear Solver in IDA!"); }
+  if(check_retval(NLS, "SUNNonlinSol_Newton"))  { sundials_stop(sun_err, "SUNNonlinSol_Newton", "Stopping IDA, something went wrong in creating the Non-linear Solver in IDA!"); }
 
   /* Attach the nonlinear solver */
   flag = IDASetNonlinearSolver(ida_mem, NLS);
-  if(check_retval(&flag, "IDASetNonlinearSolver", 1)) { sundials_stop(sun_err, "IDASetNonlinearSolver", "Stopping IDA, something went wrong in attaching the Non-linear Solver in IDA!"); }
+  if(check_retval(flag, "IDASetNonlinearSolver")) { sundials_stop(sun_err, "IDASetNonlinearSolver", "Stopping IDA, something went wrong in attaching the Non-linear Solver in IDA!"); }
 
   /* In loop, call IDASolve, print results, and test for error.
    Break out of loop when NOUT preset output times have been reached. */
@@ -332,7 +332,7 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
 
     flag = IDASolve(ida_mem, tout, &time, yy0, yp0, IDA_NORMAL);
 
-    if (check_retval(&flag, "IDASolve", 1)) {
+    if (check_retval(flag, "IDASolve")) {
       sundials_stop(sun_err, "IDASolve", "Stopping IDA, something went wrong in solving the system of DAEs!");
     } // Something went wrong in solving it!
 

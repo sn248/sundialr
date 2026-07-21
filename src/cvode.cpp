@@ -162,7 +162,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC,
    // Call CVodeCreate to create the solver memory and specify the
    // Backward Differentiation Formula (BDF)
    cvode_mem = CVodeCreate(CV_BDF, sunctx);
-   if (check_retval((void *) cvode_mem, "CVodeCreate", 0)) {
+   if (check_retval(cvode_mem, "CVodeCreate")) {
      sundials_stop(sun_err, "CVodeCreate", "Something went wrong in assigning memory, stopping cvode!");
    }
 
@@ -178,31 +178,31 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC,
 
    // setting the user_data in rhs function
    flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
-   if (check_retval(&flag, "CVodeSetUserData", 1)) { sundials_stop(sun_err, "CVodeSetUserData", "Stopping cvode, something went wrong in setting user data!"); }
+   if (check_retval(flag, "CVodeSetUserData")) { sundials_stop(sun_err, "CVodeSetUserData", "Stopping cvode, something went wrong in setting user data!"); }
 
    flag = CVodeInit(cvode_mem, rhs_function, T0, y0);
-   if (check_retval(&flag, "CVodeInit", 1)) { sundials_stop(sun_err, "CVodeInit", "Stopping cvode, something went wrong in initializing CVODE!"); }
+   if (check_retval(flag, "CVodeInit")) { sundials_stop(sun_err, "CVodeInit", "Stopping cvode, something went wrong in initializing CVODE!"); }
 
    // Call CVodeSVtolerances to specify the scalar relative tolerance and vector absolute tol
    flag = CVodeSVtolerances(cvode_mem, reltol, abstol);
-   if (check_retval(&flag, "CVodeSVtolerances", 1)) { sundials_stop(sun_err, "CVodeSVtolerances", "Stopping cvode, something went wrong in setting solver tolerances!"); }
+   if (check_retval(flag, "CVodeSVtolerances")) { sundials_stop(sun_err, "CVodeSVtolerances", "Stopping cvode, something went wrong in setting solver tolerances!"); }
 
    // Create dense SUNMatrix for use in linear solves
    sunindextype y_len_M = y_len;
    SM = SUNDenseMatrix(y_len_M, y_len_M, sunctx);
-   if(check_retval((void *)SM, "SUNDenseMatrix", 0)) { sundials_stop(sun_err, "SUNDenseMatrix", "Stopping cvode, something went wrong in setting the dense matrix!"); }
+   if(check_retval(SM, "SUNDenseMatrix")) { sundials_stop(sun_err, "SUNDenseMatrix", "Stopping cvode, something went wrong in setting the dense matrix!"); }
 
    // Create dense SUNLinearSolver object for use by CVode
    LS = SUNLinSol_Dense(y0, SM, sunctx);
-   if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) { sundials_stop(sun_err, "SUNLinSol_Dense", "Stopping cvode, something went wrong in setting the linear solver!"); }
+   if(check_retval(LS, "SUNLinSol_Dense")) { sundials_stop(sun_err, "SUNLinSol_Dense", "Stopping cvode, something went wrong in setting the linear solver!"); }
 
    // Call CVodeSetLinearSolver to attach the matrix and linear solver to CVode
    flag = CVodeSetLinearSolver(cvode_mem, LS, SM);
-   if(check_retval(&flag, "CVodeSetLinearSolver", 1)) { sundials_stop(sun_err, "CVodeSetLinearSolver", "Stopping cvode, something went wrong in setting the linear solver!"); }
+   if(check_retval(flag, "CVodeSetLinearSolver")) { sundials_stop(sun_err, "CVodeSetLinearSolver", "Stopping cvode, something went wrong in setting the linear solver!"); }
 
    if (jacobian.isNotNull()) {
      flag = CVodeSetJacFn(cvode_mem, jac_cvode);
-     if(check_retval(&flag, "CVodeSetJacFn", 1)) { sundials_stop(sun_err, "CVodeSetJacFn", "Stopping cvode, something went wrong in setting the Jacobian function!"); }
+     if(check_retval(flag, "CVodeSetJacFn")) { sundials_stop(sun_err, "CVodeSetJacFn", "Stopping cvode, something went wrong in setting the Jacobian function!"); }
    }
    // NumericMatrix to store results - filled with 0.0
 
@@ -228,7 +228,7 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC,
      flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
 
      // If something went wrong in solving it!
-     if (check_retval(&flag, "CVode", 1)) {
+     if (check_retval(flag, "CVode")) {
        sundials_stop(sun_err, "CVode", "Stopping CVODE, something went wrong in solving the system of ODEs!");
      }
 
