@@ -64,3 +64,21 @@ JAC_R <- function(t, y, p) {
   ), nrow = 3, ncol = 3)
 }
 df3 <- cvodes(time_vec, IC, ODE_R, params, reltol, abstol, "STG", FALSE, jacobian = JAC_R)
+
+## Solving with a manual sensitivity right-hand side. CVODES calls it once per
+## parameter with the 1-based index iS, and it returns
+##   d(yS_iS)/dt = J %*% yS_iS + df/dp_iS  (a vector of length(y))
+## This avoids the finite-difference approximation used when sensitivity = NULL.
+SENS_R <- function(t, y, ydot, iS, yS, p) {
+  J <- matrix(c(
+    -p[1],         p[1],                        0,
+     p[2]*y[3],   -p[2]*y[3] - 2*p[3]*y[2],   2*p[3]*y[2],
+     p[2]*y[2],   -p[2]*y[2],                  0
+  ), nrow = 3, ncol = 3)
+  dfdp <- switch(iS,
+                 c(-y[1],      y[1],       0),   # d f / d p1
+                 c( y[2]*y[3], -y[2]*y[3], 0),   # d f / d p2
+                 c( 0,        -y[2]^2,     y[2]^2))  # d f / d p3
+  as.numeric(J %*% yS + dfdp)
+}
+df4 <- cvodes(time_vec, IC, ODE_R, params, reltol, abstol, "STG", FALSE, sensitivity = SENS_R)

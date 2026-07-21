@@ -29,8 +29,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // cvodes
-NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, double reltolerance, NumericVector abstolerance, std::string SensType, bool ErrCon, Nullable<Function> jacobian);
-RcppExport SEXP _sundialr_cvodes(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP, SEXP SensTypeSEXP, SEXP ErrConSEXP, SEXP jacobianSEXP) {
+NumericMatrix cvodes(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, double reltolerance, NumericVector abstolerance, std::string SensType, bool ErrCon, Nullable<Function> jacobian, Nullable<Function> sensitivity);
+RcppExport SEXP _sundialr_cvodes(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP, SEXP SensTypeSEXP, SEXP ErrConSEXP, SEXP jacobianSEXP, SEXP sensitivitySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -43,7 +43,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type SensType(SensTypeSEXP);
     Rcpp::traits::input_parameter< bool >::type ErrCon(ErrConSEXP);
     Rcpp::traits::input_parameter< Nullable<Function> >::type jacobian(jacobianSEXP);
-    rcpp_result_gen = Rcpp::wrap(cvodes(time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType, ErrCon, jacobian));
+    Rcpp::traits::input_parameter< Nullable<Function> >::type sensitivity(sensitivitySEXP);
+    rcpp_result_gen = Rcpp::wrap(cvodes(time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType, ErrCon, jacobian, sensitivity));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -86,7 +87,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_sundialr_cvode", (DL_FUNC) &_sundialr_cvode, 7},
-    {"_sundialr_cvodes", (DL_FUNC) &_sundialr_cvodes, 9},
+    {"_sundialr_cvodes", (DL_FUNC) &_sundialr_cvodes, 10},
     {"_sundialr_cvsolve", (DL_FUNC) &_sundialr_cvsolve, 8},
     {"_sundialr_ida", (DL_FUNC) &_sundialr_ida, 8},
     {NULL, NULL, 0}

@@ -13,7 +13,8 @@ cvodes(
   abstolerance = 1e-04,
   SensType = "STG",
   ErrCon = "F",
-  jacobian = NULL
+  jacobian = NULL,
+  sensitivity = NULL
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ cvodes(
 \item{ErrCon}{Error Control - allowed values are TRUE or FALSE (default)}
 
 \item{jacobian}{(Optional) Jacobian of the RHS with signature \code{function(t, y, p)}. Default is NULL}
+
+\item{sensitivity}{(Optional) Sensitivity right-hand side with signature \code{function(t, y, ydot, iS, yS, p)} returning the derivative \code{d(yS_iS)/dt = J \%*\% yS_iS + df/dp_iS} as a numeric vector of \code{length(y)}, where \code{iS} is the 1-based parameter index. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS}
 }
 \value{
 A Matrix. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector

@@ -57,6 +57,7 @@ struct rhs_func_sens{
   double rtol;
   NumericVector atol;
   SEXP jac_eqn;
+  SEXP sens_eqn;              // user sensitivity RHS, or R_NilValue
   sundials_err_record *err;   // collects errors raised inside the callbacks
 };
 
@@ -150,6 +151,45 @@ static int jac_cvodes(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
       return jac_eval(t, y, JAC, data->jac_eqn, data->params);
     });
 }
+
+// Sensitivity right-hand side, used when the caller supplies `sensitivity`.
+// CVODES calls this once per parameter (a CVSensRhs1Fn); it delegates to the R
+// function stored in data->sens_eqn, whose signature is
+//   sens_rhs(t, y, ydot, iS, yS, p)  ->  numeric vector of length(y)
+// returning d(yS_iS)/dt = J %*% yS_iS + df/dp_iS. iS is passed 1-based to R.
+// Called by SUNDIALS from its own C code, so the body runs under
+// sundials_callback_guard; see the note on rhs_function in rhs_func.cpp.
+static int sens_rhs1_cvodes(int Ns, sunrealtype t, N_Vector y, N_Vector ydot,
+                            int iS, N_Vector yS, N_Vector ySdot,
+                            void *user_data, N_Vector tmp1, N_Vector tmp2) {
+    struct rhs_func_sens *data = (struct rhs_func_sens*)user_data;
+    if (!data) { return -1; }
+    return sundials_callback_guard(data->err, [&]() -> int {
+
+      int n = NV_LENGTH_S(y);
+
+      NumericVector y1(n), ydot1(n), yS1(n);
+      sunrealtype *y_ptr    = N_VGetArrayPointer(y);
+      sunrealtype *ydot_ptr = N_VGetArrayPointer(ydot);
+      sunrealtype *yS_ptr   = N_VGetArrayPointer(yS);
+      for (int i = 0; i < n; i++) { y1[i] = y_ptr[i]; ydot1[i] = ydot_ptr[i]; yS1[i] = yS_ptr[i]; }
+
+      Function sens_fun(data->sens_eqn);
+      // iS arrives 0-based from CVODES; hand R the 1-based parameter index
+      NumericVector ySdot1 = sens_fun(t, y1, ydot1, iS + 1, yS1, data->params);
+
+      // guards the element-by-element copy below against a short return
+      if (ySdot1.length() != n) {
+        stop("The sensitivity function must return a vector of the same length as the state vector: expected %d, got %d",
+             n, ySdot1.length());
+      }
+
+      sunrealtype *ySdot_ptr = N_VGetArrayPointer(ySdot);
+      for (int i = 0; i < n; i++) ySdot_ptr[i] = ySdot1[i];
+
+      return 0;
+    });
+}
 //------------------------------------------------------------------------------
 //' cvodes
 //'
@@ -163,6 +203,7 @@ static int jac_cvodes(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
 //'@param SensType Sensitivity Type - allowed values are "STG" (for Staggered, default) or "SIM" (for Simultaneous)
 //'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
 //'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)}. Default is NULL
+//'@param sensitivity (Optional) Sensitivity right-hand side with signature \code{function(t, y, ydot, iS, yS, p)} returning the derivative \code{d(yS_iS)/dt = J \%*\% yS_iS + df/dp_iS} as a numeric vector of \code{length(y)}, where \code{iS} is the 1-based parameter index. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS
 //'@returns A Matrix. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector
 //'@example /inst/examples/cvs_Roberts_dns.r
 // [[Rcpp::export]]
@@ -173,7 +214,8 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
                       NumericVector abstolerance = 0.0001,
                       std::string SensType = "STG",
                       bool ErrCon = 'F',
-                      Nullable<Function> jacobian = R_NilValue){
+                      Nullable<Function> jacobian = R_NilValue,
+                      Nullable<Function> sensitivity = R_NilValue){
 
   int flag;
 
@@ -283,14 +325,17 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
 
   // realtype *params = Parameters.begin();
   // Initialize the struct for user data
-  // Jacobian has initial value of NULL
+  // Jacobian and sensitivity RHS have initial value of NULL
   SEXP jac_sexp = R_NilValue;
   if (jacobian.isNotNull()) jac_sexp = as<SEXP>(jacobian);
+  SEXP sens_sexp = R_NilValue;
+  if (sensitivity.isNotNull()) sens_sexp = as<SEXP>(sensitivity);
   struct rhs_func_sens my_rhs_function = {input_function,
                                           Parameters,
                                           reltol,
                                           abstol,
                                           jac_sexp,
+                                          sens_sexp,
                                           &sun_err};
 
   // setting the user_data in rhs function
@@ -332,38 +377,20 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
    calculations. Computes the right-hand sides of the sensitivity
    ODE, one at a time */
   //
-  // The fourth argument is the sensitivity right-hand side. Passing NULL tells
-  // CVODES to approximate it by finite differences of the state right-hand
-  // side, which is why cvodes() needs no extra function from the caller. The
-  // cost is that every internal step evaluates the state RHS an extra NP times,
-  // and each of those is a callback into R - by far the most expensive thing in
-  // the solve - so sensitivities are the slowest part of cvodes() and are only
-  // as accurate as the difference quotients.
-  //
-  // PLANNED for 0.1.9: let the caller supply the sensitivity RHS instead, as an
-  // optional argument alongside `jacobian`. CVodeSensInit1 takes a
-  // CVSensRhs1Fn, called once per parameter:
-  //
-  //   int f(int Ns, sunrealtype t, N_Vector y, N_Vector ydot,
-  //         int iS, N_Vector yS, N_Vector ySdot,
-  //         void *user_data, N_Vector tmp1, N_Vector tmp2)
-  //
-  // which would delegate to an R function shaped like the existing callbacks,
-  //
-  //   sens_rhs(t, y, ydot, iS, yS, p)  ->  numeric vector of length(y)
-  //
-  // returning d(yS_iS)/dt = J %*% yS_iS + df/dp_iS for the 1-based parameter
-  // index iS. Note this asks more of the caller than `jacobian` does: they must
-  // supply both the Jacobian and the parameter derivatives. It was deferred out
-  // of 0.1.8 to keep a release that already carries behaviour changes free of a
-  // new exported argument; nothing here is wrong today, only slower than it
-  // could be. Wire the callback through sundials_callback_guard(), as every
-  // other callback in this package is.
+  // The fourth argument is the sensitivity right-hand side. When the caller
+  // supplies `sensitivity`, sens_rhs1_cvodes is passed and CVODES uses that R
+  // function to evaluate the sensitivity equations analytically. Passing NULL
+  // (the default) instead tells CVODES to approximate it by finite differences
+  // of the state right-hand side, which needs no extra function from the caller
+  // but evaluates the state RHS an extra NP times per internal step - each an R
+  // callback, the most expensive thing in the solve - and is only as accurate
+  // as the difference quotients.
   //
   // (int) flag to set sensitivity solution method - see CVodeSensInit1
   int ism = CV_STAGGERED;
   if (SensType.compare("SIM") == 0) ism = CV_SIMULTANEOUS;
-  flag = CVodeSensInit1(cvode_mem, NP, ism, NULL, yS);
+  CVSensRhs1Fn fS1 = sensitivity.isNotNull() ? sens_rhs1_cvodes : NULL;
+  flag = CVodeSensInit1(cvode_mem, NP, ism, fS1, yS);
   if(check_retval(flag, "CVodeSensInit1")) { sundials_stop(sun_err, "CVodeSensInit1", "Stopping cvodes, something went wrong in calculating Sensitivities!"); }
 
   /* Call CVodeSensEEtolerances to estimate tolerances for sensitivity
