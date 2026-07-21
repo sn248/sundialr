@@ -9,6 +9,8 @@
 
 - **Southern Methodist University**. Copyright holder.
 
+- **University of Maryland Baltimore County**. Copyright holder.
+
 ## Citation
 
 Source:

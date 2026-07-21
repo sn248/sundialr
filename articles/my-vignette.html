@@ -60,7 +60,7 @@
                         <h4 data-toc-skip class="author">Satyaprakash
 Nayak</h4>
             
-            <h4 data-toc-skip class="date">2026-07-20</h4>
+            <h4 data-toc-skip class="date">2026-07-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/sn248/sundialr/blob/master/vignettes/my-vignette.Rmd" class="external-link"><code>vignettes/my-vignette.Rmd</code></a></small>
       <div class="d-none name"><code>my-vignette.Rmd</code></div>
@@ -455,13 +455,24 @@ the value of the state at specified times.</p></li>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">time</span>, <span class="va">y1</span>, type <span class="op">=</span> <span class="st">"l"</span>, lty <span class="op">=</span> <span class="fl">1</span>, main <span class="op">=</span> <span class="st">"An ODE system with discontinuties"</span>, frame.plot <span class="op">=</span> <span class="cn">F</span><span class="op">)</span>   </span></code></pre></div>
 <p><img src="my-vignette_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="672"></p>
 <p>Note that in the example above, <code>TSAMP</code> is the sampling
-time at which the solution is desired. Also, even though an Initial
+time at which the solution is desired. The value in the
+<code>Events</code> input is always <em>added</em> to the current value
+of the state, and this applies at the initial time as well: the Initial
 Value of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>y</mi><mn>1</mn></msub><annotation encoding="application/x-tex">y_1</annotation></semantics></math>
-of 1 is provided by the <code>IC</code> parameter, it is overwritten by
-the value of 100 provided in the <code>TDOSE</code> data frame. In
-general, the values in the initial conditions are overwritten by values
-in the <code>Events</code> input.</p>
+of 1 provided by the <code>IC</code> parameter is the starting point,
+and the value of 100 provided in the <code>TDOSE</code> data frame at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">t = 0</annotation></semantics></math>
+is added to it, so
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>y</mi><mn>1</mn></msub><annotation encoding="application/x-tex">y_1</annotation></semantics></math>
+starts at 101. The initial conditions are never discarded, and several
+events at the same time on one state accumulate.</p>
+<p>Prior to version 0.1.8 an event at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">t = 0</annotation></semantics></math><em>replaced</em> the initial condition rather than adding to it, so the
+same value meant different things at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">t = 0</annotation></semantics></math>
+and at later times. Solutions that dose at time zero therefore differ
+from earlier versions by the initial condition.</p>
 </div>
 <div class="section level2">
 <h2 id="system-of-odes-for-parameter-sensitivities">System of ODEs for Parameter Sensitivities<a class="anchor" aria-label="anchor" href="#system-of-odes-for-parameter-sensitivities"></a>

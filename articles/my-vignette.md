@@ -409,10 +409,18 @@ plot(time, y1, type = "l", lty = 1, main = "An ODE system with discontinuties", 
 ![](my-vignette_files/figure-html/unnamed-chunk-4-1.png)
 
 Note that in the example above, `TSAMP` is the sampling time at which
-the solution is desired. Also, even though an Initial Value of $`y_1`$
-of 1 is provided by the `IC` parameter, it is overwritten by the value
-of 100 provided in the `TDOSE` data frame. In general, the values in the
-initial conditions are overwritten by values in the `Events` input.
+the solution is desired. The value in the `Events` input is always
+*added* to the current value of the state, and this applies at the
+initial time as well: the Initial Value of $`y_1`$ of 1 provided by the
+`IC` parameter is the starting point, and the value of 100 provided in
+the `TDOSE` data frame at $`t = 0`$ is added to it, so $`y_1`$ starts at
+101. The initial conditions are never discarded, and several events at
+the same time on one state accumulate.
+
+Prior to version 0.1.8 an event at $`t = 0`$*replaced* the initial
+condition rather than adding to it, so the same value meant different
+things at $`t = 0`$ and at later times. Solutions that dose at time zero
+therefore differ from earlier versions by the initial condition.
 
 ## System of ODEs for Parameter Sensitivities
 

@@ -2,6 +2,25 @@
 
 ## sundialr v0.1.8
 
+- **New feature**:
+  [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md),
+  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md),
+  [`ida()`](http://sn248.github.io/sundialr/reference/ida.md) and
+  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  accept an optional `jacobian` argument, an `R` function giving the
+  Jacobian of the system analytically. When it is not supplied, which
+  remains the default, `SUNDIALS` approximates the Jacobian by finite
+  differences as before, so existing code is unaffected. For
+  [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md),
+  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md) and
+  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  the function has the same signature as the system itself,
+  `function(t, y, p)`, and returns an n-by-n matrix whose `[i, j]` entry
+  is `d(ydot[i])/d(y[j])`. For
+  [`ida()`](http://sn248.github.io/sundialr/reference/ida.md) it is
+  `function(t, y, ydot, cj, p)` and returns `dF/dy + cj * dF/dydot`,
+  `cj` being a scalar supplied by the solver. Supplying the Jacobian is
+  usually faster and more accurate on stiff systems
 - Updated the underlying SUNDIALS library to v7.8.0 (Jun 2026)
 - CRAN-compliance patches moved to a dedicated script
   (`src/scripts/cran_patches.sh`) which now verifies that no flagged
@@ -19,6 +38,24 @@
   `inst/examples/cvsolve_1D.r` starts at 101 accordingly. To reproduce
   the old numbers, subtract the initial condition from the value of any
   event at time 0
+- Fixed
+  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  treating the initial time as 0 rather than as the first element of
+  `time_vector`. An event at the initial time is now applied to the
+  initial conditions as intended; previously, if the time vector began
+  anywhere other than 0, such an event was silently dropped and its
+  value lost with no error or warning
+- [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  now rejects an event time outside the range of `time_vector` instead
+  of accepting it. An event before the first output time cannot be
+  applied, since the solve starts there; it previously produced a row of
+  zeros in the returned matrix and discarded the event. Event times that
+  are `NA` are rejected for the same reason
+- [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md) no
+  longer returns rows of zeros. A record that does not advance the
+  solution — one at the initial time, or one sharing a time with the
+  record before it — was skipped without storing anything, leaving that
+  row filled with zeros instead of the state
 - Fixed a bug in
   [`ida()`](http://sn248.github.io/sundialr/reference/ida.md) and
   [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)

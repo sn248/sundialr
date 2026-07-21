@@ -66,73 +66,91 @@
 <p>A convenience function <code>cvsolve</code> is provided which allows solving a system of equations with multiple discontinuities in solution. An application of such a system of equations would be to simulate the effect of multiple bolus doses of a drug in clinical pharmacokinetics. See the vignette for more details.</p>
 </div>
 <div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"sundialr"</span><span class="op">)</span></span></code></pre></div>
+<p>The development version can be installed from GitHub:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"sn248/sundialr"</span><span class="op">)</span></span></code></pre></div>
+<p><code>SUNDIALS</code> itself is bundled with the package and is compiled from source during installation, so no system installation of <code>SUNDIALS</code> is needed. Building from source does require <code>cmake</code> to be available.</p>
+</div>
+<div class="section level2">
+<h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+</h2>
+<p>Every solver takes the system of equations as an <code>R</code> function. For <code>cvode</code>, that function is given the time, the state vector and the parameter vector, and returns the derivatives:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/sn248/sundialr" class="external-link">sundialr</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The Roberts problem, a classic stiff system of three equations</span></span>
+<span><span class="va">ODE_R</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">t</span>, <span class="va">y</span>, <span class="va">p</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">ydot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">vector</a></span><span class="op">(</span>mode <span class="op">=</span> <span class="st">"numeric"</span>, length <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="va">ydot</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="op">-</span><span class="va">p</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">*</span> <span class="va">y</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">+</span> <span class="va">p</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">*</span> <span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">*</span> <span class="va">y</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span></span>
+<span>  <span class="va">ydot</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span>  <span class="va">p</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">*</span> <span class="va">y</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">-</span> <span class="va">p</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">*</span> <span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">*</span> <span class="va">y</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span> <span class="op">-</span> <span class="va">p</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span> <span class="op">*</span> <span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">*</span> <span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span></span>
+<span>  <span class="va">ydot</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span> <span class="op">&lt;-</span>  <span class="va">p</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span> <span class="op">*</span> <span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">*</span> <span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span></span>
+<span></span>
+<span>  <span class="va">ydot</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">time_vec</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.0</span>, <span class="fl">0.4</span>, <span class="fl">4.0</span>, <span class="fl">40.0</span>, <span class="fl">4e2</span>, <span class="fl">4e3</span>, <span class="fl">4e4</span><span class="op">)</span></span>
+<span><span class="va">IC</span>       <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="va">params</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.04</span>, <span class="fl">1e4</span>, <span class="fl">3e7</span><span class="op">)</span></span>
+<span><span class="va">reltol</span>   <span class="op">&lt;-</span> <span class="fl">1e-6</span></span>
+<span><span class="va">abstol</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1e-8</span>, <span class="fl">1e-14</span>, <span class="fl">1e-6</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The result is a matrix: the first column is time, the remaining columns are</span></span>
+<span><span class="co"># the states, in the order they were given in IC</span></span>
+<span><span class="va">soln</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/cvode.html">cvode</a></span><span class="op">(</span><span class="va">time_vec</span>, <span class="va">IC</span>, <span class="va">ODE_R</span>, <span class="va">params</span>, <span class="va">reltol</span>, <span class="va">abstol</span><span class="op">)</span></span></code></pre></div>
+<p><code>reltolerance</code> is a single value. <code>abstolerance</code> is either a single value, applied to every state, or one value per state as above, which is useful when the states differ in magnitude.</p>
+<div class="section level3">
+<h3 id="supplying-a-jacobian">Supplying a Jacobian<a class="anchor" aria-label="anchor" href="#supplying-a-jacobian"></a>
+</h3>
+<p>By default <code>SUNDIALS</code> approximates the Jacobian by finite differences. For a stiff system it is usually faster, and more accurate, to supply it. The function takes the same arguments as the system itself and returns an n-by-n matrix whose <code>[i, j]</code> entry is <code>d(ydot[i])/d(y[j])</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">JAC_R</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">t</span>, <span class="va">y</span>, <span class="va">p</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="va">p</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,       <span class="va">p</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,                                  <span class="fl">0</span>,</span>
+<span>       <span class="va">p</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">*</span><span class="va">y</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span>, <span class="op">-</span><span class="va">p</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">*</span><span class="va">y</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span> <span class="op">-</span> <span class="fl">2</span><span class="op">*</span><span class="va">p</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span><span class="op">*</span><span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,   <span class="fl">2</span><span class="op">*</span><span class="va">p</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span><span class="op">*</span><span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,</span>
+<span>       <span class="va">p</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">*</span><span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, <span class="op">-</span><span class="va">p</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">*</span><span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,                             <span class="fl">0</span><span class="op">)</span>,</span>
+<span>    nrow <span class="op">=</span> <span class="fl">3</span>, ncol <span class="op">=</span> <span class="fl">3</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">soln</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/cvode.html">cvode</a></span><span class="op">(</span><span class="va">time_vec</span>, <span class="va">IC</span>, <span class="va">ODE_R</span>, <span class="va">params</span>, <span class="va">reltol</span>, <span class="va">abstol</span>, jacobian <span class="op">=</span> <span class="va">JAC_R</span><span class="op">)</span></span></code></pre></div>
+<p>The system and the Jacobian can also be written in <code>C++</code> with <code>Rcpp</code> instead of in <code>R</code>, which avoids the cost of calling back into <code>R</code> at every step. The examples in <code><a href="reference/cvode.html">?cvode</a></code> show both forms.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="the-other-solvers">The other solvers<a class="anchor" aria-label="anchor" href="#the-other-solvers"></a>
+</h2>
+<p><strong><code>cvodes</code></strong> solves the same systems as <code>cvode</code> and additionally computes forward sensitivities, the partial derivative of every state with respect to every parameter, alongside the solution. These are what parameter estimation and identifiability work need. The sensitivity equations can be solved either staggered or simultaneously with the state equations, and can be included in or excluded from the error control. See <code><a href="reference/cvodes.html">?cvodes</a></code>.</p>
+<p><strong><code>ida</code></strong> solves differential-algebraic equations, systems that mix differential equations with algebraic constraints and so cannot be written as <code>y' = f(t, y)</code>. The system is given as a residual <code>F(t, y, y', p) = 0</code>, and an initial value of <code>y'</code> consistent with the constraints at the initial time is required alongside the initial values of <code>y</code>. See <code><a href="reference/ida.html">?ida</a></code>.</p>
+<p><strong><code>cvsolve</code></strong> is a convenience wrapper around <code>cvode</code> for systems whose solution has discontinuities. Discontinuities are described by a data frame giving the state, the time, and the value to add to that state at that time; the solver integrates up to each one, applies it, and restarts. The motivating case is simulating repeated bolus doses of a drug in clinical pharmacokinetics, where each dose is an instantaneous addition to a compartment. See <code><a href="reference/cvsolve.html">?cvsolve</a></code> and the vignette.</p>
+</div>
+<div class="section level2">
 <h2 id="whats-new">What’s new?<a class="anchor" aria-label="anchor" href="#whats-new"></a>
 </h2>
-</div>
-<div class="section level2">
-<h2 id="comments-for-version-018">Comments for version 0.1.8<a class="anchor" aria-label="anchor" href="#comments-for-version-018"></a>
-</h2>
-<ul>
-<li>Updated the underlying SUNDIALS library to v7.8.0 (Jun 2026)</li>
-<li>CRAN-compliance patches moved to a dedicated, self-verifying script (<code>src/scripts/cran_patches.sh</code>)</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="comments-for-version-017">Comments for version 0.1.7<a class="anchor" aria-label="anchor" href="#comments-for-version-017"></a>
-</h2>
-<ul>
-<li>Changes in <code>/tools/cmake_call.sh</code> file to remove warnings with respect to stdout/stderr/fprintf etc in upstream C library (with the help of claude)</li>
-<li>Updated the underlying SUNDIALS library to v7.6.0 (Jan 2026)</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="comments-for-version-016">Comments for version 0.1.6<a class="anchor" aria-label="anchor" href="#comments-for-version-016"></a>
-</h2>
-<ul>
-<li>Updated the upstream <code>SUNDIALS</code> to version 7.2.0</li>
-<li>Complete overall of the build system to use <code>cmake</code> based installation</li>
-</ul>
 <div class="section level3">
-<h3 id="comments-for-version-015">Comments for version 0.1.5<a class="anchor" aria-label="anchor" href="#comments-for-version-015"></a>
+<h3 id="version-018">Version 0.1.8<a class="anchor" aria-label="anchor" href="#version-018"></a>
 </h3>
 <ul>
-<li>Updated the upstream <code>SUNDIALS</code> to version 7.1.1.</li>
-<li>Fixed the <code>pkgdown</code> website</li>
-<li>There was a bug in assigning absolute tolerance in equations. Fixed now.</li>
+<li>
+<strong>New</strong>: all four solvers accept an optional <code>jacobian</code> argument for supplying the Jacobian analytically instead of letting <code>SUNDIALS</code> approximate it by finite differences. It defaults to <code>NULL</code>, so existing code is unaffected. See the quick start above for <code>cvode</code>; <code>ida</code> takes a different form, documented in <code><a href="reference/ida.html">?ida</a></code>
+</li>
+<li>Updated the underlying <code>SUNDIALS</code> library to v7.8.0 (Jun 2026)</li>
+<li>
+<strong>Behaviour change</strong>: in <code>cvsolve</code>, an event at time 0 now adds its value to the initial conditions rather than replacing them, so the initial conditions are always the starting state and time 0 behaves like every other event time. Results change for any call that applies an event at time 0</li>
+<li>
+<code>cvsolve</code> now takes the initial time from the first element of the time vector rather than assuming it is 0, and validates the state indices and times given in <code>Events</code>
+</li>
+<li>Fixed several memory faults, including an out-of-bounds access when <code>abstolerance</code> was given as a single value to <code>ida</code> or <code>cvsolve</code>, and memory that was not released when a solve ended in an error</li>
+<li>Errors raised inside a user-supplied <code>R</code> function are now reported properly, and error messages name the <code>SUNDIALS</code> routine that failed</li>
+<li>Added test coverage for <code>ida</code> and <code>cvsolve</code>
+</li>
 </ul>
-</div>
-</div>
-<div class="section level2">
-<h2 id="comments-for-version-01412">Comments for version 0.1.4.1.2<a class="anchor" aria-label="anchor" href="#comments-for-version-01412"></a>
-</h2>
-<ul>
-<li>Fixed the issue with forwarded email address.</li>
-</ul>
-<div class="section level3">
-<h3 id="release-0141">Release 0.1.4.1<a class="anchor" aria-label="anchor" href="#release-0141"></a>
-</h3>
-<ul>
-<li>Fixed the linking bug due to multiple defined symbols. No other change.</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="release-014">Release 0.1.4<a class="anchor" aria-label="anchor" href="#release-014"></a>
-</h3>
-<ul>
-<li>This version has version 5.2.0 of <code>SUNDIALS</code> (released in March 2020) at the back end.</li>
-<li>A new function <code>cvsolve</code> is added. It allows solving ODEs with multiple discontinuities in the solution. See a complete use case in the vignette.</li>
-<li>A <code>pkgdown</code> create site of the package is added.</li>
-<li>A hex sticker for the package is released!</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="release-013">Release 0.1.3<a class="anchor" aria-label="anchor" href="#release-013"></a>
-</h3>
-<ul>
-<li>This version has version 4.0.1 of <code>SUNDIALS</code> (released in Dec 2018) at the back end.</li>
-<li>An interface to <code>CVODES</code> is added. It calculates forward sensitivities w.r.t all parameters of the ODE system.</li>
-<li>Parameters can now be defined as an input parameter to the ODE function. This will allow performing parameter optimization via numerical optimizers.</li>
-</ul>
+<p>For the full list, and for earlier versions, see <a href="NEWS.html">NEWS.md</a>.</p>
 </div>
 </div>
 </div>
