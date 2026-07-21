@@ -64,6 +64,25 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 cd ..
+
+# Reproducibility fix: cmake stamps the generated sundials_config.h with the
+# compiler, its full flag list and a build timestamp. Those differ on every
+# machine and every run, so this header - which is committed, like the rest of
+# inst/include, because LinkingTo consumers need it - would otherwise carry one
+# machine's build paths and show up as a spurious diff after every build. The
+# strings are provenance metadata only (they feed SUNDIALS' optional Caliper
+# instrumentation, not compilation), so blanking them makes the generated
+# header identical from run to run.
+SUNDIALS_CONFIG_H="../inst/include/sundials/sundials_config.h"
+if [ -f "${SUNDIALS_CONFIG_H}" ]; then
+    perl -i -pe 's/^(#define SUN_(?:C|CXX|FORTRAN)_COMPILER(?:_VERSION|_FLAGS)?)\s+".*"\s*$/$1 ""\n/;
+                 s/^(#define SUN_JOB_(?:ID|START_TIME))\s+".*"\s*$/$1 ""\n/;' "${SUNDIALS_CONFIG_H}"
+    if [ $? -ne 0 ]; then
+        echo "Normalising sundials_config.h failed!"
+        exit 1
+    fi
+fi
+
 ##mv sundials/lib* sundials/lib
 mv sundials-src/src/* ./sundials
 rm -fr sundials-src sundials-build

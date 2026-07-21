@@ -111,9 +111,9 @@
 #define SUNDIALS_LOGGING_LEVEL 0
 
 /* Build metadata */
-#define SUN_C_COMPILER "GNU"
-#define SUN_C_COMPILER_VERSION "13.3.0"
-#define SUN_C_COMPILER_FLAGS " -fpic -g -O2 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer -ffile-prefix-map=/build/r-base-z8Gqxj/r-base-4.6.1=. -fstack-protector-strong -fstack-clash-protection -Wformat -Werror=format-security -fcf-protection -fdebug-prefix-map=/build/r-base-z8Gqxj/r-base-4.6.1=/usr/src/r-base-4.6.1-1.2404.1 -Wdate-time -D_FORTIFY_SOURCE=3 -Wno-deprecated-declarations"
+#define SUN_C_COMPILER ""
+#define SUN_C_COMPILER_VERSION ""
+#define SUN_C_COMPILER_FLAGS ""
 
 #define SUN_CXX_COMPILER ""
 #define SUN_CXX_COMPILER_VERSION ""
@@ -125,8 +125,8 @@
 
 #define SUN_BUILD_TYPE "Release"
 
-#define SUN_JOB_ID "20260715090106"
-#define SUN_JOB_START_TIME "20260715090106"
+#define SUN_JOB_ID ""
+#define SUN_JOB_START_TIME ""
 
 #define SUN_TPL_LIST ""
 #define SUN_TPL_LIST_SIZE ""
@@ -282,12 +282,10 @@
  * SUNDIALS modules enabled
  * -----------------------------------------------------------------*/
 
-#define SUNDIALS_ARKODE 1
 #define SUNDIALS_CVODE 1
 #define SUNDIALS_CVODES 1
 #define SUNDIALS_IDA 1
 #define SUNDIALS_IDAS 1
-#define SUNDIALS_KINSOL 1
 #define SUNDIALS_NVECTOR_SERIAL 1
 #define SUNDIALS_NVECTOR_MANYVECTOR 1
 #define SUNDIALS_SUNMATRIX_BAND 1
