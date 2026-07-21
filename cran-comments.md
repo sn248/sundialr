@@ -1,4 +1,5 @@
 ## Comments for version 0.1.8
++ New feature: `cvode()`, `cvodes()`, `ida()` and `cvsolve()` gain an optional `jacobian` argument for supplying the Jacobian of the system analytically instead of relying on the finite-difference approximation. It is the last argument of each function and defaults to `NULL`, so existing calls, including positional ones, are unaffected
 + Updated the upstream `SUNDIALS` to version 7.8.0
 + CRAN-compliance patches (removal of `abort()`, `stdout`/`stderr` writes and `sprintf` from the bundled library) moved to a dedicated, self-verifying script
 + Fixed `cvsolve()` assuming the initial time is 0 rather than reading it from `time_vector`. With a time vector starting elsewhere, an event at the initial time was silently dropped and its value lost. Event times outside the range of `time_vector`, and `NA` times, are now rejected rather than producing a row of zeros in the result, and rows that do not advance the solution are filled with the current state instead of being left zeroed
@@ -11,6 +12,15 @@
 + Added `tests/testthat/test-ida.r`, `tests/testthat/test-cvsolve.r` and `tests/testthat/test-callbacks.r`; `ida()` and `cvsolve()` previously had no automated tests, which is why the absolute tolerance fault above went unnoticed
 + The generated `inst/include/sundials/sundials_config.h` is now reproducible. `cmake` stamps it with the compiler, its full flag list and a build timestamp, so the committed copy carried one machine's build paths and changed on every build; those strings are provenance metadata and are now blanked after the `cmake` install step. The regenerated header also drops the `SUNDIALS_ARKODE` and `SUNDIALS_KINSOL` defines, which it had continued to declare even though the build disables both modules and ships neither library
 + `src/Makevars.in` no longer sets `CXX`. It hardcoded `clang++`, which is not the package's choice to make and would fail on a machine without that compiler installed; the compiler is now left to `R`'s configuration
+
+### Known NOTE
+`checking examples` reports `cvode` and `ida` above the 5 second threshold. Almost none of that is
+spent solving: the same `ida` call on its own runs in 0.03 seconds. The examples also show the
+right-hand side written in `Rcpp` rather than `R`, and `Rcpp::sourceCpp()` compiles that code while
+the example runs, which is what the time is. Elapsed time stays below 5 seconds in our checks
+(`ida` 4.56s, `cvode` 4.51s); it is the sum of user and system time that crosses it. The examples
+are kept as they are because compiling an `Rcpp` right-hand side is one of the two ways the package
+is meant to be used, and showing only the `R` form would leave that undocumented.
 
 ## Comments for version 0.1.6
 + Updated the upstream `SUNDIALS` to version 7.2.0

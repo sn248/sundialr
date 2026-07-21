@@ -328,9 +328,38 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   for (int is=0;is<NP;is++) N_VConst(SUN_RCONST(0.0), yS[is]);
 
   /* Call CVodeSensInit1 to activate forward sensitivity computations
-   and allocate internal memory for COVEDS related to sensitivity
+   and allocate internal memory for CVODES related to sensitivity
    calculations. Computes the right-hand sides of the sensitivity
    ODE, one at a time */
+  //
+  // The fourth argument is the sensitivity right-hand side. Passing NULL tells
+  // CVODES to approximate it by finite differences of the state right-hand
+  // side, which is why cvodes() needs no extra function from the caller. The
+  // cost is that every internal step evaluates the state RHS an extra NP times,
+  // and each of those is a callback into R - by far the most expensive thing in
+  // the solve - so sensitivities are the slowest part of cvodes() and are only
+  // as accurate as the difference quotients.
+  //
+  // PLANNED for 0.1.9: let the caller supply the sensitivity RHS instead, as an
+  // optional argument alongside `jacobian`. CVodeSensInit1 takes a
+  // CVSensRhs1Fn, called once per parameter:
+  //
+  //   int f(int Ns, sunrealtype t, N_Vector y, N_Vector ydot,
+  //         int iS, N_Vector yS, N_Vector ySdot,
+  //         void *user_data, N_Vector tmp1, N_Vector tmp2)
+  //
+  // which would delegate to an R function shaped like the existing callbacks,
+  //
+  //   sens_rhs(t, y, ydot, iS, yS, p)  ->  numeric vector of length(y)
+  //
+  // returning d(yS_iS)/dt = J %*% yS_iS + df/dp_iS for the 1-based parameter
+  // index iS. Note this asks more of the caller than `jacobian` does: they must
+  // supply both the Jacobian and the parameter derivatives. It was deferred out
+  // of 0.1.8 to keep a release that already carries behaviour changes free of a
+  // new exported argument; nothing here is wrong today, only slower than it
+  // could be. Wire the callback through sundials_callback_guard(), as every
+  // other callback in this package is.
+  //
   // (int) flag to set sensitivity solution method - see CVodeSensInit1
   int ism = CV_STAGGERED;
   if (SensType.compare("SIM") == 0) ism = CV_SIMULTANEOUS;

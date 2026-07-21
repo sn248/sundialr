@@ -1,5 +1,6 @@
 sundialr v0.1.8
 ===============
+* **New feature**: `cvode()`, `cvodes()`, `ida()` and `cvsolve()` accept an optional `jacobian` argument, an `R` function giving the Jacobian of the system analytically. When it is not supplied, which remains the default, `SUNDIALS` approximates the Jacobian by finite differences as before, so existing code is unaffected. For `cvode()`, `cvodes()` and `cvsolve()` the function has the same signature as the system itself, `function(t, y, p)`, and returns an n-by-n matrix whose `[i, j]` entry is `d(ydot[i])/d(y[j])`. For `ida()` it is `function(t, y, ydot, cj, p)` and returns `dF/dy + cj * dF/dydot`, `cj` being a scalar supplied by the solver. Supplying the Jacobian is usually faster and more accurate on stiff systems
 * Updated the underlying SUNDIALS library to v7.8.0 (Jun 2026)
 * CRAN-compliance patches moved to a dedicated script (`src/scripts/cran_patches.sh`) which now verifies that no flagged call survives patching
 * Added `tools/strip_sundials_tarball.sh` to reproducibly strip the bundled SUNDIALS tarball of examples, docs, tests and benchmarks
