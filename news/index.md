@@ -21,6 +21,22 @@
   `function(t, y, ydot, cj, p)` and returns `dF/dy + cj * dF/dydot`,
   `cj` being a scalar supplied by the solver. Supplying the Jacobian is
   usually faster and more accurate on stiff systems
+- **New feature**: a C-linkage CVODE API for use by other packages’
+  compiled code, declared in `inst/include/sundialr_capi.h` and
+  registered as `R_RegisterCCallable` entry points under the package
+  name `sundialr`. A consumer reaches it with
+  `R_GetCCallable("sundialr", ...)` after `Imports: sundialr`; the
+  header exposes only `double`/`int` and an opaque handle, so no
+  SUNDIALS headers or `LinkingTo` are required. The handle owns a
+  persistent state vector and is reused across many segments via
+  `sundialr_cvode_reinit()`, the pattern a host integrator loop needs;
+  tolerances may be scalar or per-equation (the latter realised with a
+  custom error-weight function, so vector relative tolerances are
+  supported), an analytic Jacobian is optional, and every entry point
+  returns a `CVODE` status code and records a retrievable message rather
+  than throwing across the foreign call boundary. This is the first half
+  of adding `CVODE` as an alternative integrator in `mrgsolve`; the
+  existing `R` interface is unchanged
 - **New feature**:
   [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
   accepts an optional `sensitivity` argument, an `R` function giving the
