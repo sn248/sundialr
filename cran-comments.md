@@ -1,5 +1,7 @@
 ## Comments for version 0.2.0
 + New feature: `cvode()`, `cvodes()`, `ida()` and `cvsolve()` gain an optional `jacobian` argument for supplying the Jacobian of the system analytically instead of relying on the finite-difference approximation. It is the last argument of each function and defaults to `NULL`, so existing calls, including positional ones, are unaffected
++ New feature: `cvodes()` gains an optional `sensitivity` argument for supplying the sensitivity right-hand side analytically, `function(t, y, ydot, iS, yS, p)` returning `d(yS_iS)/dt`. It defaults to `NULL`, in which case the sensitivities are approximated by finite differences of the right-hand side as before, so existing calls are unaffected
++ New feature: a C-linkage `CVODE` API (`inst/include/sundialr_capi.h`, registered as `R_RegisterCCallable` entry points) for use by other packages' compiled code via `R_GetCCallable("sundialr", ...)`. It exposes only `double`/`int` and an opaque handle, adds no dependencies, and leaves the existing `R` interface unchanged
 + Updated the upstream `SUNDIALS` to version 7.8.0
 + CRAN-compliance patches (removal of `abort()`, `stdout`/`stderr` writes and `sprintf` from the bundled library) moved to a dedicated, self-verifying script
 + Fixed `cvsolve()` assuming the initial time is 0 rather than reading it from `time_vector`. With a time vector starting elsewhere, an event at the initial time was silently dropped and its value lost. Event times outside the range of `time_vector`, and `NA` times, are now rejected rather than producing a row of zeros in the result, and rows that do not advance the solution are filled with the current state instead of being left zeroed
@@ -13,7 +15,22 @@
 + The generated `inst/include/sundials/sundials_config.h` is now reproducible. `cmake` stamps it with the compiler, its full flag list and a build timestamp, so the committed copy carried one machine's build paths and changed on every build; those strings are provenance metadata and are now blanked after the `cmake` install step. The regenerated header also drops the `SUNDIALS_ARKODE` and `SUNDIALS_KINSOL` defines, which it had continued to declare even though the build disables both modules and ships neither library
 + `src/Makevars.in` no longer sets `CXX`. It hardcoded `clang++`, which is not the package's choice to make and would fail on a machine without that compiler installed; the compiler is now left to `R`'s configuration
 
-### Known NOTE
+### Test environments
+* local Ubuntu 24.04, R 4.6.1
+* win-builder (R-devel and R-release)
+* macOS builder (R-release)
+* R-hub (via `rhub::rhub_check()`)
+
+<!-- Confirm/prune this list to the environments actually run before submitting. -->
+
+### R CMD check results
+0 errors | 0 warnings | 1 note
+
+The one NOTE is the examples-timing note described below. (Locally, the PDF-manual
+check also reports an ERROR/WARNING, but that is solely a missing `inconsolata.sty`
+LaTeX font in the local environment, not a package issue; it does not occur where
+that font is installed, e.g. win-builder.)
+
 `checking examples` reports `cvode` and `ida` above the 5 second threshold. Almost none of that is
 spent solving: the same `ida` call on its own runs in 0.03 seconds. The examples also show the
 right-hand side written in `Rcpp` rather than `R`, and `Rcpp::sourceCpp()` compiles that code while
@@ -21,6 +38,10 @@ the example runs, which is what the time is. Elapsed time stays below 5 seconds 
 (`ida` 4.56s, `cvode` 4.51s); it is the sum of user and system time that crosses it. The examples
 are kept as they are because compiling an `Rcpp` right-hand side is one of the two ways the package
 is meant to be used, and showing only the `R` form would leave that undocumented.
+
+### Downstream dependencies
+The only reverse dependency, `rxode2`, does not call the affected functions and is unaffected. The
+new C API is additive and changes no existing behaviour.
 
 ## Comments for version 0.1.6
 + Updated the upstream `SUNDIALS` to version 7.2.0

@@ -33,7 +33,7 @@
 
 /*
  * sundialr C API - a plain-C wrapper around CVODE (BDF, dense) intended to be
- * called from another package's compiled code (e.g. mrgsolve) via
+ * called from another package's compiled code via
  * R_GetCCallable("sundialr", ...). This is the ONLY header a consumer includes:
  * it deliberately exposes no SUNDIALS types and no Rcpp, only plain double and
  * int arguments and an opaque handle, so the consumer needs neither SUNDIALS

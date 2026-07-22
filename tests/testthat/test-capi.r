@@ -20,7 +20,7 @@ test_that("scalar-tolerance decay matches the closed form", {
 test_that("reinit-per-segment gives the same trajectory as a single reinit", {
   # State continuity across CVodeReInit: reinitialising at every output point
   # with the current state must reproduce the uninterrupted solve (and the
-  # closed form). This is the pattern mrgsolve drives per dose/event.
+  # closed form). This is the pattern a host loop drives per dose/event.
   times <- seq(0, 8, by = 0.5)
   y0 <- 3; k <- 0.6
   march  <- decay(times, y0, k, tol_mode = 1L, reinit_each = FALSE)

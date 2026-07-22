@@ -2,7 +2,7 @@
 //   Distributed under the BSD-3 licence; see the header of sundialr_capi.h.
 
 // Test drivers for the sundialr C API. Each one exercises the plain-C surface
-// exactly as an external consumer (mrgsolve) would - create / configure /
+// exactly as an external consumer would - create / configure /
 // reinit / solve / free - and returns results to R so testthat can compare them
 // with closed-form solutions (see tests/testthat/test-capi.r). They call the C
 // API directly because they are linked into the same package.
@@ -62,7 +62,8 @@ static void capi_test_fail(void* m, const char* what) {
 
 // Scalar decay. tol_mode: 1 = scalar tolerances, 2 = per-equation vectors.
 // reinit_each = true reinitialises at every output time with the current state
-// (state continuity across reinit), the reinit-per-segment pattern mrgsolve uses.
+// (state continuity across reinit), the reinit-per-segment pattern a dose/event-
+// driven host loop uses.
 // [[Rcpp::export(".capi_test_decay")]]
 NumericVector capi_test_decay(NumericVector times, double y0, double k,
                               int tol_mode, bool reinit_each) {

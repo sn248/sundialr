@@ -2,7 +2,7 @@
 //   Distributed under the BSD-3 licence; see the header of sundialr_capi.h.
 
 // Registration of the sundialr C API as R "CCallable" entry points, so another
-// package (e.g. mrgsolve) can reach them with R_GetCCallable("sundialr", name)
+// package can reach them with R_GetCCallable("sundialr", name)
 // after LinkingTo/Imports sundialr. Rcpp generates R_init_sundialr itself and
 // would overwrite anything added there, so per the standard workaround this runs
 // from an [[Rcpp::export]] function invoked by the package's .onLoad() (see
