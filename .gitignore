@@ -24,3 +24,9 @@ CLAUDE.md
 dev/
 
 /.quarto/
+
+# R CMD build / check artifacts
+*.Rcheck/
+*.tar.gz
+# ...but the bundled SUNDIALS source tarball is committed and must stay tracked
+!src/sundials-mod-*.tar.gz

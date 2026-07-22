@@ -11,6 +11,88 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// register_capi
+void register_capi();
+RcppExport SEXP _sundialr_register_capi() {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    register_capi();
+    return R_NilValue;
+END_RCPP
+}
+// capi_test_decay
+NumericVector capi_test_decay(NumericVector times, double y0, double k, int tol_mode, bool reinit_each);
+RcppExport SEXP _sundialr_capi_test_decay(SEXP timesSEXP, SEXP y0SEXP, SEXP kSEXP, SEXP tol_modeSEXP, SEXP reinit_eachSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type times(timesSEXP);
+    Rcpp::traits::input_parameter< double >::type y0(y0SEXP);
+    Rcpp::traits::input_parameter< double >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type tol_mode(tol_modeSEXP);
+    Rcpp::traits::input_parameter< bool >::type reinit_each(reinit_eachSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_decay(times, y0, k, tol_mode, reinit_each));
+    return rcpp_result_gen;
+END_RCPP
+}
+// capi_test_twocmt
+NumericMatrix capi_test_twocmt(NumericVector times, double y10, double k1, double k2, bool use_jac);
+RcppExport SEXP _sundialr_capi_test_twocmt(SEXP timesSEXP, SEXP y10SEXP, SEXP k1SEXP, SEXP k2SEXP, SEXP use_jacSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type times(timesSEXP);
+    Rcpp::traits::input_parameter< double >::type y10(y10SEXP);
+    Rcpp::traits::input_parameter< double >::type k1(k1SEXP);
+    Rcpp::traits::input_parameter< double >::type k2(k2SEXP);
+    Rcpp::traits::input_parameter< bool >::type use_jac(use_jacSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_twocmt(times, y10, k1, k2, use_jac));
+    return rcpp_result_gen;
+END_RCPP
+}
+// capi_test_force_error
+List capi_test_force_error();
+RcppExport SEXP _sundialr_capi_test_force_error() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(capi_test_force_error());
+    return rcpp_result_gen;
+END_RCPP
+}
+// capi_test_num_steps
+double capi_test_num_steps(double tout, double y0, double k);
+RcppExport SEXP _sundialr_capi_test_num_steps(SEXP toutSEXP, SEXP y0SEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type tout(toutSEXP);
+    Rcpp::traits::input_parameter< double >::type y0(y0SEXP);
+    Rcpp::traits::input_parameter< double >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_num_steps(tout, y0, k));
+    return rcpp_result_gen;
+END_RCPP
+}
+// capi_test_clean_err
+bool capi_test_clean_err();
+RcppExport SEXP _sundialr_capi_test_clean_err() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(capi_test_clean_err());
+    return rcpp_result_gen;
+END_RCPP
+}
+// capi_test_abi
+int capi_test_abi();
+RcppExport SEXP _sundialr_capi_test_abi() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(capi_test_abi());
+    return rcpp_result_gen;
+END_RCPP
+}
 // cvode
 NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, double reltolerance, NumericVector abstolerance, Nullable<Function> jacobian);
 RcppExport SEXP _sundialr_cvode(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP, SEXP jacobianSEXP) {
@@ -86,6 +168,13 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_sundialr_register_capi", (DL_FUNC) &_sundialr_register_capi, 0},
+    {"_sundialr_capi_test_decay", (DL_FUNC) &_sundialr_capi_test_decay, 5},
+    {"_sundialr_capi_test_twocmt", (DL_FUNC) &_sundialr_capi_test_twocmt, 5},
+    {"_sundialr_capi_test_force_error", (DL_FUNC) &_sundialr_capi_test_force_error, 0},
+    {"_sundialr_capi_test_num_steps", (DL_FUNC) &_sundialr_capi_test_num_steps, 3},
+    {"_sundialr_capi_test_clean_err", (DL_FUNC) &_sundialr_capi_test_clean_err, 0},
+    {"_sundialr_capi_test_abi", (DL_FUNC) &_sundialr_capi_test_abi, 0},
     {"_sundialr_cvode", (DL_FUNC) &_sundialr_cvode, 7},
     {"_sundialr_cvodes", (DL_FUNC) &_sundialr_cvodes, 10},
     {"_sundialr_cvsolve", (DL_FUNC) &_sundialr_cvsolve, 8},
