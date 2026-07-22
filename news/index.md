@@ -34,8 +34,8 @@
   custom error-weight function, so vector relative tolerances are
   supported), an analytic Jacobian is optional, and every entry point
   returns a `CVODE` status code and records a retrievable message rather
-  than throwing across the foreign call boundary. This is the first half
-  of adding `CVODE` as an alternative integrator in `mrgsolve`; the
+  than throwing across the foreign call boundary. It lets `CVODE` be
+  embedded as an integrator inside another package’s own solve loop; the
   existing `R` interface is unchanged
 - **New feature**:
   [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
