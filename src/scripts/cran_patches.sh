@@ -11,9 +11,11 @@
 # Usage: cran_patches.sh <path-to-extracted-sundials-source>
 #   (run from src/; cmake_call.sh calls it with "sundials-src")
 #
-# NOTE: All patches use 'perl -pi -e' / python3 instead of 'sed -i' for
-#   portability. macOS BSD sed requires 'sed -i ""' while GNU sed uses
-#   'sed -i'; perl handles in-place editing identically on both platforms.
+# NOTE: All patches use 'perl -pi -e' instead of 'sed -i' for portability.
+#   macOS BSD sed requires 'sed -i ""' while GNU sed uses 'sed -i'; perl
+#   handles in-place editing identically on all platforms. perl (not python)
+#   is used throughout: it is the one scripting language guaranteed present on
+#   every R build machine, including Windows/Rtools where python3 is absent.
 #
 # Patches applied (verified against SUNDIALS 7.8.0 — re-verify each pattern
 # on any SUNDIALS upgrade; the patterns match exact source lines):
@@ -62,21 +64,17 @@ perl -pi -e 's|  fprintf\(stderr, "%s", log_msg\);|  /* CRAN: fprintf(stderr) re
 # The same 3-line block appears in sundials_errors.c (sunCreateLogMessage)
 # and sundials_logger.c (sunCreateLogPayload).
 
-python3 -c "
-import re, sys
-for fname in ['${SRC}/src/sundials/sundials_errors.c',
-              '${SRC}/src/sundials/sundials_logger.c']:
-    with open(fname) as f: c = f.read()
-    c, n = re.subn(
-        r'    char\* fileAndLine = sunCombineFileAndLine\([^\n]+\);\n'
-        r'    fprintf\(stderr,[^;]+FATAL LOGGER ERROR[^;]+;\n'
-        r'    free\(fileAndLine\);',
-        '    /* CRAN: fprintf(stderr) removed; fatal logger error silenced */',
-        c)
-    if n != 1:
-        sys.exit('cran_patches.sh: FATAL LOGGER patch matched %d times in %s (expected 1)' % (n, fname))
-    with open(fname, 'w') as f: f.write(c)
-"
+# perl -0777 (slurp mode) so the multi-line block matches as one string; the
+# fprintf spans two source lines and [^;]+ crosses the newline. Not python3:
+# it is absent on Windows (Rtools) build machines, which broke the CRAN
+# WinBuilder install. perl is already required by every other patch here.
+for f in "${SRC}/src/sundials/sundials_errors.c" \
+         "${SRC}/src/sundials/sundials_logger.c"; do
+  perl -0777 -pi -e '
+    my $n = s{    char\* fileAndLine = sunCombineFileAndLine\([^\n]+\);\n    fprintf\(stderr,[^;]+FATAL LOGGER ERROR[^;]+;\n    free\(fileAndLine\);}{    /* CRAN: fprintf(stderr) removed; fatal logger error silenced */}g;
+    die "cran_patches.sh: FATAL LOGGER patch matched $n times in $ARGV (expected 1)\n" unless $n == 1;
+  ' "$f"
+done
 
 ## ---- sundials_logger.c ------------------------------------------------------
 # sunOpenLogFile: delete the stdout/stderr mapping branches, then strip the
