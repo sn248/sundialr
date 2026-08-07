@@ -14,6 +14,7 @@
 + Added `tests/testthat/test-ida.r`, `tests/testthat/test-cvsolve.r` and `tests/testthat/test-callbacks.r`; `ida()` and `cvsolve()` previously had no automated tests, which is why the absolute tolerance fault above went unnoticed
 + The generated `inst/include/sundials/sundials_config.h` is now reproducible. `cmake` stamps it with the compiler, its full flag list and a build timestamp, so the committed copy carried one machine's build paths and changed on every build; those strings are provenance metadata and are now blanked after the `cmake` install step. The regenerated header also drops the `SUNDIALS_ARKODE` and `SUNDIALS_KINSOL` defines, which it had continued to declare even though the build disables both modules and ships neither library
 + `src/Makevars.in` no longer sets `CXX`. It hardcoded `clang++`, which is not the package's choice to make and would fail on a machine without that compiler installed; the compiler is now left to `R`'s configuration
++ The `Rcpp::sourceCpp()` demonstration in the `cvode()`, `cvodes()` and `ida()` examples is now wrapped in `\dontrun{}`, so no example invokes the C++ compiler while it runs. See the response to the examples-timing NOTE below
 
 ### Test environments
 * local Ubuntu 24.04, R 4.6.1
@@ -21,23 +22,36 @@
 * macOS builder (R-release)
 * R-hub (via `rhub::rhub_check()`)
 
-<!-- Confirm/prune this list to the environments actually run before submitting. -->
+<!-- Prune this list to the environments actually run before submitting. -->
 
 ### R CMD check results
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 0 notes
 
-The one NOTE is the examples-timing note described below. (Locally, the PDF-manual
-check also reports an ERROR/WARNING, but that is solely a missing `inconsolata.sty`
-LaTeX font in the local environment, not a package issue; it does not occur where
-that font is installed, e.g. win-builder.)
+(Locally, the PDF-manual check also reports an ERROR/WARNING, but that is solely a
+missing `inconsolata.sty` LaTeX font in the local environment, not a package issue;
+it does not occur where that font is installed, e.g. win-builder.)
 
-`checking examples` reports `cvode` and `ida` above the 5 second threshold. Almost none of that is
-spent solving: the same `ida` call on its own runs in 0.03 seconds. The examples also show the
-right-hand side written in `Rcpp` rather than `R`, and `Rcpp::sourceCpp()` compiles that code while
-the example runs, which is what the time is. Elapsed time stays below 5 seconds in our checks
-(`ida` 4.56s, `cvode` 4.51s); it is the sum of user and system time that crosses it. The examples
-are kept as they are because compiling an `Rcpp` right-hand side is one of the two ways the package
-is meant to be used, and showing only the `R` form would leave that undocumented.
+### Response to the examples-timing NOTE on r-devel-windows-x86_64
+
+The previous submission was noted for `cvode` taking 17.39s elapsed against 0.09s of
+CPU, with the suggestion that internet access was responsible and that a timeout be
+added. That was not the cause and no timeout was needed: these examples make no
+network calls.
+
+The examples illustrated writing the right-hand side in `Rcpp`, and
+`Rcpp::sourceCpp()` compiled that code while the example ran. The compile happens in
+a child process, so its cost falls entirely in elapsed time while the CPU columns,
+which count only the `R` process itself, stay near zero. That is the profile in the
+NOTE, and it resembles a network stall without being one. Only `cvode` was reported
+because all examples share one `sundialr-Ex.R` session and the `cvodes` example
+embedded byte-identical `C++`, hitting the `sourceCpp()` cache; the `ida` example was
+compiling as well, at 6.04s, below the threshold but not by much.
+
+The `sourceCpp()` demonstration is now wrapped in `\dontrun{}` in all three examples.
+Elapsed time falls from 8.74s to 0.05s for `cvode` and from 6.04s to 0.04s for `ida`,
+and `checking examples` reports OK. The `Rcpp` form is still shown in the manual and
+is still compiled and run in the package vignette, so that usage remains documented
+and tested.
 
 ### Downstream dependencies
 The only reverse dependency, `rxode2`, does not call the affected functions and is unaffected. The
