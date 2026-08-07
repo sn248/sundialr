@@ -56,7 +56,29 @@ ODE_R <- function(t, y, p){
 
 }
 
-# ODEs can also be described using Rcpp
+# R code to genrate time vector, IC and solve the equations
+time_vec <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
+IC <- c(1,0,0)
+params <- c(0.04, 10000, 30000000)
+reltol <- 1e-04
+abstol <- c(1e-8,1e-14,1e-6)
+
+## Solving the ODEs using cvode function
+df1 <- cvode(time_vec, IC, ODE_R , params, reltol, abstol)           ## using R
+
+## Solving with a manual Jacobian  J[i,j] = d(ydot_i)/d(y_j)
+JAC_R <- function(t, y, p) {
+  matrix(c(
+    -p[1],         p[1],                        0,
+     p[2]*y[3],   -p[2]*y[3] - 2*p[3]*y[2],   2*p[3]*y[2],
+     p[2]*y[2],   -p[2]*y[2],                  0
+  ), nrow = 3, ncol = 3)
+}
+df3 <- cvode(time_vec, IC, ODE_R, params, reltol, abstol, jacobian = JAC_R)
+
+## ODEs can also be described using Rcpp. Compiling the C++ version invokes the
+## toolchain, which takes far longer than the solve itself, so it is not run here.
+\dontrun{
 Rcpp::sourceCpp(code = '
 
                 #include <Rcpp.h>
@@ -77,29 +99,9 @@ Rcpp::sourceCpp(code = '
 
                 }')
 
-
-
-# R code to genrate time vector, IC and solve the equations
-time_vec <- c(0.0, 0.4, 4.0, 40.0, 4E2, 4E3, 4E4, 4E5, 4E6, 4E7, 4E8, 4E9, 4E10)
-IC <- c(1,0,0)
-params <- c(0.04, 10000, 30000000)
-reltol <- 1e-04
-abstol <- c(1e-8,1e-14,1e-6)
-
-## Solving the ODEs using cvode function
-df1 <- cvode(time_vec, IC, ODE_R , params, reltol, abstol)           ## using R
 df2 <- cvode(time_vec, IC, ODE_Rcpp , params, reltol, abstol)        ## using Rcpp
 
 ## Check that both solutions are identical
 # identical(df1, df2)
-
-## Solving with a manual Jacobian  J[i,j] = d(ydot_i)/d(y_j)
-JAC_R <- function(t, y, p) {
-  matrix(c(
-    -p[1],         p[1],                        0,
-     p[2]*y[3],   -p[2]*y[3] - 2*p[3]*y[2],   2*p[3]*y[2],
-     p[2]*y[2],   -p[2]*y[2],                  0
-  ), nrow = 3, ncol = 3)
 }
-df3 <- cvode(time_vec, IC, ODE_R, params, reltol, abstol, jacobian = JAC_R)
 }
