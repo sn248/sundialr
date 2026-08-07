@@ -2,6 +2,8 @@
 
 ## sundialr v0.2.0
 
+CRAN release: 2026-08-07
+
 - **New feature**:
   [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md),
   [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md),
