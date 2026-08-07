@@ -83,6 +83,28 @@ if [ -f "${SUNDIALS_CONFIG_H}" ]; then
     fi
 fi
 
+# Line-ending fix: sundials_config.h and sundials_export.h are the only two
+# headers cmake *generates*. The other 42 in inst/include/sundials are copied
+# verbatim out of the bundled tarball and so keep its LF endings, which is why
+# these two alone came out CRLF on Windows and were reported by
+#   checking line endings in C/C++/Fortran sources/headers ... NOTE
+# Force both to LF so the installed headers are byte-identical whatever host
+# built them, as the reproducibility fix above already requires.
+#
+# -Mopen=IO,:raw matters: without it Strawberry Perl applies its default :crlf
+# layer to both ends, stripping the CR on read and adding it back on write, so
+# the substitution would silently do nothing on the one platform that needs it.
+for SUNDIALS_GEN_H in "../inst/include/sundials/sundials_config.h" \
+                      "../inst/include/sundials/sundials_export.h"; do
+    if [ -f "${SUNDIALS_GEN_H}" ]; then
+        perl -i -Mopen=IO,:raw -pe 's/\r\n/\n/g' "${SUNDIALS_GEN_H}"
+        if [ $? -ne 0 ]; then
+            echo "Normalising line endings in ${SUNDIALS_GEN_H} failed!"
+            exit 1
+        fi
+    fi
+done
+
 ##mv sundials/lib* sundials/lib
 mv sundials-src/src/* ./sundials
 rm -fr sundials-src sundials-build

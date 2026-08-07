@@ -18,11 +18,12 @@
 
 ### Test environments
 * local Ubuntu 24.04, R 4.6.1
-* win-builder (R-devel and R-release)
-* macOS builder (R-release)
-* R-hub (via `rhub::rhub_check()`)
-
-<!-- Prune this list to the environments actually run before submitting. -->
+* R-hub (via the package's GitHub Actions workflow), all R-devel:
+  * `linux`
+  * `windows`
+  * `macos`
+  * `macos-arm64`
+  * `m1-san`
 
 ### R CMD check results
 0 errors | 0 warnings | 0 notes

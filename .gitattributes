@@ -1,4 +1,26 @@
-* text=lf
-data/* binary
-src/* text=lf
-R/* text=lf
+# Every text file is LF in the index and LF in the working tree on every
+# platform, so a Windows checkout does not hand `R CMD check` CRLF files.
+#
+# The previous `* text=lf` was silently a no-op: git only accepts `text`,
+# `text=auto`, `text=input` or `-text`, and ignores any other value. Nothing
+# was normalised, so on Windows (where Git for Windows defaults to
+# core.autocrlf=true) `configure.ac` was checked out with CRLF and R-hub's
+# windows job failed `checking line endings in shell scripts`.
+* text=auto eol=lf
+
+# Binary payloads must never be line-ending converted. The bundled SUNDIALS
+# source tarball is the one that matters - it is what the whole build unpacks,
+# and normalising it would corrupt the archive. `text=auto` already detects
+# binary content, but the build depends on this, so it is stated explicitly.
+*.tar.gz binary
+*.gz     binary
+*.a      binary
+*.o      binary
+*.so     binary
+*.dll    binary
+*.rds    binary
+*.RData  binary
+*.pdf    binary
+*.png    binary
+*.jpg    binary
+*.ico    binary
