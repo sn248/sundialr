@@ -14,7 +14,18 @@
 # performs (checkout -> read Config/Needs/wasm -> r-wasm/actions/build-rwasm) and
 # uploads the result as a job artifact rather than publishing it to a release.
 # Keep those steps in sync with the upstream reusable workflow, otherwise a green
-# run here stops being evidence that the release build will succeed.
+# run here stops being evidence that the release build will succeed. One
+# deliberate difference: a setup-r step, because ubuntu-24.04 runner images no
+# longer ship R and upstream's `shell: Rscript {0}` step therefore dies with
+# "Rscript: command not found". Upstream has not added setup-r, so the release
+# workflow is expected to fail that way on the next published release until it
+# does; this workflow works around it rather than reproducing it.
+#
+# Note also that the webR failure originally reported for this package came from
+# the R-universe builder (r-universe-org/actions/wasm-build), not from
+# release-file-system-image.yml. Both compile the package with Emscripten and
+# both hit the package's own duplicate-archive-member problem, but they are
+# different pipelines - a green run here is evidence, not proof, about R-universe.
 #
 # Trigger from the Actions tab, or:  gh workflow run wasm-check.yml
 
@@ -44,6 +55,15 @@ jobs:
           repository: r-wasm/actions
           token: ${{ secrets.GITHUB_TOKEN }}
           path: .actions
+
+      # ubuntu-24.04 runner images no longer ship R, so the `shell: Rscript {0}`
+      # step below fails with "Rscript: command not found" without this. The
+      # upstream reusable workflow has no equivalent step and so is currently
+      # broken the same way on ubuntu-latest - see the note at the top of this file.
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
 
       - name: Find `Config/Needs/wasm` in DESCRIPTION
         id: needs
