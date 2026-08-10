@@ -27,13 +27,7 @@ if test x"${need_to_build}" != x"no"; then
 	fi
   tools/cmake_call.sh
   sundialr_include=""
-  ## WebAssembly fix: link only the self-contained archives. SUNDIALS 7.x bakes
-  ## the shared object libraries (nvecserial, sunmatrix*, sunlinsol*, ...) into
-  ## every package archive, so libsundials_cvodes.a already provides nvecserial,
-  ## sunlinsoldense and sunmatrixdense. Naming them again added a second copy of
-  ## each object to the link, which only whole-archive linkers reject. Keep this
-  ## in sync with LINK_ORDER in src/scripts/dedupe_static_libs.sh.
-  sundialr_libs="-lsundials_idas -lsundials_cvodes -lsundials_core -lm"
+  sundialr_libs="-lsundials_idas -lsundials_cvodes -lsundials_nvecserial -lsundials_sunlinsoldense -lsundials_sunmatrixdense -lsundials_core -lm"
   ## tools/remove_static_libs.sh
 fi
 ## Now use all the values
