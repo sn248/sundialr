@@ -65,6 +65,26 @@ if [ $? -ne 0 ]; then
 fi
 cd ..
 
+# WebAssembly fix: SUNDIALS 7.x bakes the shared object libraries (nvecserial,
+# sunmatrix*, sunlinsol*, ...) into every package archive, so libsundials_idas.a
+# and libsundials_cvodes.a ship duplicate copies of the same objects. Native ld
+# extracts archive members on demand and ignores the extras, but Emscripten links
+# the package .so as a side module with --whole-archive and every copy collides
+# ("wasm-ld: error: duplicate symbol: N_VNewEmpty_Serial"). Strip the duplicates
+# so each object is defined exactly once.
+#
+# Its exit status is deliberately NOT checked, and the script always exits 0
+# anyway: it runs after `make install` but before the cleanup at the end of this
+# file, so aborting here strands sundials-src/ and sundials-build/ in the source
+# tree, which then ship inside the tarball and break the *next* build in a way
+# that points at cran_patches.sh (this is what commit 050c575 did to Windows and
+# macOS). A skipped dedupe leaves only the wasm build broken.
+#
+# AR/RANLIB are set by scripts/r_config.sh above but not exported, so pass them
+# through explicitly - a cross build needs its own archiver (emar/emranlib), as
+# host ranlib cannot index wasm objects.
+AR="${AR}" RANLIB="${RANLIB}" sh ./scripts/dedupe_static_libs.sh ../inst/lib
+
 # Reproducibility fix: cmake stamps the generated sundials_config.h with the
 # compiler, its full flag list and a build timestamp. Those differ on every
 # machine and every run, so this header - which is committed, like the rest of

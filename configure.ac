@@ -26,8 +26,22 @@ if test x"${need_to_build}" != x"no"; then
 		. src/scripts/cmake_config.sh
 	fi
   tools/cmake_call.sh
+  ## cmake_call.sh exits non-zero on every failure it detects, but its status was
+  ## previously ignored, so a failed SUNDIALS build let configure report success
+  ## and surfaced much later as "cannot find -lsundials_idas" at link time - which
+  ## reads like a bad link line rather than a build that never happened. Fail here
+  ## instead, where the real error is still on screen.
+  if test $? -ne 0; then
+    AC_MSG_ERROR([building the bundled SUNDIALS libraries failed; see the output above])
+  fi
   sundialr_include=""
-  sundialr_libs="-lsundials_idas -lsundials_cvodes -lsundials_nvecserial -lsundials_sunlinsoldense -lsundials_sunmatrixdense -lsundials_core -lm"
+  ## WebAssembly fix: link only the self-contained archives. SUNDIALS 7.x bakes
+  ## the shared object libraries (nvecserial, sunmatrix*, sunlinsol*, ...) into
+  ## every package archive, so libsundials_cvodes.a already provides nvecserial,
+  ## sunlinsoldense and sunmatrixdense. Naming them again added a second copy of
+  ## each object to the link, which only whole-archive linkers reject. Keep this
+  ## in sync with LINK_ORDER in src/scripts/dedupe_static_libs.sh.
+  sundialr_libs="-lsundials_idas -lsundials_cvodes -lsundials_core -lm"
   ## tools/remove_static_libs.sh
 fi
 ## Now use all the values

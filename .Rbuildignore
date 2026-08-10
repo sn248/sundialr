@@ -17,3 +17,5 @@ cran-comments.md
 ^\.positai$
 ^dev$
 ^revdep$
+^src/sundials-src$
+^src/sundials-build$

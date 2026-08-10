@@ -2,6 +2,12 @@
 
 rm -fr src/*.o src/*.so autom4te.cache config.log config.status inst/lib/*.a
 rm -fr src/sundials
+# Both are removed at the end of tools/cmake_call.sh on a successful build, so
+# these only matter when it failed partway. R CMD build installs the package to
+# build vignettes, which runs configure in the source directory, so without this
+# a failed build leaves them behind for the next run to trip over.
+rm -fr src/sundials-src
+rm -fr src/sundials-build
 rm -fr src/Makevars
 rm -fr inst/lib/cmake
 rm -f configure~
