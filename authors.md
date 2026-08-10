@@ -14,7 +14,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/sn248/sundialr/blob/v0.2.0/inst/CITATION)
+[`inst/CITATION`](https://github.com/sn248/sundialr/blob/master/inst/CITATION)
 
 Satyaprakash Nayak (2023) The sundialr package: An Interface to
 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers.
