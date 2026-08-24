@@ -91,9 +91,9 @@
  *   sundialr_cvode_free(m);
  *
  * History: sundialr_cvode_set_udata and sundialr_cvode_reset_stats were added
- * after the first 0.2.0 API cut. Both are additive and binary-compatible, so
+ * in sundialr 0.2.1. Both are additive and binary-compatible, so
  * SUNDIALR_ABI_VERSION stays 1 (it moves only on a breaking change); a consumer
- * that needs them should require the sundialr version that has them.
+ * that needs them should require sundialr >= 0.2.1.
  */
 
 #ifdef __cplusplus
