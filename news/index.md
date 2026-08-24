@@ -1,5 +1,32 @@
 # Changelog
 
+## sundialr v0.2.1
+
+- **New feature**: two additions to the C API for host loops that drive
+  many small solves. `sundialr_cvode_set_udata()` replaces the
+  callback-data pointer on an existing handle, so one handle can serve
+  many parameter sets — a population of subjects — instead of paying a
+  create/free cycle (`SUNContext`, `cvode_mem`, matrix and linear solver
+  allocations) per set. `sundialr_cvode_reset_stats()` zeroes the
+  accumulated step count so `sundialr_cvode_get_num_steps()` can report
+  per-subject counts from a shared handle. Both are additive and
+  binary-compatible, so `SUNDIALR_ABI_VERSION` stays 1
+- Fixed `sundialr_cvode_get_num_steps()` under the reinit-per-segment
+  pattern: `CVodeReInit` zeroes `CVODE`’s internal step counter, so the
+  count previously restarted at every `sundialr_cvode_reinit()` and
+  never reflected more than the current segment, despite being
+  documented as a running total. The handle now accumulates the count
+  across reinits, counting from `create()` or the last `reset_stats()`
+- The C API’s handle-reuse and thread-safety contracts are now
+  documented in `sundialr_capi.h` and pinned by tests: after the first
+  `reinit`+`solve` cycle, further `reinit`/`solve` calls on a handle
+  perform no heap allocation (a tight-loop test drives 10^4 segments and
+  checks the state buffer is never reallocated), and distinct handles —
+  each owning its own `SUNContext` and error record, with no global
+  mutable state and no R API on any entry point — may be driven from
+  concurrent threads, one handle per thread (pinned by a two-thread
+  test)
+
 ## sundialr v0.2.0
 
 CRAN release: 2026-08-07
@@ -39,30 +66,6 @@ CRAN release: 2026-08-07
   than throwing across the foreign call boundary. It lets `CVODE` be
   embedded as an integrator inside another package’s own solve loop; the
   existing `R` interface is unchanged
-- **New feature**: two additions to the C API for host loops that drive
-  many small solves. `sundialr_cvode_set_udata()` replaces the
-  callback-data pointer on an existing handle, so one handle can serve
-  many parameter sets — a population of subjects — instead of paying a
-  create/free cycle (`SUNContext`, `cvode_mem`, matrix and linear solver
-  allocations) per set. `sundialr_cvode_reset_stats()` zeroes the
-  accumulated step count so `sundialr_cvode_get_num_steps()` can report
-  per-subject counts from a shared handle. Both are additive and
-  binary-compatible, so `SUNDIALR_ABI_VERSION` stays 1
-- Fixed `sundialr_cvode_get_num_steps()` under the reinit-per-segment
-  pattern: `CVodeReInit` zeroes `CVODE`’s internal step counter, so the
-  count previously restarted at every `sundialr_cvode_reinit()` and
-  never reflected more than the current segment, despite being
-  documented as a running total. The handle now accumulates the count
-  across reinits, counting from `create()` or the last `reset_stats()`
-- The C API’s handle-reuse and thread-safety contracts are now
-  documented in `sundialr_capi.h` and pinned by tests: after the first
-  `reinit`+`solve` cycle, further `reinit`/`solve` calls on a handle
-  perform no heap allocation (a tight-loop test drives 10^4 segments and
-  checks the state buffer is never reallocated), and distinct handles —
-  each owning its own `SUNContext` and error record, with no global
-  mutable state and no R API on any entry point — may be driven from
-  concurrent threads, one handle per thread (pinned by a two-thread
-  test)
 - **New feature**:
   [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
   accepts an optional `sensitivity` argument, an `R` function giving the
