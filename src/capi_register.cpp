@@ -26,9 +26,11 @@ void register_capi() {
   R_RegisterCCallable("sundialr", "sundialr_cvode_set_max_steps",  (DL_FUNC) sundialr_cvode_set_max_steps);
   R_RegisterCCallable("sundialr", "sundialr_cvode_set_max_step",   (DL_FUNC) sundialr_cvode_set_max_step);
   R_RegisterCCallable("sundialr", "sundialr_cvode_set_min_step",   (DL_FUNC) sundialr_cvode_set_min_step);
+  R_RegisterCCallable("sundialr", "sundialr_cvode_set_udata",  (DL_FUNC) sundialr_cvode_set_udata);
   R_RegisterCCallable("sundialr", "sundialr_cvode_reinit",     (DL_FUNC) sundialr_cvode_reinit);
   R_RegisterCCallable("sundialr", "sundialr_cvode_solve",      (DL_FUNC) sundialr_cvode_solve);
   R_RegisterCCallable("sundialr", "sundialr_cvode_get_num_steps", (DL_FUNC) sundialr_cvode_get_num_steps);
+  R_RegisterCCallable("sundialr", "sundialr_cvode_reset_stats", (DL_FUNC) sundialr_cvode_reset_stats);
   R_RegisterCCallable("sundialr", "sundialr_cvode_last_err",   (DL_FUNC) sundialr_cvode_last_err);
   R_RegisterCCallable("sundialr", "sundialr_abi_version",      (DL_FUNC) sundialr_abi_version);
 }

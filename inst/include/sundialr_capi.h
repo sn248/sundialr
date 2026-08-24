@@ -52,15 +52,48 @@
  *     and copies the state into the caller's buffer. One handle is meant to be
  *     reused across many segments via reinit(), the supported CVODE pattern.
  *
+ * Reuse and allocation guarantee:
+ *   After the first reinit()+solve() cycle on a handle, further reinit() and
+ *   solve() calls perform no heap allocation. The wrapper's reinit copies y0
+ *   into the existing state vector and calls CVodeReInit, which SUNDIALS
+ *   documents (and its source confirms) as resetting counters and reusing the
+ *   memory allocated by CVodeInit; the linear solver's saved-Jacobian matrix is
+ *   cloned once, on the first solve, and reused thereafter. So a host loop
+ *   issuing 1e4-1e5 small reinit+solve segments per fit pays the allocation
+ *   cost once at create()/first solve, never per segment. The one exception is
+ *   a FAILING call, which may allocate to store the message that
+ *   sundialr_cvode_last_err() returns. This guarantee is pinned by the tight-
+ *   loop test in tests/testthat/test-capi.r.
+ *
+ * Thread-safety:
+ *   One handle per concurrent solve. Every piece of mutable state - the
+ *   SUNContext (SUNDIALS 6+ is designed around per-thread contexts), cvode_mem,
+ *   state vector, matrix/linear solver, tolerance/step configuration, udata
+ *   pointer, error record and message - lives inside the handle; the file has
+ *   no global mutable state, the callback thunks are stateless, and no entry
+ *   point calls the R API. Distinct handles may therefore be driven from
+ *   different threads simultaneously (each thread its own handle), as parallel
+ *   host workers do. A single handle must NOT be shared between threads without
+ *   external locking. Callbacks run on the thread that called solve(); a
+ *   callback that touches R must only ever run on the main R thread.
+ *
  * Typical use:
  *   void* m = sundialr_cvode_create(neq, udata);
  *   sundialr_cvode_set_rhs(m, my_rhs);
  *   sundialr_cvode_set_tol_scalar(m, 1e-6, 1e-8);
  *   sundialr_cvode_set_max_steps(m, 5000);
- *   for each segment:
- *     sundialr_cvode_reinit(m, t0, y0);       // only when the state jumps
- *     sundialr_cvode_solve (m, tout, y, &tr); // check return < 0
+ *   for each subject:                          // one handle serves them all
+ *     sundialr_cvode_set_udata(m, subj);       // repoint the callback data
+ *     sundialr_cvode_reset_stats(m);           // per-subject step counts
+ *     for each segment:
+ *       sundialr_cvode_reinit(m, t0, y0);      // only when the state jumps
+ *       sundialr_cvode_solve (m, tout, y, &tr); // check return < 0
  *   sundialr_cvode_free(m);
+ *
+ * History: sundialr_cvode_set_udata and sundialr_cvode_reset_stats were added
+ * after the first 0.2.0 API cut. Both are additive and binary-compatible, so
+ * SUNDIALR_ABI_VERSION stays 1 (it moves only on a breaking change); a consumer
+ * that needs them should require the sundialr version that has them.
  */
 
 #ifdef __cplusplus
@@ -140,6 +173,13 @@ int sundialr_cvode_set_max_steps(void* m, long mxsteps);
 int sundialr_cvode_set_max_step(void* m, double hmax);
 int sundialr_cvode_set_min_step(void* m, double hmin);
 
+/* Replace the udata pointer handed to every callback. Takes effect from the
+ * next callback invocation; no reinit is required (though a host loop will
+ * typically follow it with one, since new callback data usually means a new
+ * trajectory). Lets one handle serve many parameter sets - e.g. a population
+ * of subjects - instead of paying a create()/free() cycle per set. */
+int sundialr_cvode_set_udata(void* m, void* udata);
+
 /* --- Integration ----------------------------------------------------------- */
 
 /* Set the state to y0 (length neq) and (re)start the integrator at t0. The first
@@ -156,8 +196,16 @@ int sundialr_cvode_solve(void* m, double tout, double* y, double* treached);
 
 /* --- Introspection --------------------------------------------------------- */
 
-/* Total internal steps taken since the first reinit, or -1 if unavailable. */
+/* Total internal steps taken since create() or the last reset_stats(),
+ * accumulated ACROSS reinit() calls (CVodeReInit zeroes CVODE's own counter, so
+ * the handle carries the running sum over segments). Returns -1 before the
+ * first reinit. */
 long sundialr_cvode_get_num_steps(void* m);
+
+/* Zero the accumulated step count, so get_num_steps() counts from here - e.g.
+ * at a subject boundary, for per-subject step counts from a shared handle.
+ * May be called at any point, including mid-segment. */
+int sundialr_cvode_reset_stats(void* m);
 
 /* The message recorded for the most recent failure, or NULL if none. The string
  * is owned by the handle and valid until the next entry point or free(). */

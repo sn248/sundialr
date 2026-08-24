@@ -75,3 +75,51 @@ test_that("introspection: ABI version and step count", {
   expect_equal(abi(), 1L)
   expect_true(numsteps(8.0, 3.0, 0.6) > 0)
 })
+
+test_that("set_udata lets one handle serve several parameter sets", {
+  # Subject 1 solves with k1; set_udata repoints the callback data at k2 and
+  # subject 2 solves on the SAME handle. Each column must match its own closed
+  # form - if the old pointer were still read, column 2 would reproduce column 1.
+  setud <- sundialr:::.capi_test_set_udata
+  times <- seq(0, 8, by = 0.5)
+  y0 <- 3; k1 <- 0.6; k2 <- 1.7
+  num <- setud(times, y0, k1, k2)
+  expect_equal(num[, 1], y0 * exp(-k1 * times), tolerance = 1e-6)
+  expect_equal(num[, 2], y0 * exp(-k2 * times), tolerance = 1e-6)
+})
+
+test_that("a tight reinit+solve loop reuses the handle's memory and stays exact", {
+  # The handle-reuse guarantee at host-loop volume: 1e4 reinit+solve segments
+  # (a fit's order of magnitude) on one handle. ptr_stable pins that the state
+  # buffer is never reallocated; y_end pins correctness after 1e4 restarts.
+  tight <- sundialr:::.capi_test_tight_loop
+  y0 <- 3; k <- 0.6
+  res <- tight(10000L, 0.001, y0, k)
+  expect_true(res$ptr_stable)
+  expect_equal(res$y_end, y0 * exp(-k * res$t_end), tolerance = 1e-6)
+  # get_num_steps accumulates across reinits (CVodeReInit zeroes CVODE's own
+  # counter, so without the handle's running sum steps_end would be ~0 here).
+  expect_true(res$steps_mid > 100)
+  expect_true(res$steps_end > res$steps_mid)
+})
+
+test_that("reset_stats zeroes the step count and counting resumes", {
+  rstats <- sundialr:::.capi_test_reset_stats
+  res <- rstats()
+  expect_true(res$before > 0)             # steps taken before the reset
+  expect_equal(res$at_reset, 0)           # reads zero immediately, mid-segment
+  expect_true(res$after_solve > 0)        # resumes counting
+  expect_true(res$after_reinit > res$after_solve)  # and accumulates across reinit
+})
+
+test_that("independent handles can be driven from concurrent threads", {
+  # One handle per thread, each with its own SUNContext and no shared state -
+  # the documented thread-safety contract. Both trajectories must match their
+  # closed forms after running simultaneously.
+  conc <- sundialr:::.capi_test_concurrent
+  times <- seq(0, 8, by = 0.25)
+  y0 <- 3; k1 <- 0.6; k2 <- 1.7
+  res <- conc(times, y0, k1, k2)
+  expect_equal(res$y1, y0 * exp(-k1 * times), tolerance = 1e-6)
+  expect_equal(res$y2, y0 * exp(-k2 * times), tolerance = 1e-6)
+})

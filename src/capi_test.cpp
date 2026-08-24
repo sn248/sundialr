@@ -13,7 +13,14 @@
 
 #include <Rcpp.h>
 #include <string>
+#include <thread>
+#include <vector>
 #include <sundialr_capi.h>
+
+// White-box hook from sundialr_capi.cpp (deliberately not in the public
+// header): the address of the handle's state buffer, for the tight-loop
+// no-reallocation check below.
+extern "C" const void* sundialr_cvode_state_ptr_internal(void* m);
 
 using namespace Rcpp;
 
@@ -200,4 +207,175 @@ bool capi_test_clean_err() {
 // [[Rcpp::export(".capi_test_abi")]]
 int capi_test_abi() {
   return sundialr_abi_version();
+}
+
+// One handle serving two "subjects": solve decay with k1, repoint the callback
+// data at k2 with set_udata, reinit and solve again. Column j holds subject
+// j's trajectory; each must match its own closed form, which fails if the old
+// udata pointer is still being read after the switch.
+// [[Rcpp::export(".capi_test_set_udata")]]
+NumericMatrix capi_test_set_udata(NumericVector times, double y0,
+                                  double k1, double k2) {
+  int n = times.size();
+  double ka = k1, kb = k2;
+  void* m = sundialr_cvode_create(1, &ka);
+  if (!m) stop("sundialr_cvode_create returned NULL");
+
+  sundialr_cvode_set_rhs(m, decay_rhs);
+  sundialr_cvode_set_tol_scalar(m, 1e-10, 1e-12);
+  sundialr_cvode_set_max_steps(m, 100000);
+
+  NumericMatrix out(n, 2);
+  for (int subj = 0; subj < 2; subj++) {
+    if (subj == 1) {
+      if (sundialr_cvode_set_udata(m, &kb) != 0) capi_test_fail(m, "set_udata failed");
+    }
+    double ycur = y0;
+    out(0, subj) = ycur;
+    if (sundialr_cvode_reinit(m, times[0], &ycur) < 0) capi_test_fail(m, "reinit failed");
+    for (int i = 1; i < n; i++) {
+      double yo = 0.0, tr = 0.0;
+      if (sundialr_cvode_solve(m, times[i], &yo, &tr) < 0) capi_test_fail(m, "solve failed");
+      out(i, subj) = yo;
+    }
+  }
+
+  sundialr_cvode_free(m);
+  return out;
+}
+
+// The handle-reuse guarantee: nseg reinit+solve segments on one handle, the
+// dose/event cadence of a host fitting loop at realistic volume. Checks that
+// the state buffer's address never changes (direct evidence the state vector
+// is not reallocated; CVodeReInit's no-malloc contract covers the rest), that
+// the trajectory stays exact, and that get_num_steps accumulates across the
+// reinits instead of resetting with CVODE's internal counter.
+// [[Rcpp::export(".capi_test_tight_loop")]]
+List capi_test_tight_loop(int nseg, double dt, double y0, double k) {
+  double kk = k;
+  void* m = sundialr_cvode_create(1, &kk);
+  if (!m) stop("sundialr_cvode_create returned NULL");
+
+  sundialr_cvode_set_rhs(m, decay_rhs);
+  sundialr_cvode_set_tol_scalar(m, 1e-10, 1e-12);
+  sundialr_cvode_set_max_steps(m, 100000);
+
+  double t = 0.0, ycur = y0;
+  if (sundialr_cvode_reinit(m, t, &ycur) < 0) capi_test_fail(m, "reinit failed");
+  const void* p0 = sundialr_cvode_state_ptr_internal(m);
+  bool ptr_stable = (p0 != NULL);
+
+  long steps_mid = -1;
+  for (int i = 0; i < nseg; i++) {
+    double yo = 0.0, tr = 0.0;
+    if (sundialr_cvode_solve(m, t + dt, &yo, &tr) < 0) capi_test_fail(m, "solve failed");
+    t += dt;
+    ycur = yo;
+    if (sundialr_cvode_reinit(m, t, &ycur) < 0) capi_test_fail(m, "reinit failed");
+    if (sundialr_cvode_state_ptr_internal(m) != p0) ptr_stable = false;
+    if (i == nseg / 2) steps_mid = sundialr_cvode_get_num_steps(m);
+  }
+  long steps_end = sundialr_cvode_get_num_steps(m);
+
+  sundialr_cvode_free(m);
+  return List::create(_["y_end"]      = ycur,
+                      _["t_end"]      = t,
+                      _["ptr_stable"] = ptr_stable,
+                      _["steps_mid"]  = (double) steps_mid,
+                      _["steps_end"]  = (double) steps_end);
+}
+
+// reset_stats semantics: the count reads zero immediately after a reset (even
+// mid-segment), then resumes accumulating, including across a later reinit.
+// [[Rcpp::export(".capi_test_reset_stats")]]
+List capi_test_reset_stats() {
+  double kk = 0.6;
+  void* m = sundialr_cvode_create(1, &kk);
+  if (!m) stop("sundialr_cvode_create returned NULL");
+
+  sundialr_cvode_set_rhs(m, decay_rhs);
+  sundialr_cvode_set_tol_scalar(m, 1e-10, 1e-12);
+  sundialr_cvode_set_max_steps(m, 100000);
+
+  double ycur = 3.0, yo = 0.0, tr = 0.0;
+  if (sundialr_cvode_reinit(m, 0.0, &ycur) < 0) capi_test_fail(m, "reinit failed");
+  if (sundialr_cvode_solve(m, 1.0, &yo, &tr) < 0) capi_test_fail(m, "solve failed");
+  long before = sundialr_cvode_get_num_steps(m);
+
+  if (sundialr_cvode_reset_stats(m) != 0) capi_test_fail(m, "reset_stats failed");
+  long at_reset = sundialr_cvode_get_num_steps(m);   // mid-segment: must be 0
+
+  if (sundialr_cvode_solve(m, 2.0, &yo, &tr) < 0) capi_test_fail(m, "solve failed");
+  long after_solve = sundialr_cvode_get_num_steps(m);
+
+  if (sundialr_cvode_reinit(m, 2.0, &yo) < 0) capi_test_fail(m, "reinit failed");
+  if (sundialr_cvode_solve(m, 3.0, &yo, &tr) < 0) capi_test_fail(m, "solve failed");
+  long after_reinit = sundialr_cvode_get_num_steps(m);
+
+  sundialr_cvode_free(m);
+  return List::create(_["before"]       = (double) before,
+                      _["at_reset"]     = (double) at_reset,
+                      _["after_solve"]  = (double) after_solve,
+                      _["after_reinit"] = (double) after_reinit);
+}
+
+// --- Concurrency: two handles driven from two std::threads -----------------
+// Everything a thread touches is preallocated here and owned by its job; the
+// thread bodies call ONLY the C API (which never throws and never calls the R
+// API), so no R interaction happens off the main thread. Two threads, matching
+// CRAN's limit on cores used by tests.
+
+namespace {
+
+struct capi_thread_job {
+  double k = 0.0;
+  double y0 = 0.0;
+  std::vector<double> times;
+  std::vector<double> out;
+  int status = 0;                     // 0 = ok, < 0 = first failing code
+};
+
+void capi_thread_run(capi_thread_job* job) {
+  void* m = sundialr_cvode_create(1, &job->k);
+  if (!m) { job->status = -100; return; }
+  sundialr_cvode_set_rhs(m, decay_rhs);
+  sundialr_cvode_set_tol_scalar(m, 1e-10, 1e-12);
+  sundialr_cvode_set_max_steps(m, 100000);
+
+  double ycur = job->y0;
+  job->out[0] = ycur;
+  int flag = sundialr_cvode_reinit(m, job->times[0], &ycur);
+  if (flag < 0) { job->status = flag; sundialr_cvode_free(m); return; }
+
+  for (size_t i = 1; i < job->times.size(); i++) {
+    double yo = 0.0, tr = 0.0;
+    flag = sundialr_cvode_solve(m, job->times[i], &yo, &tr);
+    if (flag < 0) { job->status = flag; break; }
+    job->out[i] = yo;
+    // Reinit every segment so the reinit path runs concurrently too.
+    flag = sundialr_cvode_reinit(m, job->times[i], &yo);
+    if (flag < 0) { job->status = flag; break; }
+  }
+  sundialr_cvode_free(m);
+}
+
+}  // namespace
+
+// [[Rcpp::export(".capi_test_concurrent")]]
+List capi_test_concurrent(NumericVector times, double y0, double k1, double k2) {
+  int n = times.size();
+  capi_thread_job j1, j2;
+  j1.k = k1; j1.y0 = y0; j1.times.assign(times.begin(), times.end()); j1.out.assign(n, 0.0);
+  j2.k = k2; j2.y0 = y0; j2.times.assign(times.begin(), times.end()); j2.out.assign(n, 0.0);
+
+  std::thread t1(capi_thread_run, &j1);
+  std::thread t2(capi_thread_run, &j2);
+  t1.join();
+  t2.join();
+
+  if (j1.status < 0) stop("thread 1 failed with code " + std::to_string(j1.status));
+  if (j2.status < 0) stop("thread 2 failed with code " + std::to_string(j2.status));
+
+  return List::create(_["y1"] = NumericVector(j1.out.begin(), j1.out.end()),
+                      _["y2"] = NumericVector(j2.out.begin(), j2.out.end()));
 }

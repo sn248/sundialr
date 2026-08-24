@@ -29,6 +29,22 @@
     .Call('_sundialr_capi_test_abi', PACKAGE = 'sundialr')
 }
 
+.capi_test_set_udata <- function(times, y0, k1, k2) {
+    .Call('_sundialr_capi_test_set_udata', PACKAGE = 'sundialr', times, y0, k1, k2)
+}
+
+.capi_test_tight_loop <- function(nseg, dt, y0, k) {
+    .Call('_sundialr_capi_test_tight_loop', PACKAGE = 'sundialr', nseg, dt, y0, k)
+}
+
+.capi_test_reset_stats <- function() {
+    .Call('_sundialr_capi_test_reset_stats', PACKAGE = 'sundialr')
+}
+
+.capi_test_concurrent <- function(times, y0, k1, k2) {
+    .Call('_sundialr_capi_test_concurrent', PACKAGE = 'sundialr', times, y0, k1, k2)
+}
+
 #'cvode
 #'
 #' CVODE solver to solve stiff ODEs

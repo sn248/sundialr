@@ -93,6 +93,58 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// capi_test_set_udata
+NumericMatrix capi_test_set_udata(NumericVector times, double y0, double k1, double k2);
+RcppExport SEXP _sundialr_capi_test_set_udata(SEXP timesSEXP, SEXP y0SEXP, SEXP k1SEXP, SEXP k2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type times(timesSEXP);
+    Rcpp::traits::input_parameter< double >::type y0(y0SEXP);
+    Rcpp::traits::input_parameter< double >::type k1(k1SEXP);
+    Rcpp::traits::input_parameter< double >::type k2(k2SEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_set_udata(times, y0, k1, k2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// capi_test_tight_loop
+List capi_test_tight_loop(int nseg, double dt, double y0, double k);
+RcppExport SEXP _sundialr_capi_test_tight_loop(SEXP nsegSEXP, SEXP dtSEXP, SEXP y0SEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type nseg(nsegSEXP);
+    Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
+    Rcpp::traits::input_parameter< double >::type y0(y0SEXP);
+    Rcpp::traits::input_parameter< double >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_tight_loop(nseg, dt, y0, k));
+    return rcpp_result_gen;
+END_RCPP
+}
+// capi_test_reset_stats
+List capi_test_reset_stats();
+RcppExport SEXP _sundialr_capi_test_reset_stats() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(capi_test_reset_stats());
+    return rcpp_result_gen;
+END_RCPP
+}
+// capi_test_concurrent
+List capi_test_concurrent(NumericVector times, double y0, double k1, double k2);
+RcppExport SEXP _sundialr_capi_test_concurrent(SEXP timesSEXP, SEXP y0SEXP, SEXP k1SEXP, SEXP k2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type times(timesSEXP);
+    Rcpp::traits::input_parameter< double >::type y0(y0SEXP);
+    Rcpp::traits::input_parameter< double >::type k1(k1SEXP);
+    Rcpp::traits::input_parameter< double >::type k2(k2SEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_concurrent(times, y0, k1, k2));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cvode
 NumericMatrix cvode(NumericVector time_vector, NumericVector IC, SEXP input_function, NumericVector Parameters, double reltolerance, NumericVector abstolerance, Nullable<Function> jacobian);
 RcppExport SEXP _sundialr_cvode(SEXP time_vectorSEXP, SEXP ICSEXP, SEXP input_functionSEXP, SEXP ParametersSEXP, SEXP reltoleranceSEXP, SEXP abstoleranceSEXP, SEXP jacobianSEXP) {
@@ -175,6 +227,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sundialr_capi_test_num_steps", (DL_FUNC) &_sundialr_capi_test_num_steps, 3},
     {"_sundialr_capi_test_clean_err", (DL_FUNC) &_sundialr_capi_test_clean_err, 0},
     {"_sundialr_capi_test_abi", (DL_FUNC) &_sundialr_capi_test_abi, 0},
+    {"_sundialr_capi_test_set_udata", (DL_FUNC) &_sundialr_capi_test_set_udata, 4},
+    {"_sundialr_capi_test_tight_loop", (DL_FUNC) &_sundialr_capi_test_tight_loop, 4},
+    {"_sundialr_capi_test_reset_stats", (DL_FUNC) &_sundialr_capi_test_reset_stats, 0},
+    {"_sundialr_capi_test_concurrent", (DL_FUNC) &_sundialr_capi_test_concurrent, 4},
     {"_sundialr_cvode", (DL_FUNC) &_sundialr_cvode, 7},
     {"_sundialr_cvodes", (DL_FUNC) &_sundialr_cvodes, 10},
     {"_sundialr_cvsolve", (DL_FUNC) &_sundialr_cvsolve, 8},

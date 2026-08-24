@@ -82,6 +82,13 @@ struct sundialr_cvode_handle {
 
   bool initialized = false;           // has CVodeInit run yet?
 
+  // Steps completed in segments already closed by a reinit, since create() or
+  // the last reset_stats(). CVodeReInit zeroes CVODE's internal counter, so
+  // get_num_steps() reports nst_accum + the current segment's internal count.
+  // reset_stats() mid-segment sets nst_accum to minus the internal count, which
+  // makes the sum read zero now and stay consistent when the segment closes.
+  long nst_accum = 0;
+
   // Tolerance configuration, applied on the first reinit and immediately on any
   // later change. 0 = none set yet (a scalar default is used), 1 = scalar,
   // 2 = per-equation vectors (via the error-weight function).
@@ -314,6 +321,16 @@ int sundialr_cvode_set_max_step(void* m, double hmax) {
   })
 }
 
+int sundialr_cvode_set_udata(void* m, void* udata) {
+  sundialr_cvode_handle* h = (sundialr_cvode_handle*) m;
+  if (!h) return SUNDIALR_CV_MEM_NULL;
+  // The callback thunks read h->udata at call time (CVodeSetUserData points at
+  // the handle itself, never at udata), so this needs no CVODE call and takes
+  // effect from the next callback invocation.
+  h->udata = udata;
+  return SUNDIALR_CV_SUCCESS;
+}
+
 int sundialr_cvode_set_min_step(void* m, double hmin) {
   sundialr_cvode_handle* h = (sundialr_cvode_handle*) m;
   if (!h) return SUNDIALR_CV_MEM_NULL;
@@ -363,8 +380,14 @@ int sundialr_cvode_reinit(void* m, double t0, const double* y0) {
       if (flag < 0) { capi_capture_err(h, flag); return flag; }
       h->initialized = true;
     } else {
+      // Bank the closing segment's steps before CVodeReInit zeroes the counter,
+      // so get_num_steps() stays cumulative across segments. Only after the
+      // reinit succeeds - a failed one leaves the counter running.
+      long seg_ns = 0;
+      int  ns_ok  = CVodeGetNumSteps(h->cvode_mem, &seg_ns);
       flag = CVodeReInit(h->cvode_mem, t0, h->y);
       if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (ns_ok >= 0) h->nst_accum += seg_ns;
     }
     return SUNDIALR_CV_SUCCESS;
   })
@@ -399,7 +422,29 @@ long sundialr_cvode_get_num_steps(void* m) {
   if (!h || !h->initialized) return -1;
   long ns = 0;
   if (CVodeGetNumSteps(h->cvode_mem, &ns) < 0) return -1;
-  return ns;
+  return h->nst_accum + ns;
+}
+
+int sundialr_cvode_reset_stats(void* m) {
+  sundialr_cvode_handle* h = (sundialr_cvode_handle*) m;
+  if (!h) return SUNDIALR_CV_MEM_NULL;
+  if (!h->initialized) { h->nst_accum = 0; return SUNDIALR_CV_SUCCESS; }
+  long ns = 0;
+  if (CVodeGetNumSteps(h->cvode_mem, &ns) < 0) return SUNDIALR_CV_MEM_FAIL;
+  // Offset out the current segment's running count (see the field comment).
+  h->nst_accum = -ns;
+  return SUNDIALR_CV_SUCCESS;
+}
+
+// Internal white-box hook for the tight-loop test: the address of the state
+// vector's data buffer, whose stability across 1e4 reinit+solve cycles is the
+// direct evidence for the no-reallocation guarantee in sundialr_capi.h. Not
+// declared in the public header and not registered as a CCallable - it is
+// reached only by src/capi_test.cpp via a local extern declaration.
+const void* sundialr_cvode_state_ptr_internal(void* m) {
+  sundialr_cvode_handle* h = (sundialr_cvode_handle*) m;
+  if (!h || !h->y) return NULL;
+  return (const void*) N_VGetArrayPointer(h->y);
 }
 
 const char* sundialr_cvode_last_err(void* m) {
