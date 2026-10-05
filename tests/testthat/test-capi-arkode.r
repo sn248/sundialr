@@ -123,3 +123,32 @@ test_that("independent ESDIRK handles can be driven from concurrent threads", {
   expect_equal(res$y1, 3 * exp(-0.6 * times), tolerance = 1e-6)
   expect_equal(res$y2, 3 * exp(-1.7 * times), tolerance = 1e-6)
 })
+
+test_that("ESDIRK reinit_cold leaves a used handle exactly as a new one", {
+  # Problem A is fast (k1 = 50), so the handle ends it with a step size and
+  # controller state that have nothing to do with problem B. A warm reinit
+  # (ARKodeReset) carries them into B; reinit_cold (ARKStepReInit) must not:
+  # its B trajectory is the new handle's, bit for bit.
+  cold <- sundialr:::.capi_test_arkode_cold
+  ta <- seq(0, 10, by = 0.5); tb <- seq(10, 30, by = 0.5)
+  for (jac in c(TRUE, FALSE)) for (tm in 1:2) {
+    r <- cold(ta, tb, p_a = c(50, 0.3), p_b = c(1, 0.3),
+              y_a = c(10, 0), y_b = c(5, 2), use_jac = jac, tol_mode = tm)
+    info <- sprintf("use_jac = %s, tol_mode = %d", jac, tm)
+    expect_identical(r$cold, r$fresh, info = info)
+    expect_identical(r$first_cold, r$fresh, info = info)
+    expect_false(identical(r$warm, r$fresh), info = info)   # the history reinit() keeps
+    expect_equal(r$warm, r$fresh, tolerance = 1e-6, info = info)
+    # the step count runs on across the cold reinit (banked, not restarted) ...
+    expect_equal(r$steps_cold_total, r$steps_a + r$steps_fresh, info = info)
+    expect_equal(r$steps_after_reset, 0, info = info)
+    # ... and 1000 cold reinit+solve cycles keep the handle's state buffer
+    expect_true(r$ptr_stable, info = info)
+  }
+  # and B is right: y1 = 5 e^{-(t-10)}, closed form for y2
+  t <- tb[-1] - 10
+  y1 <- 5 * exp(-t)
+  y2 <- 5 / (0.3 - 1) * (exp(-t) - exp(-0.3 * t)) + 2 * exp(-0.3 * t)
+  expect_equal(r$cold[, 1], y1, tolerance = 1e-6)
+  expect_equal(r$cold[, 2], y2, tolerance = 1e-6)
+})

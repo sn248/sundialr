@@ -179,6 +179,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// capi_test_arkode_cold
+List capi_test_arkode_cold(NumericVector times_a, NumericVector times_b, NumericVector p_a, NumericVector p_b, NumericVector y_a, NumericVector y_b, bool use_jac, int tol_mode);
+RcppExport SEXP _sundialr_capi_test_arkode_cold(SEXP times_aSEXP, SEXP times_bSEXP, SEXP p_aSEXP, SEXP p_bSEXP, SEXP y_aSEXP, SEXP y_bSEXP, SEXP use_jacSEXP, SEXP tol_modeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type times_a(times_aSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type times_b(times_bSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type p_a(p_aSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type p_b(p_bSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y_a(y_aSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y_b(y_bSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_jac(use_jacSEXP);
+    Rcpp::traits::input_parameter< int >::type tol_mode(tol_modeSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_arkode_cold(times_a, times_b, p_a, p_b, y_a, y_b, use_jac, tol_mode));
+    return rcpp_result_gen;
+END_RCPP
+}
 // capi_test_robertson
 NumericMatrix capi_test_robertson(NumericVector times, bool use_jac, int solver);
 RcppExport SEXP _sundialr_capi_test_robertson(SEXP timesSEXP, SEXP use_jacSEXP, SEXP solverSEXP) {
@@ -280,6 +298,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sundialr_capi_test_concurrent", (DL_FUNC) &_sundialr_capi_test_concurrent, 5},
     {"_sundialr_capi_test_arkode_method", (DL_FUNC) &_sundialr_capi_test_arkode_method, 5},
     {"_sundialr_capi_test_arkode_method_errors", (DL_FUNC) &_sundialr_capi_test_arkode_method_errors, 0},
+    {"_sundialr_capi_test_arkode_cold", (DL_FUNC) &_sundialr_capi_test_arkode_cold, 8},
     {"_sundialr_capi_test_robertson", (DL_FUNC) &_sundialr_capi_test_robertson, 3},
     {"_sundialr_cvode", (DL_FUNC) &_sundialr_cvode, 7},
     {"_sundialr_cvodes", (DL_FUNC) &_sundialr_cvodes, 10},

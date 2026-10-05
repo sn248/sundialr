@@ -20,8 +20,12 @@
 //     reinit rather than by create(). Configuration made before that is stored
 //     in the handle and applied then, as the CVODE half does for CVodeInit.
 //   - Later reinits use ARKodeReset, which, unlike CVodeReInit, keeps the step
-//     counter running. get_num_steps() is therefore the counter minus a base
-//     that reset_stats() moves, with no banking at reinit.
+//     counter running -- and also the step size and the error controller's
+//     history, so the next segment starts from where the last one left off.
+//     get_num_steps() is therefore the counter minus a base that
+//     reset_stats() moves. reinit_cold() is the full re-initialisation
+//     (ARKStepReInit), which clears that history as CVodeReInit does; it zeroes
+//     the counter, so it banks the steps taken before it.
 
 #include <cstring>
 #include <string>
@@ -87,7 +91,11 @@ struct sundialr_arkode_handle {
 
   // ARKodeReset keeps the step counter running across reinits, so the count
   // reported is the counter minus this base, which reset_stats() moves.
+  // ARKStepReInit (reinit_cold) zeroes the counter, so the steps taken before
+  // it are banked in nst_bank first, as the CVODE half banks around
+  // CVodeReInit. get_num_steps() = nst_bank + counter - nst_base.
   long nst_base = 0;
+  long nst_bank = 0;
 
   // Tolerance configuration, as in the CVODE handle: 0 = none set (scalar
   // defaults), 1 = scalar, 2 = per-equation vectors via the error weights.
@@ -354,6 +362,31 @@ int sundialr_arkode_reinit(void* m, double t0, const double* y0) {
   })
 }
 
+int sundialr_arkode_reinit_cold(void* m, double t0, const double* y0) {
+  sundialr_arkode_handle* h = (sundialr_arkode_handle*) m;
+  if (!h) return SUNDIALR_ARK_MEM_NULL;
+  // Before the integrator exists the first reinit is already a cold start.
+  if (!h->initialized) return sundialr_arkode_reinit(m, t0, y0);
+  CAPI_GUARD(h, SUNDIALR_ARK_MEM_FAIL, {
+    capi_clear_err(h);
+    double* yp = N_VGetArrayPointer(h->y);
+    for (int i = 0; i < h->neq; i++) yp[i] = y0[i];
+    // Bank the steps counted so far: ARKStepReInit zeroes ARKODE's counter.
+    long ns = 0;
+    if (ARKodeGetNumSteps(h->arkode_mem, &ns) >= 0) {
+      h->nst_bank += ns - h->nst_base;
+      h->nst_base  = 0;
+    }
+    // Implicit only, as in ark_first_init. ARKStepReInit re-runs ARKODE's
+    // FIRST_INIT: step sizes, controller, tolerance scale factor and counters
+    // are reset; the method, tolerances, step limits, Jacobian and linear
+    // solver are kept, and its vectors and tables are reused.
+    int flag = ARKStepReInit(h->arkode_mem, NULL, ark_rhs_thunk, t0, h->y);
+    if (flag < 0) { capi_capture_err(h, flag, "ARKODE"); return flag; }
+    return SUNDIALR_ARK_SUCCESS;
+  })
+}
+
 int sundialr_arkode_solve(void* m, double tout, double* y, double* treached) {
   sundialr_arkode_handle* h = (sundialr_arkode_handle*) m;
   if (!h) return SUNDIALR_ARK_MEM_NULL;
@@ -383,16 +416,17 @@ long sundialr_arkode_get_num_steps(void* m) {
   if (!h || !h->initialized) return -1;
   long ns = 0;
   if (ARKodeGetNumSteps(h->arkode_mem, &ns) < 0) return -1;
-  return ns - h->nst_base;
+  return h->nst_bank + ns - h->nst_base;
 }
 
 int sundialr_arkode_reset_stats(void* m) {
   sundialr_arkode_handle* h = (sundialr_arkode_handle*) m;
   if (!h) return SUNDIALR_ARK_MEM_NULL;
-  if (!h->initialized) { h->nst_base = 0; return SUNDIALR_ARK_SUCCESS; }
+  if (!h->initialized) { h->nst_base = 0; h->nst_bank = 0; return SUNDIALR_ARK_SUCCESS; }
   long ns = 0;
   if (ARKodeGetNumSteps(h->arkode_mem, &ns) < 0) return SUNDIALR_ARK_MEM_FAIL;
   h->nst_base = ns;
+  h->nst_bank = 0;
   return SUNDIALR_ARK_SUCCESS;
 }
 

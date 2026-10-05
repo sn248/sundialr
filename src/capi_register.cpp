@@ -45,6 +45,7 @@ void register_capi() {
   R_RegisterCCallable("sundialr", "sundialr_arkode_set_order", (DL_FUNC) sundialr_arkode_set_order);
   R_RegisterCCallable("sundialr", "sundialr_arkode_set_table_name", (DL_FUNC) sundialr_arkode_set_table_name);
   R_RegisterCCallable("sundialr", "sundialr_arkode_reinit", (DL_FUNC) sundialr_arkode_reinit);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_reinit_cold", (DL_FUNC) sundialr_arkode_reinit_cold);
   R_RegisterCCallable("sundialr", "sundialr_arkode_solve", (DL_FUNC) sundialr_arkode_solve);
   R_RegisterCCallable("sundialr", "sundialr_arkode_get_num_steps", (DL_FUNC) sundialr_arkode_get_num_steps);
   R_RegisterCCallable("sundialr", "sundialr_arkode_reset_stats", (DL_FUNC) sundialr_arkode_reset_stats);

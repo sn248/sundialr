@@ -242,8 +242,17 @@ int sundialr_abi_version(void);
  *   - Status codes are ARKODE's ARK_* values, mirrored as SUNDIALR_ARK_*. They
  *     coincide with SUNDIALR_CV_* from 0 to -11 and from -20 to -23, but not
  *     elsewhere: e.g. a constraint failure is -19 here and -15 in CVODE.
- *   - get_num_steps() needs no banking across reinits: ARKodeReset, unlike
- *     CVodeReInit, keeps ARKODE's step counter running.
+ *   - reinit() is WARM: ARKodeReset, unlike CVodeReInit, keeps ARKODE's step
+ *     size and error-controller history (and its step counter), so a segment
+ *     after a state jump starts at the step the last one ended with. That is
+ *     usually what a one-step method wants within one trajectory, but it makes
+ *     a handle reused for an unrelated problem -- the next subject of a
+ *     population -- depend on the problem it solved before. reinit_cold() is
+ *     the full re-initialisation (ARKStepReInit) and leaves the handle exactly
+ *     as a new one would be, so results do not depend on the handle's history.
+ *     Use it wherever CVodeReInit semantics are wanted.
+ *   - get_num_steps() is a running total across both kinds of reinit (cold
+ *     reinits bank the count, since ARKStepReInit zeroes ARKODE's counter).
  *
  * Typical use:
  *   void* m = sundialr_arkode_create(neq, udata);
@@ -254,8 +263,11 @@ int sundialr_abi_version(void);
  *   sundialr_arkode_solve (m, tout, y, &tr);    // check return < 0
  *   sundialr_arkode_free(m);
  *
- * History: added in sundialr 0.2.1. Additive and binary-compatible, so
- * SUNDIALR_ABI_VERSION stays 1; a consumer should require sundialr >= 0.2.1.
+ * History: added in sundialr 0.2.1 (reinit_cold() in the same release, after the
+ * other entry points). Additive and binary-compatible, so SUNDIALR_ABI_VERSION
+ * stays 1; a consumer should require sundialr >= 0.2.1, and one that must also
+ * run against an earlier 0.2.1 development build can probe for
+ * "sundialr_arkode_reinit_cold" before using it.
  * =========================================================================== */
 
 /* --- Status codes: numeric values identical to ARKODE's ARK_* macros ------- */
@@ -321,6 +333,13 @@ int sundialr_arkode_set_table_name(void* m, const char* name);
  * configures the integrator; later calls are ARKodeReset and keep every
  * setting. */
 int sundialr_arkode_reinit(void* m, double t0, const double* y0);
+
+/* Set the state to y0 and restart at t0 as a NEW handle would: a full
+ * re-initialisation (ARKStepReInit) that also clears the step size and the
+ * error controller's history, which reinit() keeps. Every setting is kept and
+ * the handle's memory reused. Before the first reinit it is the same as
+ * reinit(). The step count keeps running (see get_num_steps). */
+int sundialr_arkode_reinit_cold(void* m, double t0, const double* y0);
 
 /* Advance to tout and copy the state into y. Returns ARKODE's own code. */
 int sundialr_arkode_solve(void* m, double tout, double* y, double* treached);
