@@ -2,6 +2,24 @@
 
 ## sundialr v0.2.1
 
+- **New feature**: the C API gains a second integrator, `ARKODE` run as
+  a fully implicit ESDIRK method (singly diagonally implicit Runge-Kutta
+  with an explicit first stage) with Newton iteration and a dense linear
+  solver. Its `sundialr_arkode_*` entry points mirror the
+  `sundialr_cvode_*` ones one for one — the same callback types, handle
+  lifecycle, tolerance and step-size setters, `set_udata`, step
+  counting, and the same no-throw, no-allocation-on-reuse and
+  one-handle-per-thread contracts — so a host loop written against the
+  CVODE API can switch integrator by changing which entry points it
+  looks up. The method defaults to `ARKODE_ESDIRK436L2SA_6_3_4` (order
+  4); `sundialr_arkode_set_order()` picks ARKODE’s default ESDIRK of
+  order 2 to 5 and `sundialr_arkode_set_table_name()` any ARKODE DIRK
+  table by name. Status codes are ARKODE’s, mirrored as
+  `SUNDIALR_ARK_*`; they coincide with the CVODE codes for the common
+  failures but not everywhere. The addition is binary-compatible, so
+  `SUNDIALR_ABI_VERSION` stays 1. To support it the bundled build now
+  compiles `ARKODE`, with CRAN-compliance patches for the `stdout`
+  references in its parameter-printing paths
 - Updated the underlying SUNDIALS library to v7.9.0 (Sep 2026). The
   changes relevant to the bundled solvers are bug fixes: the
   `SUNNonlinearSolver_Auto` stiffness switch no longer moves to Newton

@@ -137,6 +137,10 @@ the vignette.
 ### Version 0.2.1
 
 - Updated the underlying `SUNDIALS` library to v7.9.0 (Sep 2026)
+- **New**: an ESDIRK integrator from `ARKODE` in the C API, as
+  `sundialr_arkode_*` entry points that mirror the `CVODE` ones, so
+  packages calling the C API can choose a one-step implicit Runge-Kutta
+  method instead of BDF
 - **New**: two additions to the C API, `sundialr_cvode_set_udata()` and
   `sundialr_cvode_reset_stats()`, so one solver handle can be reused
   across many parameter sets; `sundialr_cvode_get_num_steps()` now
