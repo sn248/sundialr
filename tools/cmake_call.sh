@@ -111,14 +111,23 @@ fi
 # Force both to LF so the installed headers are byte-identical whatever host
 # built them, as the reproducibility fix above already requires.
 #
-# -Mopen=IO,:raw matters: without it Strawberry Perl applies its default :crlf
-# layer to both ends, stripping the CR on read and adding it back on write, so
-# the substitution would silently do nothing on the one platform that needs it.
+# POSIX `tr`, not Perl: this step used `perl -Mopen=IO,:raw`, and the `open`
+# module is not in perl-base, so a minimal image (Debian/Ubuntu with only the
+# essential perl-base, as rocker/r-ver is) failed the whole install here
+# ("Can't locate open.pm in @INC"). `tr -d '\r'` behaves the same in GNU tr
+# (Linux, Rtools) and BSD tr (macOS), and the MSYS2 tools Rtools ships read and
+# write in binary mode, so there is no text-layer CR translation to defeat --
+# the reason the Perl version needed `:raw`. These generated headers contain
+# no lone CRs, so deleting every CR is the same as converting CRLF to LF. The
+# write goes to a temporary file and is moved over the original only on success.
 for SUNDIALS_GEN_H in "../inst/include/sundials/sundials_config.h" \
                       "../inst/include/sundials/sundials_export.h"; do
     if [ -f "${SUNDIALS_GEN_H}" ]; then
-        perl -i -Mopen=IO,:raw -pe 's/\r\n/\n/g' "${SUNDIALS_GEN_H}"
-        if [ $? -ne 0 ]; then
+        if tr -d '\r' < "${SUNDIALS_GEN_H}" > "${SUNDIALS_GEN_H}.lf" &&
+           mv "${SUNDIALS_GEN_H}.lf" "${SUNDIALS_GEN_H}"; then
+            :
+        else
+            rm -f "${SUNDIALS_GEN_H}.lf"
             echo "Normalising line endings in ${SUNDIALS_GEN_H} failed!"
             exit 1
         fi
