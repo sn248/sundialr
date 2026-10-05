@@ -53,6 +53,10 @@
     .Call('_sundialr_capi_test_arkode_method_errors', PACKAGE = 'sundialr')
 }
 
+.capi_test_arkode_cold <- function(times_a, times_b, p_a, p_b, y_a, y_b, use_jac, tol_mode) {
+    .Call('_sundialr_capi_test_arkode_cold', PACKAGE = 'sundialr', times_a, times_b, p_a, p_b, y_a, y_b, use_jac, tol_mode)
+}
+
 .capi_test_robertson <- function(times, use_jac, solver = 0L) {
     .Call('_sundialr_capi_test_robertson', PACKAGE = 'sundialr', times, use_jac, solver)
 }

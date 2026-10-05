@@ -522,6 +522,109 @@ List capi_test_arkode_method_errors() {
                       _["solve"] = solve, _["y1"] = yo);
 }
 
+// --- ARKODE cold reinit ------------------------------------------------------
+// One handle first solves an unrelated problem (a fast two-compartment system,
+// p_a), then is pointed at a second one (p_b, from y_b at t0) by one of three
+// routes: reinit_cold() on the used handle, warm reinit() on the used handle,
+// and a NEW handle. reinit_cold() must reproduce the new handle bit for bit (no
+// history crosses it); warm reinit() carries the first problem's step size and
+// controller state into the second. Also returned: step counts (the cold handle
+// keeps a running total) and whether 1000 further cold reinit+solve cycles kept
+// the state buffer in place. tol_mode: 1 = scalar, 2 = per-equation vectors.
+namespace {
+struct cold_cfg { bool use_jac; int tol_mode; };
+
+void* cold_handle(double* p, const cold_cfg& c) {
+  void* m = sundialr_arkode_create(2, p);
+  if (!m) stop("sundialr_arkode_create returned NULL");
+  sundialr_arkode_set_rhs(m, twocmt_rhs);
+  if (c.use_jac) sundialr_arkode_set_jac(m, twocmt_jac);
+  if (c.tol_mode == 2) {
+    double rt[2] = {1e-8, 1e-8}, at[2] = {1e-10, 1e-12};
+    sundialr_arkode_set_tol_vector(m, rt, at);
+  } else {
+    sundialr_arkode_set_tol_scalar(m, 1e-8, 1e-10);
+  }
+  sundialr_arkode_set_max_steps(m, 100000);
+  return m;
+}
+
+// Solve from the handle's current start to each of `times`; rows = times.
+NumericMatrix cold_march(void* m, const NumericVector& times) {
+  NumericMatrix out(times.size(), 2);
+  for (int i = 0; i < times.size(); i++) {
+    double yo[2], tr = 0.0;
+    if (sundialr_arkode_solve(m, times[i], yo, &tr) < 0) capi_test_fail(ARKODE_API, m, "solve failed");
+    out(i, 0) = yo[0]; out(i, 1) = yo[1];
+  }
+  return out;
+}
+}  // namespace
+
+// [[Rcpp::export(".capi_test_arkode_cold")]]
+List capi_test_arkode_cold(NumericVector times_a, NumericVector times_b,
+                           NumericVector p_a, NumericVector p_b,
+                           NumericVector y_a, NumericVector y_b,
+                           bool use_jac, int tol_mode) {
+  cold_cfg c{use_jac, tol_mode};
+  double pa[2] = {p_a[0], p_a[1]}, pb[2] = {p_b[0], p_b[1]};
+  double ya[2] = {y_a[0], y_a[1]}, yb[2] = {y_b[0], y_b[1]};
+  const double t0b = times_b[0];
+  NumericVector tb = times_b[Range(1, times_b.size() - 1)];
+
+  // the problem-A history, then each route to problem B
+  auto used = [&](void) {
+    void* m = cold_handle(pa, c);
+    if (sundialr_arkode_reinit(m, times_a[0], ya) < 0) capi_test_fail(ARKODE_API, m, "reinit failed");
+    cold_march(m, times_a[Range(1, times_a.size() - 1)]);
+    sundialr_arkode_set_udata(m, pb);
+    return m;
+  };
+
+  void* mc = used();
+  long steps_a = sundialr_arkode_get_num_steps(mc);
+  if (sundialr_arkode_reinit_cold(mc, t0b, yb) < 0) capi_test_fail(ARKODE_API, mc, "reinit_cold failed");
+  NumericMatrix cold = cold_march(mc, tb);
+  long steps_cold_total = sundialr_arkode_get_num_steps(mc);
+  // further cold cycles: the state buffer must stay where it is
+  const void* p0 = sundialr_arkode_state_ptr_internal(mc);
+  bool ptr_stable = true;
+  for (int k = 0; k < 1000; k++) {
+    double y[2] = {yb[0], yb[1]}, yo[2], tr = 0.0;
+    if (sundialr_arkode_reinit_cold(mc, 0.0, y) < 0) capi_test_fail(ARKODE_API, mc, "reinit_cold failed");
+    if (sundialr_arkode_solve(mc, 0.01, yo, &tr) < 0) capi_test_fail(ARKODE_API, mc, "solve failed");
+    if (sundialr_arkode_state_ptr_internal(mc) != p0) ptr_stable = false;
+  }
+  sundialr_arkode_reset_stats(mc);
+  long steps_after_reset = sundialr_arkode_get_num_steps(mc);
+  sundialr_arkode_free(mc);
+
+  void* mw = used();
+  if (sundialr_arkode_reinit(mw, t0b, yb) < 0) capi_test_fail(ARKODE_API, mw, "reinit failed");
+  NumericMatrix warm = cold_march(mw, tb);
+  sundialr_arkode_free(mw);
+
+  void* mf = cold_handle(pb, c);
+  if (sundialr_arkode_reinit(mf, t0b, yb) < 0) capi_test_fail(ARKODE_API, mf, "reinit failed");
+  NumericMatrix fresh = cold_march(mf, tb);
+  long steps_fresh = sundialr_arkode_get_num_steps(mf);
+  sundialr_arkode_free(mf);
+
+  // reinit_cold before the integrator exists is an ordinary first reinit
+  void* mn = cold_handle(pb, c);
+  if (sundialr_arkode_reinit_cold(mn, t0b, yb) < 0) capi_test_fail(ARKODE_API, mn, "first reinit_cold failed");
+  NumericMatrix first_cold = cold_march(mn, tb);
+  sundialr_arkode_free(mn);
+
+  return List::create(_["cold"] = cold, _["warm"] = warm, _["fresh"] = fresh,
+                      _["first_cold"] = first_cold,
+                      _["steps_a"] = (double) steps_a,
+                      _["steps_cold_total"] = (double) steps_cold_total,
+                      _["steps_fresh"] = (double) steps_fresh,
+                      _["steps_after_reset"] = (double) steps_after_reset,
+                      _["ptr_stable"] = ptr_stable);
+}
+
 // Robertson to each of `times`, from (1, 0, 0) at t = 0. Rows are output
 // times, columns the three species.
 // [[Rcpp::export(".capi_test_robertson")]]
