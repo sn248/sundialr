@@ -122,6 +122,11 @@ vignette.
 
 ## What's new?
 
+### Version 0.2.1
++ Updated the underlying `SUNDIALS` library to v7.9.0 (Sep 2026)
++ **New**: two additions to the C API, `sundialr_cvode_set_udata()` and `sundialr_cvode_reset_stats()`, so one solver handle can be reused across many parameter sets; `sundialr_cvode_get_num_steps()` now counts across reinitialisations as documented
++ Installing from source no longer needs Perl's `open` module, which minimal Debian/Ubuntu images such as `rocker/r-ver` lack
+
 ### Version 0.2.0
 + **New**: all four solvers accept an optional `jacobian` argument for supplying the Jacobian analytically instead of letting `SUNDIALS` approximate it by finite differences. It defaults to `NULL`, so existing code is unaffected. See the quick start above for `cvode`; `ida` takes a different form, documented in `?ida`
 + Updated the underlying `SUNDIALS` library to v7.8.0 (Jun 2026)
