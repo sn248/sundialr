@@ -32,5 +32,22 @@ void register_capi() {
   R_RegisterCCallable("sundialr", "sundialr_cvode_get_num_steps", (DL_FUNC) sundialr_cvode_get_num_steps);
   R_RegisterCCallable("sundialr", "sundialr_cvode_reset_stats", (DL_FUNC) sundialr_cvode_reset_stats);
   R_RegisterCCallable("sundialr", "sundialr_cvode_last_err",   (DL_FUNC) sundialr_cvode_last_err);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_create", (DL_FUNC) sundialr_arkode_create);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_free", (DL_FUNC) sundialr_arkode_free);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_set_rhs", (DL_FUNC) sundialr_arkode_set_rhs);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_set_jac", (DL_FUNC) sundialr_arkode_set_jac);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_set_tol_scalar", (DL_FUNC) sundialr_arkode_set_tol_scalar);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_set_tol_vector", (DL_FUNC) sundialr_arkode_set_tol_vector);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_set_max_steps", (DL_FUNC) sundialr_arkode_set_max_steps);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_set_max_step", (DL_FUNC) sundialr_arkode_set_max_step);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_set_min_step", (DL_FUNC) sundialr_arkode_set_min_step);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_set_udata", (DL_FUNC) sundialr_arkode_set_udata);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_set_order", (DL_FUNC) sundialr_arkode_set_order);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_set_table_name", (DL_FUNC) sundialr_arkode_set_table_name);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_reinit", (DL_FUNC) sundialr_arkode_reinit);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_solve", (DL_FUNC) sundialr_arkode_solve);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_get_num_steps", (DL_FUNC) sundialr_arkode_get_num_steps);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_reset_stats", (DL_FUNC) sundialr_arkode_reset_stats);
+  R_RegisterCCallable("sundialr", "sundialr_arkode_last_err", (DL_FUNC) sundialr_arkode_last_err);
   R_RegisterCCallable("sundialr", "sundialr_abi_version",      (DL_FUNC) sundialr_abi_version);
 }

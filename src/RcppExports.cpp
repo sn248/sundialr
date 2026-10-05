@@ -21,8 +21,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // capi_test_decay
-NumericVector capi_test_decay(NumericVector times, double y0, double k, int tol_mode, bool reinit_each);
-RcppExport SEXP _sundialr_capi_test_decay(SEXP timesSEXP, SEXP y0SEXP, SEXP kSEXP, SEXP tol_modeSEXP, SEXP reinit_eachSEXP) {
+NumericVector capi_test_decay(NumericVector times, double y0, double k, int tol_mode, bool reinit_each, int solver);
+RcppExport SEXP _sundialr_capi_test_decay(SEXP timesSEXP, SEXP y0SEXP, SEXP kSEXP, SEXP tol_modeSEXP, SEXP reinit_eachSEXP, SEXP solverSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -31,13 +31,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type k(kSEXP);
     Rcpp::traits::input_parameter< int >::type tol_mode(tol_modeSEXP);
     Rcpp::traits::input_parameter< bool >::type reinit_each(reinit_eachSEXP);
-    rcpp_result_gen = Rcpp::wrap(capi_test_decay(times, y0, k, tol_mode, reinit_each));
+    Rcpp::traits::input_parameter< int >::type solver(solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_decay(times, y0, k, tol_mode, reinit_each, solver));
     return rcpp_result_gen;
 END_RCPP
 }
 // capi_test_twocmt
-NumericMatrix capi_test_twocmt(NumericVector times, double y10, double k1, double k2, bool use_jac);
-RcppExport SEXP _sundialr_capi_test_twocmt(SEXP timesSEXP, SEXP y10SEXP, SEXP k1SEXP, SEXP k2SEXP, SEXP use_jacSEXP) {
+NumericMatrix capi_test_twocmt(NumericVector times, double y10, double k1, double k2, bool use_jac, int solver);
+RcppExport SEXP _sundialr_capi_test_twocmt(SEXP timesSEXP, SEXP y10SEXP, SEXP k1SEXP, SEXP k2SEXP, SEXP use_jacSEXP, SEXP solverSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -46,40 +47,44 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type k1(k1SEXP);
     Rcpp::traits::input_parameter< double >::type k2(k2SEXP);
     Rcpp::traits::input_parameter< bool >::type use_jac(use_jacSEXP);
-    rcpp_result_gen = Rcpp::wrap(capi_test_twocmt(times, y10, k1, k2, use_jac));
+    Rcpp::traits::input_parameter< int >::type solver(solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_twocmt(times, y10, k1, k2, use_jac, solver));
     return rcpp_result_gen;
 END_RCPP
 }
 // capi_test_force_error
-List capi_test_force_error();
-RcppExport SEXP _sundialr_capi_test_force_error() {
+List capi_test_force_error(int solver);
+RcppExport SEXP _sundialr_capi_test_force_error(SEXP solverSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(capi_test_force_error());
+    Rcpp::traits::input_parameter< int >::type solver(solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_force_error(solver));
     return rcpp_result_gen;
 END_RCPP
 }
 // capi_test_num_steps
-double capi_test_num_steps(double tout, double y0, double k);
-RcppExport SEXP _sundialr_capi_test_num_steps(SEXP toutSEXP, SEXP y0SEXP, SEXP kSEXP) {
+double capi_test_num_steps(double tout, double y0, double k, int solver);
+RcppExport SEXP _sundialr_capi_test_num_steps(SEXP toutSEXP, SEXP y0SEXP, SEXP kSEXP, SEXP solverSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type tout(toutSEXP);
     Rcpp::traits::input_parameter< double >::type y0(y0SEXP);
     Rcpp::traits::input_parameter< double >::type k(kSEXP);
-    rcpp_result_gen = Rcpp::wrap(capi_test_num_steps(tout, y0, k));
+    Rcpp::traits::input_parameter< int >::type solver(solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_num_steps(tout, y0, k, solver));
     return rcpp_result_gen;
 END_RCPP
 }
 // capi_test_clean_err
-bool capi_test_clean_err();
-RcppExport SEXP _sundialr_capi_test_clean_err() {
+bool capi_test_clean_err(int solver);
+RcppExport SEXP _sundialr_capi_test_clean_err(SEXP solverSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(capi_test_clean_err());
+    Rcpp::traits::input_parameter< int >::type solver(solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_clean_err(solver));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -94,8 +99,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // capi_test_set_udata
-NumericMatrix capi_test_set_udata(NumericVector times, double y0, double k1, double k2);
-RcppExport SEXP _sundialr_capi_test_set_udata(SEXP timesSEXP, SEXP y0SEXP, SEXP k1SEXP, SEXP k2SEXP) {
+NumericMatrix capi_test_set_udata(NumericVector times, double y0, double k1, double k2, int solver);
+RcppExport SEXP _sundialr_capi_test_set_udata(SEXP timesSEXP, SEXP y0SEXP, SEXP k1SEXP, SEXP k2SEXP, SEXP solverSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -103,13 +108,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type y0(y0SEXP);
     Rcpp::traits::input_parameter< double >::type k1(k1SEXP);
     Rcpp::traits::input_parameter< double >::type k2(k2SEXP);
-    rcpp_result_gen = Rcpp::wrap(capi_test_set_udata(times, y0, k1, k2));
+    Rcpp::traits::input_parameter< int >::type solver(solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_set_udata(times, y0, k1, k2, solver));
     return rcpp_result_gen;
 END_RCPP
 }
 // capi_test_tight_loop
-List capi_test_tight_loop(int nseg, double dt, double y0, double k);
-RcppExport SEXP _sundialr_capi_test_tight_loop(SEXP nsegSEXP, SEXP dtSEXP, SEXP y0SEXP, SEXP kSEXP) {
+List capi_test_tight_loop(int nseg, double dt, double y0, double k, int solver);
+RcppExport SEXP _sundialr_capi_test_tight_loop(SEXP nsegSEXP, SEXP dtSEXP, SEXP y0SEXP, SEXP kSEXP, SEXP solverSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -117,23 +123,25 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< double >::type y0(y0SEXP);
     Rcpp::traits::input_parameter< double >::type k(kSEXP);
-    rcpp_result_gen = Rcpp::wrap(capi_test_tight_loop(nseg, dt, y0, k));
+    Rcpp::traits::input_parameter< int >::type solver(solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_tight_loop(nseg, dt, y0, k, solver));
     return rcpp_result_gen;
 END_RCPP
 }
 // capi_test_reset_stats
-List capi_test_reset_stats();
-RcppExport SEXP _sundialr_capi_test_reset_stats() {
+List capi_test_reset_stats(int solver);
+RcppExport SEXP _sundialr_capi_test_reset_stats(SEXP solverSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(capi_test_reset_stats());
+    Rcpp::traits::input_parameter< int >::type solver(solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_reset_stats(solver));
     return rcpp_result_gen;
 END_RCPP
 }
 // capi_test_concurrent
-List capi_test_concurrent(NumericVector times, double y0, double k1, double k2);
-RcppExport SEXP _sundialr_capi_test_concurrent(SEXP timesSEXP, SEXP y0SEXP, SEXP k1SEXP, SEXP k2SEXP) {
+List capi_test_concurrent(NumericVector times, double y0, double k1, double k2, int solver);
+RcppExport SEXP _sundialr_capi_test_concurrent(SEXP timesSEXP, SEXP y0SEXP, SEXP k1SEXP, SEXP k2SEXP, SEXP solverSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -141,7 +149,46 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type y0(y0SEXP);
     Rcpp::traits::input_parameter< double >::type k1(k1SEXP);
     Rcpp::traits::input_parameter< double >::type k2(k2SEXP);
-    rcpp_result_gen = Rcpp::wrap(capi_test_concurrent(times, y0, k1, k2));
+    Rcpp::traits::input_parameter< int >::type solver(solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_concurrent(times, y0, k1, k2, solver));
+    return rcpp_result_gen;
+END_RCPP
+}
+// capi_test_arkode_method
+List capi_test_arkode_method(NumericVector times, double y0, double k, int order, std::string table);
+RcppExport SEXP _sundialr_capi_test_arkode_method(SEXP timesSEXP, SEXP y0SEXP, SEXP kSEXP, SEXP orderSEXP, SEXP tableSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type times(timesSEXP);
+    Rcpp::traits::input_parameter< double >::type y0(y0SEXP);
+    Rcpp::traits::input_parameter< double >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type order(orderSEXP);
+    Rcpp::traits::input_parameter< std::string >::type table(tableSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_arkode_method(times, y0, k, order, table));
+    return rcpp_result_gen;
+END_RCPP
+}
+// capi_test_arkode_method_errors
+List capi_test_arkode_method_errors();
+RcppExport SEXP _sundialr_capi_test_arkode_method_errors() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(capi_test_arkode_method_errors());
+    return rcpp_result_gen;
+END_RCPP
+}
+// capi_test_robertson
+NumericMatrix capi_test_robertson(NumericVector times, bool use_jac, int solver);
+RcppExport SEXP _sundialr_capi_test_robertson(SEXP timesSEXP, SEXP use_jacSEXP, SEXP solverSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type times(timesSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_jac(use_jacSEXP);
+    Rcpp::traits::input_parameter< int >::type solver(solverSEXP);
+    rcpp_result_gen = Rcpp::wrap(capi_test_robertson(times, use_jac, solver));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -221,16 +268,19 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_sundialr_register_capi", (DL_FUNC) &_sundialr_register_capi, 0},
-    {"_sundialr_capi_test_decay", (DL_FUNC) &_sundialr_capi_test_decay, 5},
-    {"_sundialr_capi_test_twocmt", (DL_FUNC) &_sundialr_capi_test_twocmt, 5},
-    {"_sundialr_capi_test_force_error", (DL_FUNC) &_sundialr_capi_test_force_error, 0},
-    {"_sundialr_capi_test_num_steps", (DL_FUNC) &_sundialr_capi_test_num_steps, 3},
-    {"_sundialr_capi_test_clean_err", (DL_FUNC) &_sundialr_capi_test_clean_err, 0},
+    {"_sundialr_capi_test_decay", (DL_FUNC) &_sundialr_capi_test_decay, 6},
+    {"_sundialr_capi_test_twocmt", (DL_FUNC) &_sundialr_capi_test_twocmt, 6},
+    {"_sundialr_capi_test_force_error", (DL_FUNC) &_sundialr_capi_test_force_error, 1},
+    {"_sundialr_capi_test_num_steps", (DL_FUNC) &_sundialr_capi_test_num_steps, 4},
+    {"_sundialr_capi_test_clean_err", (DL_FUNC) &_sundialr_capi_test_clean_err, 1},
     {"_sundialr_capi_test_abi", (DL_FUNC) &_sundialr_capi_test_abi, 0},
-    {"_sundialr_capi_test_set_udata", (DL_FUNC) &_sundialr_capi_test_set_udata, 4},
-    {"_sundialr_capi_test_tight_loop", (DL_FUNC) &_sundialr_capi_test_tight_loop, 4},
-    {"_sundialr_capi_test_reset_stats", (DL_FUNC) &_sundialr_capi_test_reset_stats, 0},
-    {"_sundialr_capi_test_concurrent", (DL_FUNC) &_sundialr_capi_test_concurrent, 4},
+    {"_sundialr_capi_test_set_udata", (DL_FUNC) &_sundialr_capi_test_set_udata, 5},
+    {"_sundialr_capi_test_tight_loop", (DL_FUNC) &_sundialr_capi_test_tight_loop, 5},
+    {"_sundialr_capi_test_reset_stats", (DL_FUNC) &_sundialr_capi_test_reset_stats, 1},
+    {"_sundialr_capi_test_concurrent", (DL_FUNC) &_sundialr_capi_test_concurrent, 5},
+    {"_sundialr_capi_test_arkode_method", (DL_FUNC) &_sundialr_capi_test_arkode_method, 5},
+    {"_sundialr_capi_test_arkode_method_errors", (DL_FUNC) &_sundialr_capi_test_arkode_method_errors, 0},
+    {"_sundialr_capi_test_robertson", (DL_FUNC) &_sundialr_capi_test_robertson, 3},
     {"_sundialr_cvode", (DL_FUNC) &_sundialr_cvode, 7},
     {"_sundialr_cvodes", (DL_FUNC) &_sundialr_cvodes, 10},
     {"_sundialr_cvsolve", (DL_FUNC) &_sundialr_cvsolve, 8},

@@ -39,7 +39,6 @@
 // sundials_err_handler.h - and is just as easy to reintroduce by copying a
 // solver body that uses stop(), so keep every body inside CAPI_GUARD.
 
-#include <cmath>
 #include <string>
 #include <vector>
 
@@ -56,6 +55,10 @@
 #include <sundials_err_handler.h>
 
 #include <sundialr_capi.h>
+
+// CAPI_GUARD, error capture and the vector-tolerance error weights, shared with
+// the ARKODE half of the API (sundialr_capi_arkode.cpp).
+#include "capi_internal.h"
 
 // The C API speaks `double`; N_VGetArrayPointer hands back sunrealtype*. The
 // package builds SUNDIALS at its default double precision, so the two coincide
@@ -108,23 +111,6 @@ struct sundialr_cvode_handle {
   std::string last_err_msg;           // returned by last_err()
 };
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-// Copy the current failure into last_err_msg: the SUNDIALS-recorded message if
-// there is one, otherwise a description naming the numeric code.
-static void capi_capture_err(sundialr_cvode_handle* h, int flag) {
-  if (h->err.has_error) h->last_err_msg = h->err.message;
-  else h->last_err_msg = std::string("CVODE returned error code ") + std::to_string(flag);
-}
-
-// Clear the per-call error state before an operation that can record one.
-static void capi_clear_err(sundialr_cvode_handle* h) {
-  h->err.has_error = false;
-  h->err.message.clear();
-}
-
 // --- SUNDIALS callback thunks (C linkage, never throw) ---------------------
 
 static int capi_rhs_thunk(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data) {
@@ -147,16 +133,7 @@ static int capi_jac_thunk(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix J,
 
 // Error-weight function realising per-equation rtol/atol (CVODE itol == 4).
 static int capi_ewt_thunk(N_Vector y, N_Vector w, void* user_data) {
-  sundialr_cvode_handle* h = (sundialr_cvode_handle*) user_data;
-  int n = h->neq;
-  double* yp = N_VGetArrayPointer(y);
-  double* wp = N_VGetArrayPointer(w);
-  for (int i = 0; i < n; i++) {
-    double ww = h->rtol_v[i] * std::fabs(yp[i]) + h->atol_v[i];
-    if (ww <= 0.0) return -1;
-    wp[i] = 1.0 / ww;
-  }
-  return 0;
+  return capi_fill_ewt((sundialr_cvode_handle*) user_data, y, w);
 }
 
 // Apply the stored tolerance configuration to an initialized handle.
@@ -174,20 +151,6 @@ static int capi_apply_steps(sundialr_cvode_handle* h) {
   if (h->has_hmin)     { flag = CVodeSetMinStep(h->cvode_mem, h->hmin);         if (flag < 0) return flag; }
   return 0;
 }
-
-// Wrap every entry-point body so no C++ exception can escape to the caller (the
-// whole reason this file exists). A thrown std::exception is recorded and turned
-// into an error code; anything else becomes a generic memory error.
-#define CAPI_GUARD(handle, failcode, body)                                     \
-  try { body }                                                                 \
-  catch (std::exception& e) {                                                  \
-    if (handle) { (handle)->last_err_msg = e.what(); }                         \
-    return failcode;                                                           \
-  }                                                                            \
-  catch (...) {                                                                \
-    if (handle) { (handle)->last_err_msg = "unidentified C++ exception in sundialr C API"; } \
-    return failcode;                                                           \
-  }
 
 extern "C" {
 
@@ -256,7 +219,7 @@ int sundialr_cvode_set_jac(void* m, sundialr_jac J) {
     if (h->initialized) {
       int flag = J ? CVodeSetJacFn(h->cvode_mem, capi_jac_thunk)
                    : CVodeSetJacFn(h->cvode_mem, NULL);
-      if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
     }
     return SUNDIALR_CV_SUCCESS;
   })
@@ -271,7 +234,7 @@ int sundialr_cvode_set_tol_scalar(void* m, double rtol, double atol) {
     h->atol_s = atol;
     if (h->initialized) {
       int flag = CVodeSStolerances(h->cvode_mem, rtol, atol);
-      if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
     }
     return SUNDIALR_CV_SUCCESS;
   })
@@ -287,7 +250,7 @@ int sundialr_cvode_set_tol_vector(void* m, const double* rtol, const double* ato
     h->atol_v.assign(atol, atol + h->neq);
     if (h->initialized) {
       int flag = CVodeWFtolerances(h->cvode_mem, capi_ewt_thunk);
-      if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
     }
     return SUNDIALR_CV_SUCCESS;
   })
@@ -301,7 +264,7 @@ int sundialr_cvode_set_max_steps(void* m, long mxsteps) {
     h->maxsteps = mxsteps;
     if (h->initialized) {
       int flag = CVodeSetMaxNumSteps(h->cvode_mem, mxsteps);
-      if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
     }
     return SUNDIALR_CV_SUCCESS;
   })
@@ -315,7 +278,7 @@ int sundialr_cvode_set_max_step(void* m, double hmax) {
     h->hmax = hmax;
     if (h->initialized) {
       int flag = CVodeSetMaxStep(h->cvode_mem, hmax);
-      if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
     }
     return SUNDIALR_CV_SUCCESS;
   })
@@ -339,7 +302,7 @@ int sundialr_cvode_set_min_step(void* m, double hmin) {
     h->hmin = hmin;
     if (h->initialized) {
       int flag = CVodeSetMinStep(h->cvode_mem, hmin);
-      if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
     }
     return SUNDIALR_CV_SUCCESS;
   })
@@ -365,19 +328,19 @@ int sundialr_cvode_reinit(void* m, double t0, const double* y0) {
       // One-time setup. CVodeReInit does not reset any of these, so later
       // reinits keep the linear solver, tolerances, Jacobian and step limits.
       flag = CVodeInit(h->cvode_mem, capi_rhs_thunk, t0, h->y);
-      if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
       flag = CVodeSetUserData(h->cvode_mem, h);
-      if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
       flag = CVodeSetLinearSolver(h->cvode_mem, h->LS, h->SM);
-      if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
       if (h->jac) {
         flag = CVodeSetJacFn(h->cvode_mem, capi_jac_thunk);   // must follow SetLinearSolver
-        if (flag < 0) { capi_capture_err(h, flag); return flag; }
+        if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
       }
       flag = capi_apply_tol(h);
-      if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
       flag = capi_apply_steps(h);
-      if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
       h->initialized = true;
     } else {
       // Bank the closing segment's steps before CVodeReInit zeroes the counter,
@@ -386,7 +349,7 @@ int sundialr_cvode_reinit(void* m, double t0, const double* y0) {
       long seg_ns = 0;
       int  ns_ok  = CVodeGetNumSteps(h->cvode_mem, &seg_ns);
       flag = CVodeReInit(h->cvode_mem, t0, h->y);
-      if (flag < 0) { capi_capture_err(h, flag); return flag; }
+      if (flag < 0) { capi_capture_err(h, flag, "CVODE"); return flag; }
       if (ns_ok >= 0) h->nst_accum += seg_ns;
     }
     return SUNDIALR_CV_SUCCESS;
@@ -409,7 +372,7 @@ int sundialr_cvode_solve(void* m, double tout, double* y, double* treached) {
     for (int i = 0; i < h->neq; i++) y[i] = yp[i];
     if (treached) *treached = (double) treal;
 
-    if (flag < 0) capi_capture_err(h, flag);
+    if (flag < 0) capi_capture_err(h, flag, "CVODE");
     return flag;
   })
 }

@@ -282,6 +282,7 @@
  * SUNDIALS modules enabled
  * -----------------------------------------------------------------*/
 
+#define SUNDIALS_ARKODE 1
 #define SUNDIALS_CVODE 1
 #define SUNDIALS_CVODES 1
 #define SUNDIALS_IDA 1
