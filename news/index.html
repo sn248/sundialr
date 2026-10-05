@@ -38,7 +38,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.1" id="sundialr-v021">sundialr v0.2.1<a class="anchor" aria-label="anchor" href="#sundialr-v021"></a></h2>
-<ul><li>
+<ul><li>The build no longer needs Perl’s <code>open</code> module. The step that normalises the line endings of the two <code>cmake</code>-generated headers used <code>perl -Mopen=IO,:raw</code>, and <code>open</code> is not part of the minimal <code>perl-base</code>, so installing from source on a minimal Debian/Ubuntu image (for example <code>rocker/r-ver</code>) failed with “Can’t locate open.pm in <a href="https://github.com/INC" class="external-link">@INC</a>”. The step now uses POSIX <code>tr</code>, which behaves the same on Linux, macOS and Windows (Rtools)</li>
+<li>
 <strong>New feature</strong>: two additions to the C API for host loops that drive many small solves. <code>sundialr_cvode_set_udata()</code> replaces the callback-data pointer on an existing handle, so one handle can serve many parameter sets — a population of subjects — instead of paying a create/free cycle (<code>SUNContext</code>, <code>cvode_mem</code>, matrix and linear solver allocations) per set. <code>sundialr_cvode_reset_stats()</code> zeroes the accumulated step count so <code>sundialr_cvode_get_num_steps()</code> can report per-subject counts from a shared handle. Both are additive and binary-compatible, so <code>SUNDIALR_ABI_VERSION</code> stays 1</li>
 <li>Fixed <code>sundialr_cvode_get_num_steps()</code> under the reinit-per-segment pattern: <code>CVodeReInit</code> zeroes <code>CVODE</code>’s internal step counter, so the count previously restarted at every <code>sundialr_cvode_reinit()</code> and never reflected more than the current segment, despite being documented as a running total. The handle now accumulates the count across reinits, counting from <code>create()</code> or the last <code>reset_stats()</code>
 </li>

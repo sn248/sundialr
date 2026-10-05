@@ -2,6 +2,13 @@
 
 ## sundialr v0.2.1
 
+- The build no longer needs Perl’s `open` module. The step that
+  normalises the line endings of the two `cmake`-generated headers used
+  `perl -Mopen=IO,:raw`, and `open` is not part of the minimal
+  `perl-base`, so installing from source on a minimal Debian/Ubuntu
+  image (for example `rocker/r-ver`) failed with “Can’t locate open.pm
+  in [@INC](https://github.com/INC)”. The step now uses POSIX `tr`,
+  which behaves the same on Linux, macOS and Windows (Rtools)
 - **New feature**: two additions to the C API for host loops that drive
   many small solves. `sundialr_cvode_set_udata()` replaces the
   callback-data pointer on an existing handle, so one handle can serve
