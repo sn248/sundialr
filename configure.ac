@@ -41,7 +41,7 @@ if test x"${need_to_build}" != x"no"; then
   ## sunlinsoldense and sunmatrixdense. Naming them again added a second copy of
   ## each object to the link, which only whole-archive linkers reject. Keep this
   ## in sync with LINK_ORDER in src/scripts/dedupe_static_libs.sh.
-  sundialr_libs="-lsundials_idas -lsundials_cvodes -lsundials_core -lm"
+  sundialr_libs="-lsundials_arkode -lsundials_idas -lsundials_cvodes -lsundials_core -lm"
   ## tools/remove_static_libs.sh
 fi
 ## Now use all the values

@@ -32,8 +32,9 @@
 #define SUNDIALR_CAPI_H
 
 /*
- * sundialr C API - a plain-C wrapper around CVODE (BDF, dense) intended to be
- * called from another package's compiled code via
+ * sundialr C API - plain-C wrappers around CVODE (BDF, dense) and, further
+ * down, ARKODE (ESDIRK, dense), intended to be called from another package's
+ * compiled code via
  * R_GetCCallable("sundialr", ...). This is the ONLY header a consumer includes:
  * it deliberately exposes no SUNDIALS types and no Rcpp, only plain double and
  * int arguments and an opaque handle, so the consumer needs neither SUNDIALS
@@ -213,6 +214,121 @@ const char* sundialr_cvode_last_err(void* m);
 
 /* This build's ABI version (SUNDIALR_ABI_VERSION). */
 int sundialr_abi_version(void);
+
+/* ===========================================================================
+ * ARKODE (ESDIRK, dense)
+ *
+ * A second integrator with the same shape as the CVODE API above: the same
+ * callback types (sundialr_rhs, sundialr_jac), lifecycle, configuration calls
+ * and introspection, under a sundialr_arkode_ prefix, so a host loop written
+ * against one can drive the other by swapping the entry points it looks up.
+ * The no-throw, return-code, reuse/no-allocation and thread-safety contracts
+ * stated at the top of this header apply unchanged, with ARKodeReset in place
+ * of CVodeReInit.
+ *
+ * The integrator is ARKODE's ARKStep run fully implicit with an ESDIRK method
+ * (singly diagonally implicit Runge-Kutta with an explicit first stage), each
+ * implicit stage solved by Newton iteration with a dense direct linear solver. One-step methods restart
+ * cheaply, which suits integrations broken into many short segments by
+ * discontinuities, where a multistep method such as CVODE's BDF must rebuild
+ * its history at every restart.
+ *
+ * Method selection (before the first reinit only):
+ *   default                         ARKODE_ESDIRK436L2SA_6_3_4 (order 4)
+ *   sundialr_arkode_set_order(q)    ARKODE's default ESDIRK of order q, 2..5
+ *   sundialr_arkode_set_table_name  any ARKODE DIRK table by its name
+ *
+ * Differences from the CVODE API:
+ *   - Status codes are ARKODE's ARK_* values, mirrored as SUNDIALR_ARK_*. They
+ *     coincide with SUNDIALR_CV_* from 0 to -11 and from -20 to -23, but not
+ *     elsewhere: e.g. a constraint failure is -19 here and -15 in CVODE.
+ *   - get_num_steps() needs no banking across reinits: ARKodeReset, unlike
+ *     CVodeReInit, keeps ARKODE's step counter running.
+ *
+ * Typical use:
+ *   void* m = sundialr_arkode_create(neq, udata);
+ *   sundialr_arkode_set_rhs(m, my_rhs);
+ *   sundialr_arkode_set_order(m, 3);            // optional
+ *   sundialr_arkode_set_tol_scalar(m, 1e-6, 1e-8);
+ *   sundialr_arkode_reinit(m, t0, y0);
+ *   sundialr_arkode_solve (m, tout, y, &tr);    // check return < 0
+ *   sundialr_arkode_free(m);
+ *
+ * History: added in sundialr 0.2.1. Additive and binary-compatible, so
+ * SUNDIALR_ABI_VERSION stays 1; a consumer should require sundialr >= 0.2.1.
+ * =========================================================================== */
+
+/* --- Status codes: numeric values identical to ARKODE's ARK_* macros ------- */
+#define SUNDIALR_ARK_SUCCESS             0
+#define SUNDIALR_ARK_TSTOP_RETURN        1
+#define SUNDIALR_ARK_ROOT_RETURN         2
+#define SUNDIALR_ARK_TOO_MUCH_WORK      -1
+#define SUNDIALR_ARK_TOO_MUCH_ACC       -2
+#define SUNDIALR_ARK_ERR_FAILURE        -3
+#define SUNDIALR_ARK_CONV_FAILURE       -4
+#define SUNDIALR_ARK_LINIT_FAIL         -5
+#define SUNDIALR_ARK_LSETUP_FAIL        -6
+#define SUNDIALR_ARK_LSOLVE_FAIL        -7
+#define SUNDIALR_ARK_RHSFUNC_FAIL       -8
+#define SUNDIALR_ARK_FIRST_RHSFUNC_ERR  -9
+#define SUNDIALR_ARK_REPTD_RHSFUNC_ERR -10
+#define SUNDIALR_ARK_UNREC_RHSFUNC_ERR -11
+#define SUNDIALR_ARK_CONSTR_FAIL       -19
+#define SUNDIALR_ARK_MEM_FAIL          -20
+#define SUNDIALR_ARK_MEM_NULL          -21
+#define SUNDIALR_ARK_ILL_INPUT         -22
+#define SUNDIALR_ARK_NO_MALLOC         -23
+#define SUNDIALR_ARK_TOO_CLOSE         -27
+#define SUNDIALR_ARK_VECTOROP_ERR      -28
+#define SUNDIALR_ARK_NLS_INIT_FAIL     -29
+#define SUNDIALR_ARK_NLS_SETUP_FAIL    -30
+#define SUNDIALR_ARK_NLS_SETUP_RECVR   -31
+#define SUNDIALR_ARK_NLS_OP_ERR        -32
+#define SUNDIALR_ARK_INVALID_TABLE     -44
+#define SUNDIALR_ARK_CONTROLLER_ERR    -50
+
+/* --- Lifecycle ------------------------------------------------------------- */
+
+/* Allocate a handle for neq equations; NULL on failure. The integrator itself
+ * is created by the first reinit, since ARKODE needs t0 and y0 to build it. */
+void* sundialr_arkode_create(int neq, void* udata);
+void  sundialr_arkode_free(void* m);
+
+/* --- Configuration: as the sundialr_cvode_ equivalents --------------------- */
+int sundialr_arkode_set_rhs(void* m, sundialr_rhs f);
+int sundialr_arkode_set_jac(void* m, sundialr_jac J);
+int sundialr_arkode_set_tol_scalar(void* m, double rtol, double atol);
+int sundialr_arkode_set_tol_vector(void* m, const double* rtol, const double* atol);
+int sundialr_arkode_set_max_steps(void* m, long mxsteps);
+int sundialr_arkode_set_max_step(void* m, double hmax);
+int sundialr_arkode_set_min_step(void* m, double hmin);
+int sundialr_arkode_set_udata(void* m, void* udata);
+
+/* Use ARKODE's default ESDIRK of the given order (2, 3, 4 or 5). Must be called
+ * before the first reinit; returns SUNDIALR_ARK_ILL_INPUT otherwise or for any
+ * other order. Overrides an earlier set_table_name(). */
+int sundialr_arkode_set_order(void* m, int order);
+
+/* Use the ARKODE DIRK table with this name, e.g. "ARKODE_ESDIRK547L2SA2_7_4_5"
+ * (the names are those of ARKODE's ARKODE_DIRKTableID enum). Must be called
+ * before the first reinit; returns SUNDIALR_ARK_ILL_INPUT for an unknown name.
+ * Overrides an earlier set_order(). */
+int sundialr_arkode_set_table_name(void* m, const char* name);
+
+/* --- Integration ----------------------------------------------------------- */
+
+/* Set the state to y0 and (re)start at t0. The first call creates and
+ * configures the integrator; later calls are ARKodeReset and keep every
+ * setting. */
+int sundialr_arkode_reinit(void* m, double t0, const double* y0);
+
+/* Advance to tout and copy the state into y. Returns ARKODE's own code. */
+int sundialr_arkode_solve(void* m, double tout, double* y, double* treached);
+
+/* --- Introspection --------------------------------------------------------- */
+long        sundialr_arkode_get_num_steps(void* m);
+int         sundialr_arkode_reset_stats(void* m);
+const char* sundialr_arkode_last_err(void* m);
 
 #ifdef __cplusplus
 }

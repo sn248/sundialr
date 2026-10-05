@@ -131,6 +131,32 @@ perl -pi -e 's|  else if \(v->ops->nvprint == NULL\) \{ printf\("NULL Print Op\\
 perl -pi -e 's|  N_VPrintFile_Serial\(x, stdout\);|  /* CRAN: stdout removed; use N_VPrintFile_Serial with explicit FILE* */|' \
     "${SRC}/src/nvector/serial/nvector_serial.c"
 
+## ---- ARKODE stdout references ------------------------------------------------
+# ARKodePrintMem falls back to stdout for a NULL FILE*; return instead.
+# The *_SetFromCommandLine "write_parameters" options print to stdout; replace
+# each write with its success code so the option becomes a no-op. Each pattern
+# must match exactly once, so an upstream change fails here rather than
+# silently leaving the reference in place.
+
+perl -0777 -pi -e '
+  my $n = s{  if \(outfile == NULL\) \{ outfile = stdout; \}}{  if (outfile == NULL) { return; } /* CRAN: stdout fallback removed */}g;
+  die "cran_patches.sh: ARKodePrintMem patch matched $n times in $ARGV (expected 1)\n" unless $n == 1;
+' "${SRC}/src/arkode/arkode.c"
+
+perl -0777 -pi -e '
+  my $n = s{retval = ARKodeWriteParameters\(arkode_mem, stdout\);}{retval = ARK_SUCCESS; /* CRAN: write to stdout removed */}g;
+  die "cran_patches.sh: ARKodeWriteParameters patch matched $n times in $ARGV (expected 1)\n" unless $n == 1;
+' "${SRC}/src/arkode/arkode_cli.c"
+
+for f in "${SRC}/src/sunadaptcontroller/imexgus/sunadaptcontroller_imexgus.c" \
+         "${SRC}/src/sunadaptcontroller/mrihtol/sunadaptcontroller_mrihtol.c" \
+         "${SRC}/src/sunadaptcontroller/soderlind/sunadaptcontroller_soderlind.c"; do
+  perl -0777 -pi -e '
+    my $n = s{retval = SUNAdaptController_Write\(C, stdout\);}{retval = SUN_SUCCESS; /* CRAN: write to stdout removed */}g;
+    die "cran_patches.sh: SUNAdaptController_Write patch matched $n times in $ARGV (expected 1)\n" unless $n == 1;
+  ' "$f"
+done
+
 ## ---- sprintf -> strcpy ------------------------------------------------------
 # All sprintf calls in these files use a plain string literal with no format
 # specifiers, so strcpy is a safe and equivalent replacement. cvode/ida are
@@ -147,7 +173,9 @@ for f in \
     "${SRC}/src/ida/ida_io.c" \
     "${SRC}/src/ida/ida_ls.c" \
     "${SRC}/src/idas/idas_io.c" \
-    "${SRC}/src/idas/idas_ls.c"; do
+    "${SRC}/src/idas/idas_ls.c" \
+    "${SRC}/src/arkode/arkode_io.c" \
+    "${SRC}/src/arkode/arkode_ls.c"; do
   perl -pi -e 's/sprintf\((\w+), ("(?:[^"\\]|\\.)*")\)/strcpy($1, $2)/g' "$f"
 done
 
@@ -161,14 +189,16 @@ done
 
 ## ---- verification guard -----------------------------------------------------
 # Fail loudly if any CRAN-flagged call survives in sources compiled into the
-# libraries linked by sundialr (core, cvodes, idas, nvecserial,
-# sunlinsoldense, sunmatrixdense) plus the patched cvode/ida sources.
+# libraries linked by sundialr (core, arkode, cvodes, idas, nvecserial,
+# nvecmanyvector, sunadaptcontroller*, sunlinsoldense, sunmatrixdense) plus the
+# patched cvode/ida sources.
 # Excluded: fmod_* dirs (Fortran interfaces, not compiled) and
 # sundials_profiler.c (its printf is inside #if SUNDIALS_MPI_ENABLED, off).
 
 GUARD_DIRS="${SRC}/src/sundials ${SRC}/src/cvode ${SRC}/src/cvodes \
 ${SRC}/src/ida ${SRC}/src/idas ${SRC}/src/nvector/serial \
-${SRC}/src/sunlinsol/dense ${SRC}/src/sunmatrix/dense"
+${SRC}/src/sunlinsol/dense ${SRC}/src/sunmatrix/dense \
+${SRC}/src/arkode ${SRC}/src/nvector/manyvector ${SRC}/src/sunadaptcontroller"
 
 guard_fail=0
 for pat in \
@@ -185,6 +215,18 @@ for pat in \
     guard_fail=1
   fi
 done
+
+# Bare stdout/stderr references (passed as a FILE* rather than printed to
+# directly) in the ARKODE-only sources. Comment lines are skipped.
+ARK_GUARD_DIRS="${SRC}/src/arkode ${SRC}/src/nvector/manyvector ${SRC}/src/sunadaptcontroller"
+hits=`grep -rEn --include='*.c' --exclude-dir=fmod_int32 --exclude-dir=fmod_int64 \
+      '(^|[^a-zA-Z_"])(stdout|stderr)([^a-zA-Z_"]|$)' ${ARK_GUARD_DIRS} 2>/dev/null \
+      | grep -v 'CRAN:' | grep -Ev '^[^:]+:[0-9]+: *(/\*|\*)' || true`
+if [ -n "${hits}" ]; then
+  echo "cran_patches.sh: stdout/stderr reference survives patching:" >&2
+  echo "${hits}" >&2
+  guard_fail=1
+fi
 
 if [ ${guard_fail} -ne 0 ]; then
     echo "cran_patches.sh: patch patterns need re-anchoring against this SUNDIALS version" >&2

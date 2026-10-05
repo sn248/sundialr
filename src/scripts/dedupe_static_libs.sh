@@ -67,7 +67,7 @@ RANLIB=${RANLIB:-ranlib}
 echo "${TAG} AR=${AR}"
 echo "${TAG} RANLIB=${RANLIB}"
 
-LINK_ORDER="libsundials_idas.a libsundials_cvodes.a libsundials_core.a"
+LINK_ORDER="libsundials_arkode.a libsundials_idas.a libsundials_cvodes.a libsundials_core.a"
 
 REVERSED=""
 for lib in ${LINK_ORDER}; do
