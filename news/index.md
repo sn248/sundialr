@@ -16,7 +16,16 @@
   order 2 to 5 and `sundialr_arkode_set_table_name()` any ARKODE DIRK
   table by name. Status codes are ARKODE’s, mirrored as
   `SUNDIALR_ARK_*`; they coincide with the CVODE codes for the common
-  failures but not everywhere. The addition is binary-compatible, so
+  failures but not everywhere. `sundialr_arkode_reinit()` is warm: it
+  uses `ARKodeReset`, which keeps the step size and the error
+  controller’s history from the previous segment, the natural restart
+  after a dose within one trajectory. `sundialr_arkode_reinit_cold()` is
+  the full re-initialisation (`ARKStepReInit`), with `CVodeReInit`’s
+  semantics: it leaves a used handle exactly as a new one would be
+  (pinned bit for bit by a test), so a handle reused across unrelated
+  problems, such as the subjects of a population, gives results that do
+  not depend on what it solved before; the step count keeps running
+  across it. The addition is binary-compatible, so
   `SUNDIALR_ABI_VERSION` stays 1. To support it the bundled build now
   compiles `ARKODE`, with CRAN-compliance patches for the `stdout`
   references in its parameter-printing paths
