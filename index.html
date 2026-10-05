@@ -133,6 +133,16 @@
 <h2 id="whats-new">What’s new?<a class="anchor" aria-label="anchor" href="#whats-new"></a>
 </h2>
 <div class="section level3">
+<h3 id="version-021">Version 0.2.1<a class="anchor" aria-label="anchor" href="#version-021"></a>
+</h3>
+<ul>
+<li>Updated the underlying <code>SUNDIALS</code> library to v7.9.0 (Sep 2026)</li>
+<li>
+<strong>New</strong>: two additions to the C API, <code>sundialr_cvode_set_udata()</code> and <code>sundialr_cvode_reset_stats()</code>, so one solver handle can be reused across many parameter sets; <code>sundialr_cvode_get_num_steps()</code> now counts across reinitialisations as documented</li>
+<li>Installing from source no longer needs Perl’s <code>open</code> module, which minimal Debian/Ubuntu images such as <code>rocker/r-ver</code> lack</li>
+</ul>
+</div>
+<div class="section level3">
 <h3 id="version-020">Version 0.2.0<a class="anchor" aria-label="anchor" href="#version-020"></a>
 </h3>
 <ul>

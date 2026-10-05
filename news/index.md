@@ -2,6 +2,19 @@
 
 ## sundialr v0.2.1
 
+- Updated the underlying SUNDIALS library to v7.9.0 (Sep 2026). The
+  changes relevant to the bundled solvers are bug fixes: the
+  `SUNNonlinearSolver_Auto` stiffness switch no longer moves to Newton
+  iteration prematurely, and `IDA` no longer writes duplicate keys in
+  its logging output (logging is disabled in this build). The `sundialr`
+  interface and the C API are unchanged, and the existing
+  CRAN-compliance patches apply to the new sources without modification.
+  The installed headers change accordingly: the `N_Vector` operations
+  table gains an `nvsetdevicearraypointer` entry, so code compiled
+  against these headers must also be built against 7.9.0 sources
+- The `cmake` call now uses the current option names
+  `SUNDIALS_ENABLE_C_EXAMPLES` and `SUNDIALS_ENABLE_CXX_EXAMPLES`,
+  silencing two deprecation warnings during installation
 - The build no longer needs Perl’s `open` module. The step that
   normalises the line endings of the two `cmake`-generated headers used
   `perl -Mopen=IO,:raw`, and `open` is not part of the minimal
