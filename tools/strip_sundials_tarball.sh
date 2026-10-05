@@ -15,8 +15,8 @@
 #
 # If the tarball path is omitted, the official release is downloaded from
 # GitHub. Example:
-#   tools/strip_sundials_tarball.sh 7.8.0
-#   mv sundials-mod-7.8.0.tar.gz src/
+#   tools/strip_sundials_tarball.sh 7.9.0
+#   mv sundials-mod-7.9.0.tar.gz src/
 
 set -e
 

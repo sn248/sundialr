@@ -1,5 +1,5 @@
 #! /bin/sh
-# CRAN-compliance patches for the bundled SUNDIALS source (v7.8.0).
+# CRAN-compliance patches for the bundled SUNDIALS source (v7.9.0).
 #
 # CRAN ("Writing R Extensions" §1.6.4) forbids compiled code that can call
 # abort()/exit() or write to stdout/stderr. SUNDIALS errors are redirected to
@@ -17,8 +17,9 @@
 #   is used throughout: it is the one scripting language guaranteed present on
 #   every R build machine, including Windows/Rtools where python3 is absent.
 #
-# Patches applied (verified against SUNDIALS 7.8.0 — re-verify each pattern
-# on any SUNDIALS upgrade; the patterns match exact source lines):
+# Patches applied (verified against SUNDIALS 7.9.0; no pattern changed from
+# 7.8.0 — re-verify each pattern on any SUNDIALS upgrade; the patterns match
+# exact source lines):
 #
 # sundials_errors.c:
 #   - SUNAbortErrHandlerFn: remove abort() (replaced by our Rf_error handler)

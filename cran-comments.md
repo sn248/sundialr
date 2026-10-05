@@ -1,3 +1,30 @@
+## Comments for version 0.2.1
++ Updated the upstream `SUNDIALS` to version 7.9.0. The bundled library's CRAN-compliance patches (removal of `abort()`, `stdout`/`stderr` writes and `sprintf`) apply to the new sources unchanged, and the patch script's verification step confirms that no flagged call survives
++ New feature: two additive entry points in the C-linkage `CVODE` API, `sundialr_cvode_set_udata()` and `sundialr_cvode_reset_stats()`, letting another package reuse one solver handle across many parameter sets. Existing entry points are unchanged and the API remains binary-compatible
++ Fixed `sundialr_cvode_get_num_steps()` in the C API, which restarted its count at every reinitialisation instead of reporting the documented running total
++ Installing from source no longer requires Perl's `open` module, which is absent from the minimal `perl-base` shipped by some Linux images and caused installation to fail there
++ The `cmake` configuration uses the current option names for disabling the `SUNDIALS` examples, removing two deprecation warnings from the installation log
+
+### Test environments
+* local Ubuntu 24.04, R 4.6.1
+* R-hub (via the package's GitHub Actions workflow), all R-devel:
+  * `linux`
+  * `windows`
+  * `macos`
+  * `macos-arm64`
+  * `m1-san`
+* win-builder (R-devel)
+
+### R CMD check results
+0 errors | 0 warnings | 0 notes
+
+(Locally, the PDF-manual check also reports an ERROR/WARNING, but that is solely a
+missing `inconsolata.sty` LaTeX font in the local environment, not a package issue.)
+
+### Downstream dependencies
+There are currently no reverse dependencies on CRAN. `rxode2`, the previous one, no
+longer depends on this package as of version 5.1.7.
+
 ## Comments for version 0.2.0
 + New feature: `cvode()`, `cvodes()`, `ida()` and `cvsolve()` gain an optional `jacobian` argument for supplying the Jacobian of the system analytically instead of relying on the finite-difference approximation. It is the last argument of each function and defaults to `NULL`, so existing calls, including positional ones, are unaffected
 + New feature: `cvodes()` gains an optional `sensitivity` argument for supplying the sensitivity right-hand side analytically, `function(t, y, ydot, iS, yS, p)` returning `d(yS_iS)/dt`. It defaults to `NULL`, in which case the sensitivities are approximated by finite differences of the right-hand side as before, so existing calls are unaffected
