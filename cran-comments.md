@@ -5,6 +5,7 @@
 + Fixed `sundialr_cvode_get_num_steps()` in the C API, which restarted its count at every reinitialisation instead of reporting the documented running total
 + Installing from source no longer requires Perl's `open` module, which is absent from the minimal `perl-base` shipped by some Linux images and caused installation to fail there
 + The `cmake` configuration uses the current option names for disabling the `SUNDIALS` examples, removing two deprecation warnings from the installation log
++ The vignette gains a section demonstrating the C API with `ARKODE`. Its `Rcpp` chunk is compiled and run when the vignette is built, and checks the integrator against a closed-form solution
 
 ### Test environments
 * local Ubuntu 24.04, R 4.6.1
