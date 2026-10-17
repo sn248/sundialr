@@ -30,10 +30,12 @@ The four exported functions from the package are:
 - `cvsolve` - A convenient interface to solve a system of ODEs with
   discontinuities in solution.
 
-In future, we plan to provide interface for the other solvers (i.e.,
-`IDA/IDAS` and `ARCODE` in the library also. Right now, this package
-serves as a test case for providing an interface to the `SUNDIALS`
-library for `R` users.
+The `CVODE` and `ARKODE` integrators are also available to other
+packages’ compiled code through a `C` API (see [Using `ARKODE` and
+`CVODE` from compiled
+code](#using-arkode-and-cvode-from-compiled-code)). In future, we plan
+to provide an `R` interface for other solvers in the library, such as
+`IDAS` and `ARKODE`, as well.
 
 *One of the advantage of using this package is that all the source code
 of the `SUNDIALS` library is bundled with the package itself, so it does
@@ -538,6 +540,167 @@ In future, I intend to provide options to select specific entities and
 parameters with respect to which sensitivities are to be computed as the
 sensitivity matrix can get very large for medium to large models.
 
+## Using `ARKODE` and `CVODE` from compiled code
+
+Besides the `R` functions above, `sundialr` exposes two integrators to
+other packages’ compiled code through a plain-`C` API: `CVODE` (BDF) and
+`ARKODE`, run as a fully implicit ESDIRK method (a singly diagonally
+implicit Runge-Kutta method with an explicit first stage). Both use
+Newton iteration with a dense linear solver. The API is declared in the
+header `sundialr_capi.h` and is meant for packages that have their own
+solve loop in `C` or `C++` and want to use a `SUNDIALS` integrator
+inside it, without bundling `SUNDIALS` themselves. Everything goes
+through plain `double`/`int` arguments and an opaque handle, so no
+`SUNDIALS` headers are needed.
+
+The entry points are registered with `R_RegisterCCallable` and fetched
+with `R_GetCCallable("sundialr", name)`. A package using them lists
+`sundialr` under `LinkingTo`, which puts the header on the include path,
+and under `Imports`, which ensures `sundialr` is loaded, and so its
+entry points registered, before they are looked up. The life cycle of a
+handle is `create` → configure (`set_rhs`, tolerances, optionally
+`set_jac`, step limits and, for `ARKODE`, the method) → `reinit` →
+`solve`, repeated as needed → `free`. `reinit` is called whenever the
+state jumps, for example at a dose, and the same handle is reused across
+all the segments of an integration. Every entry point returns a status
+code and never throws. After a failure, `sundialr_arkode_last_err()` (or
+`sundialr_cvode_last_err()`) returns the message.
+
+As an example, we simulate repeated doses of the one-compartment model
+from the `cvsolve` section, $`\frac{dC}{dt} = -k_{el} C`$, with
+`ARKODE`, adding each dose to the state and restarting the integrator
+from there. Here the code is compiled with
+[`Rcpp::sourceCpp()`](https://rdrr.io/pkg/Rcpp/man/sourceCpp.html), so
+`// [[Rcpp::depends(sundialr)]]` does the job of `LinkingTo`:
+
+``` cpp
+// [[Rcpp::depends(sundialr)]]
+#include <Rcpp.h>
+#include <R_ext/Rdynload.h>
+#include <sundialr_capi.h>
+#include <string>
+
+// Look up a sundialr entry point, typed from its declaration in sundialr_capi.h
+#define SUNDIALR_GET(fn) \
+  reinterpret_cast<decltype(&fn)>(R_GetCCallable("sundialr", #fn))
+
+// dC/dt = -k * C; the elimination rate k arrives through udata
+static int elimination(double t, const double* y, double* ydot, void* udata) {
+  const double k = *static_cast<const double*>(udata);
+  ydot[0] = -k * y[0];
+  return 0;
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericVector arkode_doses(Rcpp::NumericVector times,
+                                 Rcpp::NumericVector dose_times,
+                                 double dose, double k) {
+  auto create   = SUNDIALR_GET(sundialr_arkode_create);
+  auto set_rhs  = SUNDIALR_GET(sundialr_arkode_set_rhs);
+  auto set_tol  = SUNDIALR_GET(sundialr_arkode_set_tol_scalar);
+  auto reinit   = SUNDIALR_GET(sundialr_arkode_reinit);
+  auto solve    = SUNDIALR_GET(sundialr_arkode_solve);
+  auto last_err = SUNDIALR_GET(sundialr_arkode_last_err);
+  auto free_h   = SUNDIALR_GET(sundialr_arkode_free);
+
+  void* m = create(1, &k);
+  if (m == NULL) Rcpp::stop("sundialr_arkode_create failed");
+  int flag = set_rhs(m, elimination);
+  if (flag >= 0) flag = set_tol(m, 1e-8, 1e-10);
+
+  Rcpp::NumericVector out(times.size());
+  double t = times[0], y = 0.0;
+  if (flag >= 0) flag = reinit(m, t, &y);
+
+  R_xlen_t d = 0;
+  for (R_xlen_t i = 0; i < times.size() && flag >= 0; ++i) {
+    // Apply each dose due by this output time: integrate up to it, add the
+    // dose to the state, and restart the integrator from the new state
+    while (flag >= 0 && d < dose_times.size() && dose_times[d] <= times[i]) {
+      if (dose_times[d] > t) flag = solve(m, dose_times[d], &y, &t);
+      if (flag >= 0) {
+        y += dose;
+        t = dose_times[d];
+        flag = reinit(m, t, &y);
+      }
+      ++d;
+    }
+    if (flag >= 0 && times[i] > t) flag = solve(m, times[i], &y, &t);
+    out[i] = y;
+  }
+
+  // Release the handle before raising an R error, which would skip the free
+  if (flag < 0) {
+    const char* msg = last_err(m);
+    std::string err = msg ? msg : "no message recorded";
+    free_h(m);
+    Rcpp::stop("ARKODE failed with status %d: %s", flag, err);
+  }
+  free_h(m);
+  return out;
+}
+```
+
+Four doses of 100, twelve hours apart, give a solution with a closed
+form, the sum of the decaying contributions of the doses given so far,
+which we can check the integrator against:
+
+``` r
+
+times <- seq(from = 0, to = 48, by = 0.25)
+dose_times <- c(0, 12, 24, 36)
+k_el <- 0.1
+
+C_arkode <- arkode_doses(times, dose_times, dose = 100, k = k_el)
+C_exact <- sapply(times, function(t) {
+  given <- dose_times[dose_times <= t]
+  sum(100 * exp(-k_el * (t - given)))
+})
+
+max(abs(C_arkode - C_exact))     # largest absolute error
+#> [1] 7.220233e-06
+
+plot(times, C_arkode, type = "l", lty = 1, frame.plot = FALSE,
+     xlab = "time", ylab = "C", main = "Repeated doses solved with ARKODE")
+```
+
+![](my-vignette_files/figure-html/arkode-check-1.png)
+
+Some points to note:
+
+- The default `ARKODE` method is `ARKODE_ESDIRK436L2SA_6_3_4`, of
+  order 4. Before the first `reinit`, `sundialr_arkode_set_order(m, q)`
+  selects `ARKODE`’s default ESDIRK method of order `q` (2 to 5), and
+  `sundialr_arkode_set_table_name(m, name)` selects any `ARKODE` DIRK
+  table by name.
+
+- `sundialr_arkode_reinit()`, used above, is a warm restart: it keeps
+  the step size and error-controller history from the previous segment,
+  which suits a dose within one trajectory.
+  `sundialr_arkode_reinit_cold()` re-initialises the integrator fully,
+  leaving the handle exactly as a new one would be. Use it when a handle
+  is reused for an unrelated problem, such as the next subject of a
+  population (`sundialr_arkode_set_udata()` repoints the callback data),
+  so that the results do not depend on what the handle solved before.
+
+- The `CVODE` API has the same shape under the `sundialr_cvode_` prefix,
+  with the same callback types. Replacing `arkode` with `cvode` in the
+  seven names looked up above solves the same problem with `CVODE`’s BDF
+  method. The `set_order` and `set_table_name` calls and `reinit_cold()`
+  are specific to `ARKODE`, and `sundialr_cvode_reinit()` always
+  performs a full re-initialisation.
+
+- Status codes are those of the underlying integrator, mirrored in the
+  header as `SUNDIALR_CV_*` and `SUNDIALR_ARK_*`. They agree for the
+  common failures but not everywhere, so test the `ARKODE` codes against
+  the `SUNDIALR_ARK_*` values.
+
+- The full contract, including that a handle performs no heap allocation
+  when reused after its first `reinit` and `solve`, and that distinct
+  handles may be used from different threads, one per thread, is
+  documented in the comments of `sundialr_capi.h`, installed in the
+  package’s `include` directory.
+
 ## Summary
 
 - The package `sundialr` provides a way to interface with the famous
@@ -560,9 +723,14 @@ sensitivity matrix can get very large for medium to large models.
   function is provided which is an interface to the `IDA` function in
   `SUNDIALS`.
 
+- For other packages’ compiled code, `sundialr` provides a `C` API to
+  the `CVODE` (BDF) and `ARKODE` (ESDIRK) integrators, declared in
+  `sundialr_capi.h` and accessed through `R_GetCCallable`. `ARKODE` is
+  currently available only through this API, not as an `R` function.
+
 As a note, since this package is under active development, the
 interfaces of both `CVODE` and `CVODES` (i.e., the function signatures)
 may change in the future versions. Please keep this mind if you intend
-to use `sundialr` in your applications. In near future, interface for
-other solvers from the `C` library such as`IDAS` and `ARKODE` may also
-be added.
+to use `sundialr` in your applications. In near future, an `R` interface
+to other solvers from the `C` library, such as `IDAS` and `ARKODE`, may
+also be added.

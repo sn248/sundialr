@@ -73,6 +73,15 @@
   mutable state and no R API on any entry point — may be driven from
   concurrent threads, one handle per thread (pinned by a two-thread
   test)
+- The vignette has a new section, “Using `ARKODE` and `CVODE` from
+  compiled code”, showing how another package uses the C API: it looks
+  up the `sundialr_arkode_*` entry points with `R_GetCCallable`,
+  simulates repeated doses of a one-compartment model with `ARKODE`,
+  restarting the integrator at each dose, and checks the result against
+  the closed-form solution. It also covers method selection, warm and
+  cold reinitialisation and switching to `CVODE`. The Introduction and
+  Summary no longer describe `ARKODE` as a future addition; it is
+  available through the C API, though not yet as an `R` function
 
 ## sundialr v0.2.0
 

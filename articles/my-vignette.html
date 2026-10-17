@@ -96,10 +96,13 @@ Equations (DAEs).</p></li>
 <li><p><code>cvsolve</code> - A convenient interface to solve a system
 of ODEs with discontinuities in solution.</p></li>
 </ul>
-<p>In future, we plan to provide interface for the other solvers (i.e.,
-<code>IDA/IDAS</code> and <code>ARCODE</code> in the library also. Right
-now, this package serves as a test case for providing an interface to
-the <code>SUNDIALS</code> library for <code>R</code> users.</p>
+<p>The <code>CVODE</code> and <code>ARKODE</code> integrators are also
+available to other packages’ compiled code through a <code>C</code> API
+(see <a href="#using-arkode-and-cvode-from-compiled-code">Using
+<code>ARKODE</code> and <code>CVODE</code> from compiled code</a>). In
+future, we plan to provide an <code>R</code> interface for other solvers
+in the library, such as <code>IDAS</code> and <code>ARKODE</code>, as
+well.</p>
 <p><em>One of the advantage of using this package is that all the source
 code of the <code>SUNDIALS</code> library is bundled with the package
 itself, so it does not require the <code>SUNDIALS</code> library to be
@@ -587,6 +590,169 @@ the sensitivity matrix can get very large for medium to large
 models.</p>
 </div>
 <div class="section level2">
+<h2 id="using-arkode-and-cvode-from-compiled-code">Using <code>ARKODE</code> and <code>CVODE</code> from compiled
+code<a class="anchor" aria-label="anchor" href="#using-arkode-and-cvode-from-compiled-code"></a>
+</h2>
+<p>Besides the <code>R</code> functions above, <code>sundialr</code>
+exposes two integrators to other packages’ compiled code through a
+plain-<code>C</code> API: <code>CVODE</code> (BDF) and
+<code>ARKODE</code>, run as a fully implicit ESDIRK method (a singly
+diagonally implicit Runge-Kutta method with an explicit first stage).
+Both use Newton iteration with a dense linear solver. The API is
+declared in the header <code>sundialr_capi.h</code> and is meant for
+packages that have their own solve loop in <code>C</code> or
+<code>C++</code> and want to use a <code>SUNDIALS</code> integrator
+inside it, without bundling <code>SUNDIALS</code> themselves. Everything
+goes through plain <code>double</code>/<code>int</code> arguments and an
+opaque handle, so no <code>SUNDIALS</code> headers are needed.</p>
+<p>The entry points are registered with <code>R_RegisterCCallable</code>
+and fetched with <code>R_GetCCallable("sundialr", name)</code>. A
+package using them lists <code>sundialr</code> under
+<code>LinkingTo</code>, which puts the header on the include path, and
+under <code>Imports</code>, which ensures <code>sundialr</code> is
+loaded, and so its entry points registered, before they are looked up.
+The life cycle of a handle is <code>create</code> → configure
+(<code>set_rhs</code>, tolerances, optionally <code>set_jac</code>, step
+limits and, for <code>ARKODE</code>, the method) → <code>reinit</code> →
+<code>solve</code>, repeated as needed → <code>free</code>.
+<code>reinit</code> is called whenever the state jumps, for example at a
+dose, and the same handle is reused across all the segments of an
+integration. Every entry point returns a status code and never throws.
+After a failure, <code>sundialr_arkode_last_err()</code> (or
+<code>sundialr_cvode_last_err()</code>) returns the message.</p>
+<p>As an example, we simulate repeated doses of the one-compartment
+model from the <code>cvsolve</code> section,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>d</mi><mi>C</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mi>−</mi><msub><mi>k</mi><mrow><mi>e</mi><mi>l</mi></mrow></msub><mi>C</mi></mrow><annotation encoding="application/x-tex">\frac{dC}{dt} = -k_{el} C</annotation></semantics></math>,
+with <code>ARKODE</code>, adding each dose to the state and restarting
+the integrator from there. Here the code is compiled with
+<code><a href="https://rdrr.io/pkg/Rcpp/man/sourceCpp.html" class="external-link">Rcpp::sourceCpp()</a></code>, so
+<code>// [[Rcpp::depends(sundialr)]]</code> does the job of
+<code>LinkingTo</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co">// [[Rcpp::depends(sundialr)]]</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;Rcpp.h&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;R_ext/Rdynload.h&gt;</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;sundialr_capi.h&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;string&gt;</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">// Look up a sundialr entry point, typed from its declaration in sundialr_capi.h</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="pp">#define SUNDIALR_GET</span><span class="op">(</span>fn<span class="op">)</span><span class="pp"> </span><span class="op">\</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="pp">  </span><span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="kw">decltype</span><span class="op">(&amp;</span>fn<span class="op">)&gt;(</span>R_GetCCallable<span class="op">(</span><span class="st">"sundialr"</span><span class="op">,</span><span class="pp"> </span><span class="op">#</span>fn<span class="op">))</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">// dC/dt = -k * C; the elimination rate k arrives through udata</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="at">static</span> <span class="dt">int</span> elimination<span class="op">(</span><span class="dt">double</span> t<span class="op">,</span> <span class="at">const</span> <span class="dt">double</span><span class="op">*</span> y<span class="op">,</span> <span class="dt">double</span><span class="op">*</span> ydot<span class="op">,</span> <span class="dt">void</span><span class="op">*</span> udata<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>  <span class="at">const</span> <span class="dt">double</span> k <span class="op">=</span> <span class="op">*</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">double</span><span class="op">*&gt;(</span>udata<span class="op">);</span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>  ydot<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="op">-</span>k <span class="op">*</span> y<span class="op">[</span><span class="dv">0</span><span class="op">];</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>  <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">// [[Rcpp::export]]</span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a>Rcpp<span class="op">::</span>NumericVector arkode_doses<span class="op">(</span>Rcpp<span class="op">::</span>NumericVector times<span class="op">,</span></span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a>                                 Rcpp<span class="op">::</span>NumericVector dose_times<span class="op">,</span></span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a>                                 <span class="dt">double</span> dose<span class="op">,</span> <span class="dt">double</span> k<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a>  <span class="kw">auto</span> create   <span class="op">=</span> SUNDIALR_GET<span class="op">(</span>sundialr_arkode_create<span class="op">);</span></span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a>  <span class="kw">auto</span> set_rhs  <span class="op">=</span> SUNDIALR_GET<span class="op">(</span>sundialr_arkode_set_rhs<span class="op">);</span></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a>  <span class="kw">auto</span> set_tol  <span class="op">=</span> SUNDIALR_GET<span class="op">(</span>sundialr_arkode_set_tol_scalar<span class="op">);</span></span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a>  <span class="kw">auto</span> reinit   <span class="op">=</span> SUNDIALR_GET<span class="op">(</span>sundialr_arkode_reinit<span class="op">);</span></span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a>  <span class="kw">auto</span> solve    <span class="op">=</span> SUNDIALR_GET<span class="op">(</span>sundialr_arkode_solve<span class="op">);</span></span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a>  <span class="kw">auto</span> last_err <span class="op">=</span> SUNDIALR_GET<span class="op">(</span>sundialr_arkode_last_err<span class="op">);</span></span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a>  <span class="kw">auto</span> free_h   <span class="op">=</span> SUNDIALR_GET<span class="op">(</span>sundialr_arkode_free<span class="op">);</span></span>
+<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a></span>
+<span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a>  <span class="dt">void</span><span class="op">*</span> m <span class="op">=</span> create<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="op">&amp;</span>k<span class="op">);</span></span>
+<span id="cb12-31"><a href="#cb12-31" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>m <span class="op">==</span> NULL<span class="op">)</span> Rcpp<span class="op">::</span>stop<span class="op">(</span><span class="st">"sundialr_arkode_create failed"</span><span class="op">);</span></span>
+<span id="cb12-32"><a href="#cb12-32" tabindex="-1"></a>  <span class="dt">int</span> flag <span class="op">=</span> set_rhs<span class="op">(</span>m<span class="op">,</span> elimination<span class="op">);</span></span>
+<span id="cb12-33"><a href="#cb12-33" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>flag <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span> flag <span class="op">=</span> set_tol<span class="op">(</span>m<span class="op">,</span> <span class="fl">1e-8</span><span class="op">,</span> <span class="fl">1e-10</span><span class="op">);</span></span>
+<span id="cb12-34"><a href="#cb12-34" tabindex="-1"></a></span>
+<span id="cb12-35"><a href="#cb12-35" tabindex="-1"></a>  Rcpp<span class="op">::</span>NumericVector out<span class="op">(</span>times<span class="op">.</span>size<span class="op">());</span></span>
+<span id="cb12-36"><a href="#cb12-36" tabindex="-1"></a>  <span class="dt">double</span> t <span class="op">=</span> times<span class="op">[</span><span class="dv">0</span><span class="op">],</span> y <span class="op">=</span> <span class="fl">0.0</span><span class="op">;</span></span>
+<span id="cb12-37"><a href="#cb12-37" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>flag <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span> flag <span class="op">=</span> reinit<span class="op">(</span>m<span class="op">,</span> t<span class="op">,</span> <span class="op">&amp;</span>y<span class="op">);</span></span>
+<span id="cb12-38"><a href="#cb12-38" tabindex="-1"></a></span>
+<span id="cb12-39"><a href="#cb12-39" tabindex="-1"></a>  <span class="dt">R_xlen_t</span> d <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb12-40"><a href="#cb12-40" tabindex="-1"></a>  <span class="cf">for</span> <span class="op">(</span><span class="dt">R_xlen_t</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> times<span class="op">.</span>size<span class="op">()</span> <span class="op">&amp;&amp;</span> flag <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> <span class="op">++</span>i<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-41"><a href="#cb12-41" tabindex="-1"></a>    <span class="co">// Apply each dose due by this output time: integrate up to it, add the</span></span>
+<span id="cb12-42"><a href="#cb12-42" tabindex="-1"></a>    <span class="co">// dose to the state, and restart the integrator from the new state</span></span>
+<span id="cb12-43"><a href="#cb12-43" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>flag <span class="op">&gt;=</span> <span class="dv">0</span> <span class="op">&amp;&amp;</span> d <span class="op">&lt;</span> dose_times<span class="op">.</span>size<span class="op">()</span> <span class="op">&amp;&amp;</span> dose_times<span class="op">[</span>d<span class="op">]</span> <span class="op">&lt;=</span> times<span class="op">[</span>i<span class="op">])</span> <span class="op">{</span></span>
+<span id="cb12-44"><a href="#cb12-44" tabindex="-1"></a>      <span class="cf">if</span> <span class="op">(</span>dose_times<span class="op">[</span>d<span class="op">]</span> <span class="op">&gt;</span> t<span class="op">)</span> flag <span class="op">=</span> solve<span class="op">(</span>m<span class="op">,</span> dose_times<span class="op">[</span>d<span class="op">],</span> <span class="op">&amp;</span>y<span class="op">,</span> <span class="op">&amp;</span>t<span class="op">);</span></span>
+<span id="cb12-45"><a href="#cb12-45" tabindex="-1"></a>      <span class="cf">if</span> <span class="op">(</span>flag <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-46"><a href="#cb12-46" tabindex="-1"></a>        y <span class="op">+=</span> dose<span class="op">;</span></span>
+<span id="cb12-47"><a href="#cb12-47" tabindex="-1"></a>        t <span class="op">=</span> dose_times<span class="op">[</span>d<span class="op">];</span></span>
+<span id="cb12-48"><a href="#cb12-48" tabindex="-1"></a>        flag <span class="op">=</span> reinit<span class="op">(</span>m<span class="op">,</span> t<span class="op">,</span> <span class="op">&amp;</span>y<span class="op">);</span></span>
+<span id="cb12-49"><a href="#cb12-49" tabindex="-1"></a>      <span class="op">}</span></span>
+<span id="cb12-50"><a href="#cb12-50" tabindex="-1"></a>      <span class="op">++</span>d<span class="op">;</span></span>
+<span id="cb12-51"><a href="#cb12-51" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-52"><a href="#cb12-52" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>flag <span class="op">&gt;=</span> <span class="dv">0</span> <span class="op">&amp;&amp;</span> times<span class="op">[</span>i<span class="op">]</span> <span class="op">&gt;</span> t<span class="op">)</span> flag <span class="op">=</span> solve<span class="op">(</span>m<span class="op">,</span> times<span class="op">[</span>i<span class="op">],</span> <span class="op">&amp;</span>y<span class="op">,</span> <span class="op">&amp;</span>t<span class="op">);</span></span>
+<span id="cb12-53"><a href="#cb12-53" tabindex="-1"></a>    out<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> y<span class="op">;</span></span>
+<span id="cb12-54"><a href="#cb12-54" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb12-55"><a href="#cb12-55" tabindex="-1"></a></span>
+<span id="cb12-56"><a href="#cb12-56" tabindex="-1"></a>  <span class="co">// Release the handle before raising an R error, which would skip the free</span></span>
+<span id="cb12-57"><a href="#cb12-57" tabindex="-1"></a>  <span class="cf">if</span> <span class="op">(</span>flag <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-58"><a href="#cb12-58" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span><span class="op">*</span> msg <span class="op">=</span> last_err<span class="op">(</span>m<span class="op">);</span></span>
+<span id="cb12-59"><a href="#cb12-59" tabindex="-1"></a>    <span class="bu">std::</span>string err <span class="op">=</span> msg <span class="op">?</span> msg <span class="op">:</span> <span class="st">"no message recorded"</span><span class="op">;</span></span>
+<span id="cb12-60"><a href="#cb12-60" tabindex="-1"></a>    free_h<span class="op">(</span>m<span class="op">);</span></span>
+<span id="cb12-61"><a href="#cb12-61" tabindex="-1"></a>    Rcpp<span class="op">::</span>stop<span class="op">(</span><span class="st">"ARKODE failed with status </span><span class="sc">%d</span><span class="st">: </span><span class="sc">%s</span><span class="st">"</span><span class="op">,</span> flag<span class="op">,</span> err<span class="op">);</span></span>
+<span id="cb12-62"><a href="#cb12-62" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb12-63"><a href="#cb12-63" tabindex="-1"></a>  free_h<span class="op">(</span>m<span class="op">);</span></span>
+<span id="cb12-64"><a href="#cb12-64" tabindex="-1"></a>  <span class="cf">return</span> out<span class="op">;</span></span>
+<span id="cb12-65"><a href="#cb12-65" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Four doses of 100, twelve hours apart, give a solution with a closed
+form, the sum of the decaying contributions of the doses given so far,
+which we can check the integrator against:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">times</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span>from <span class="op">=</span> <span class="fl">0</span>, to <span class="op">=</span> <span class="fl">48</span>, by <span class="op">=</span> <span class="fl">0.25</span><span class="op">)</span></span>
+<span><span class="va">dose_times</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">12</span>, <span class="fl">24</span>, <span class="fl">36</span><span class="op">)</span></span>
+<span><span class="va">k_el</span> <span class="op">&lt;-</span> <span class="fl">0.1</span></span>
+<span></span>
+<span><span class="va">C_arkode</span> <span class="op">&lt;-</span> <span class="fu">arkode_doses</span><span class="op">(</span><span class="va">times</span>, <span class="va">dose_times</span>, dose <span class="op">=</span> <span class="fl">100</span>, k <span class="op">=</span> <span class="va">k_el</span><span class="op">)</span></span>
+<span><span class="va">C_exact</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">times</span>, <span class="kw">function</span><span class="op">(</span><span class="va">t</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">given</span> <span class="op">&lt;-</span> <span class="va">dose_times</span><span class="op">[</span><span class="va">dose_times</span> <span class="op">&lt;=</span> <span class="va">t</span><span class="op">]</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="op">-</span><span class="va">k_el</span> <span class="op">*</span> <span class="op">(</span><span class="va">t</span> <span class="op">-</span> <span class="va">given</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">C_arkode</span> <span class="op">-</span> <span class="va">C_exact</span><span class="op">)</span><span class="op">)</span>     <span class="co"># largest absolute error</span></span>
+<span><span class="co">#&gt; [1] 7.220233e-06</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">times</span>, <span class="va">C_arkode</span>, type <span class="op">=</span> <span class="st">"l"</span>, lty <span class="op">=</span> <span class="fl">1</span>, frame.plot <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>     xlab <span class="op">=</span> <span class="st">"time"</span>, ylab <span class="op">=</span> <span class="st">"C"</span>, main <span class="op">=</span> <span class="st">"Repeated doses solved with ARKODE"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="my-vignette_files/figure-html/arkode-check-1.png" class="r-plt" alt="" width="672"></p>
+<p>Some points to note:</p>
+<ul>
+<li><p>The default <code>ARKODE</code> method is
+<code>ARKODE_ESDIRK436L2SA_6_3_4</code>, of order 4. Before the first
+<code>reinit</code>, <code>sundialr_arkode_set_order(m, q)</code>
+selects <code>ARKODE</code>’s default ESDIRK method of order
+<code>q</code> (2 to 5), and
+<code>sundialr_arkode_set_table_name(m, name)</code> selects any
+<code>ARKODE</code> DIRK table by name.</p></li>
+<li><p><code>sundialr_arkode_reinit()</code>, used above, is a warm
+restart: it keeps the step size and error-controller history from the
+previous segment, which suits a dose within one trajectory.
+<code>sundialr_arkode_reinit_cold()</code> re-initialises the integrator
+fully, leaving the handle exactly as a new one would be. Use it when a
+handle is reused for an unrelated problem, such as the next subject of a
+population (<code>sundialr_arkode_set_udata()</code> repoints the
+callback data), so that the results do not depend on what the handle
+solved before.</p></li>
+<li><p>The <code>CVODE</code> API has the same shape under the
+<code>sundialr_cvode_</code> prefix, with the same callback types.
+Replacing <code>arkode</code> with <code>cvode</code> in the seven names
+looked up above solves the same problem with <code>CVODE</code>’s BDF
+method. The <code>set_order</code> and <code>set_table_name</code> calls
+and <code>reinit_cold()</code> are specific to <code>ARKODE</code>, and
+<code>sundialr_cvode_reinit()</code> always performs a full
+re-initialisation.</p></li>
+<li><p>Status codes are those of the underlying integrator, mirrored in
+the header as <code>SUNDIALR_CV_*</code> and
+<code>SUNDIALR_ARK_*</code>. They agree for the common failures but not
+everywhere, so test the <code>ARKODE</code> codes against the
+<code>SUNDIALR_ARK_*</code> values.</p></li>
+<li><p>The full contract, including that a handle performs no heap
+allocation when reused after its first <code>reinit</code> and
+<code>solve</code>, and that distinct handles may be used from different
+threads, one per thread, is documented in the comments of
+<code>sundialr_capi.h</code>, installed in the package’s
+<code>include</code> directory.</p></li>
+</ul>
+</div>
+<div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <ul>
@@ -607,13 +773,20 @@ calculated will be added soon.</p></li>
 <li><p>To solve a system of differential algebraic systems, the
 <code>ida</code> function is provided which is an interface to the
 <code>IDA</code> function in <code>SUNDIALS</code>.</p></li>
+<li><p>For other packages’ compiled code, <code>sundialr</code> provides
+a <code>C</code> API to the <code>CVODE</code> (BDF) and
+<code>ARKODE</code> (ESDIRK) integrators, declared in
+<code>sundialr_capi.h</code> and accessed through
+<code>R_GetCCallable</code>. <code>ARKODE</code> is currently available
+only through this API, not as an <code>R</code> function.</p></li>
 </ul>
 <p>As a note, since this package is under active development, the
 interfaces of both <code>CVODE</code> and <code>CVODES</code> (i.e., the
 function signatures) may change in the future versions. Please keep this
 mind if you intend to use <code>sundialr</code> in your applications. In
-near future, interface for other solvers from the <code>C</code> library
-such as<code>IDAS</code> and <code>ARKODE</code> may also be added.</p>
+near future, an <code>R</code> interface to other solvers from the
+<code>C</code> library, such as <code>IDAS</code> and
+<code>ARKODE</code>, may also be added.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
