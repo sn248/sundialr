@@ -24,7 +24,7 @@ Currently, this package provides an interface to the `CVODE` and `CVODES` functi
 The four exported functions from the package are:
 
 + `cvode` - An interface to the `CVODE` function in `SUNDIALS` to solve a system of ODEs.
-+ `cvodes` - An interface to the `CVODES` function in `SUNDIALS` to calculate forward sensitivites with respect to parameters of the ODE system.
++ `cvodes` - An interface to the `CVODES` function in `SUNDIALS` to calculate forward sensitivities with respect to parameters of the ODE system.
 
 + `ida` - An interface to the `IDA` function in `SUNDIALS` to solve a system of Differential-Algebraic Equations (DAEs).
 
@@ -245,7 +245,7 @@ abstol <- c(1e-8,1e-14,1e-6)
 df1 <- sundialr::ida(time_vec, IC, IRes, DAE_R , params, reltol, abstol) 
 ```
 
-## Solving an ODE system with discontinuties in solution
+## Solving an ODE system with discontinuities in solution
 The `cvsolve` function defined in `sundialr` package provides a convenience interface to solve ODEs with one or more discontinuities in solution. An example of such a system of ODEs would be pharmacokinetics of a drug with repeated bolus administration. Let's look at a simple example of multiple doses of a drug with a first-order degradation administered intravenously. The ODE system for the drug is
 $$
 \frac{dC}{dt} = -k_{el} * C
@@ -276,7 +276,7 @@ TDOSE
 
 + `ID` represents the index of the state with discontinuity
 
-+ `TIMES` represents the times at which discontinutiy is applied
++ `TIMES` represents the times at which a discontinuity is applied
 
 + `VAL` represents the value **added** to the value of the state at specified times.
 
@@ -315,7 +315,7 @@ df2 <- sundialr::cvsolve(TSAMP, c(1), ODE_R, params, TDOSE)  # solving with disc
 ## first column is time, second column is the state
 time <- df2[,1]
 y1 <- df2[,2]
-plot(time, y1, type = "l", lty = 1, main = "An ODE system with discontinuties", frame.plot = F)   
+plot(time, y1, type = "l", lty = 1, main = "An ODE system with discontinuities", frame.plot = F)   
 ```
 
 Note that in the example above, `TSAMP` is the sampling time at which the solution is desired. The value in the `Events` input is always _added_ to the current value of the state, and this applies at the initial time as well: the Initial Value of $y_1$ of 1 provided by the `IC` parameter is the starting point, and the value of 100 provided in the `TDOSE` data frame at $t = 0$ is added to it, so $y_1$ starts at 101. The initial conditions are never discarded, and several events at the same time on one state accumulate.
@@ -379,12 +379,12 @@ function call below (the entire code can be found at this [link](https://github.
 df1 <- cvodes(time_vec, IC, ODE_R , params, reltol, abstol,"STG",F)  ## using R
 df2 <- cvodes(time_vec, IC, ODE_Rcpp , params, reltol, abstol,"STG",F)  ## using Rcpp
 ```
-The additional arguments in `cvodes` specify the senstivity calculation method
+The additional arguments in `cvodes` specify the sensitivity calculation method
 to be used (`STG` for `STAGGERED` or `SIM` for `SIMULATENOUS`) and flag for error control
 (either `T` or `F`).
 
 The output of `cvodes` is a matrix with number of rows equal to the length of
-the time vector (`time_vec`) and the number of columns being equal to length of (`y` $\times$ `p` + 1). The first columns is for time. Currently, the sensitivity of every enitity is calculated with respect to every parameter in model. For example, for the current model with `3` entities (ODEs) and `3` parameters, a total of `9` sensitivities are calculated at each
+the time vector (`time_vec`) and the number of columns being equal to length of (`y` $\times$ `p` + 1). The first columns is for time. Currently, the sensitivity of every entity is calculated with respect to every parameter in model. For example, for the current model with `3` entities (ODEs) and `3` parameters, a total of `9` sensitivities are calculated at each
 output time, i.e. `y1` w.r.t `p1`, `p2`, `p3`, `y2` w.r.t. `p1`, `p2`, `p3` and so on.
 The first 3 (`length(y)`) columns give sensitivity w.r.t the first parameter, the next
 3 (`length(y)`) columns give sensitivity w.r.t the second parameter and so on.
@@ -521,7 +521,7 @@ Some points to note:
 
 
 ## Summary
-+ The package `sundialr` provides a way to interface with the famous `SUNDIALS` C library (provided by Lawerence Livermore National Security)
++ The package `sundialr` provides a way to interface with the famous `SUNDIALS` C library (provided by Lawrence Livermore National Security)
 to solver initial value problems. 
 
 + The package allows the system of differential equations to be written in `R` or using `Rcpp`. Function `cvode` is used to solve initial value problems with a single initialization, but problems with multiple discontinuities in the solution can be solved using the `cvsolve` interface. 

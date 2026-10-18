@@ -36,7 +36,7 @@ cvsolve(
 A Matrix. First column is the time-vector, the other columns are values of y in order they are provided.
 }
 \description{
-CVSOLVE solver to solve stiff ODEs with discontinuties
+CVSOLVE solver to solve stiff ODEs with discontinuities
 }
 \examples{
 # Example of solving a set of ODEs with multiple discontinuities using cvsolve

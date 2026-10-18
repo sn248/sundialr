@@ -98,7 +98,7 @@ cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance = 0
 
 #'cvsolve
 #'
-#'CVSOLVE solver to solve stiff ODEs with discontinuties
+#'CVSOLVE solver to solve stiff ODEs with discontinuities
 #'@param time_vector time vector
 #'@param IC Initial Conditions
 #'@param input_function Right Hand Side function of ODEs
@@ -118,7 +118,7 @@ cvsolve <- function(time_vector, IC, input_function, Parameters, Events = NULL, 
 #' IDA solver to solve stiff DAEs
 #'@param time_vector time vector
 #'@param IC Initial Value of y
-#'@param IRes Inital Value of ydot
+#'@param IRes Initial value of ydot
 #'@param input_function Right Hand Side function of DAEs
 #'@param Parameters Parameters input to ODEs
 #'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)

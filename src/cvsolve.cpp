@@ -67,7 +67,7 @@ static int jac_cvsolve(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
 //------------------------------------------------------------------------------
 //'cvsolve
 //'
-//'CVSOLVE solver to solve stiff ODEs with discontinuties
+//'CVSOLVE solver to solve stiff ODEs with discontinuities
 //'@param time_vector time vector
 //'@param IC Initial Conditions
 //'@param input_function Right Hand Side function of ODEs
