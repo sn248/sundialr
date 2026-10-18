@@ -20,7 +20,7 @@ ida(
 
 \item{IC}{Initial Value of y}
 
-\item{IRes}{Inital Value of ydot}
+\item{IRes}{Initial value of ydot}
 
 \item{input_function}{Right Hand Side function of DAEs}
 
