@@ -60,7 +60,7 @@
                         <h4 data-toc-skip class="author">Satyaprakash
 Nayak</h4>
             
-            <h4 data-toc-skip class="date">2026-10-17</h4>
+            <h4 data-toc-skip class="date">2026-10-18</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/sn248/sundialr/blob/master/vignettes/my-vignette.Rmd" class="external-link"><code>vignettes/my-vignette.Rmd</code></a></small>
       <div class="d-none name"><code>my-vignette.Rmd</code></div>
@@ -88,8 +88,8 @@ calculate sensitivities.</p>
 <li><p><code>cvode</code> - An interface to the <code>CVODE</code>
 function in <code>SUNDIALS</code> to solve a system of ODEs.</p></li>
 <li><p><code>cvodes</code> - An interface to the <code>CVODES</code>
-function in <code>SUNDIALS</code> to calculate forward sensitivites with
-respect to parameters of the ODE system.</p></li>
+function in <code>SUNDIALS</code> to calculate forward sensitivities
+with respect to parameters of the ODE system.</p></li>
 <li><p><code>ida</code> - An interface to the <code>IDA</code> function
 in <code>SUNDIALS</code> to solve a system of Differential-Algebraic
 Equations (DAEs).</p></li>
@@ -355,7 +355,7 @@ this system of DAEs,</p>
 <span><span class="va">df1</span> <span class="op">&lt;-</span> <span class="fu">sundialr</span><span class="fu">::</span><span class="fu"><a href="../reference/ida.html">ida</a></span><span class="op">(</span><span class="va">time_vec</span>, <span class="va">IC</span>, <span class="va">IRes</span>, <span class="va">DAE_R</span> , <span class="va">params</span>, <span class="va">reltol</span>, <span class="va">abstol</span><span class="op">)</span> </span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="solving-an-ode-system-with-discontinuties-in-solution">Solving an ODE system with discontinuties in solution<a class="anchor" aria-label="anchor" href="#solving-an-ode-system-with-discontinuties-in-solution"></a>
+<h2 id="solving-an-ode-system-with-discontinuities-in-solution">Solving an ODE system with discontinuities in solution<a class="anchor" aria-label="anchor" href="#solving-an-ode-system-with-discontinuities-in-solution"></a>
 </h2>
 <p>The <code>cvsolve</code> function defined in <code>sundialr</code>
 package provides a convenience interface to solve ODEs with one or more
@@ -416,8 +416,8 @@ state (the only state in this system) at the times specified by the
 <ul>
 <li><p><code>ID</code> represents the index of the state with
 discontinuity</p></li>
-<li><p><code>TIMES</code> represents the times at which discontinutiy is
-applied</p></li>
+<li><p><code>TIMES</code> represents the times at which a discontinuity
+is applied</p></li>
 <li><p><code>VAL</code> represents the value <strong>added</strong> to
 the value of the state at specified times.</p></li>
 </ul>
@@ -455,7 +455,7 @@ the value of the state at specified times.</p></li>
 <span><span class="co">## first column is time, second column is the state</span></span>
 <span><span class="va">time</span> <span class="op">&lt;-</span> <span class="va">df2</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span></span>
 <span><span class="va">y1</span> <span class="op">&lt;-</span> <span class="va">df2</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">time</span>, <span class="va">y1</span>, type <span class="op">=</span> <span class="st">"l"</span>, lty <span class="op">=</span> <span class="fl">1</span>, main <span class="op">=</span> <span class="st">"An ODE system with discontinuties"</span>, frame.plot <span class="op">=</span> <span class="cn">F</span><span class="op">)</span>   </span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">time</span>, <span class="va">y1</span>, type <span class="op">=</span> <span class="st">"l"</span>, lty <span class="op">=</span> <span class="fl">1</span>, main <span class="op">=</span> <span class="st">"An ODE system with discontinuities"</span>, frame.plot <span class="op">=</span> <span class="cn">F</span><span class="op">)</span>   </span></code></pre></div>
 <p><img src="my-vignette_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="672"></p>
 <p>Note that in the example above, <code>TSAMP</code> is the sampling
 time at which the solution is desired. The value in the
@@ -542,7 +542,7 @@ code can be found at this <a href="https://github.com/sn248/sundialr/blob/master
 <code class="sourceCode R"><span><span class="va">df1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cvodes.html">cvodes</a></span><span class="op">(</span><span class="va">time_vec</span>, <span class="va">IC</span>, <span class="va">ODE_R</span> , <span class="va">params</span>, <span class="va">reltol</span>, <span class="va">abstol</span>,<span class="st">"STG"</span>,<span class="cn">F</span><span class="op">)</span>  <span class="co">## using R</span></span>
 <span><span class="va">df2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cvodes.html">cvodes</a></span><span class="op">(</span><span class="va">time_vec</span>, <span class="va">IC</span>, <span class="va">ODE_Rcpp</span> , <span class="va">params</span>, <span class="va">reltol</span>, <span class="va">abstol</span>,<span class="st">"STG"</span>,<span class="cn">F</span><span class="op">)</span>  <span class="co">## using Rcpp</span></span></code></pre></div>
 <p>The additional arguments in <code>cvodes</code> specify the
-senstivity calculation method to be used (<code>STG</code> for
+sensitivity calculation method to be used (<code>STG</code> for
 <code>STAGGERED</code> or <code>SIM</code> for
 <code>SIMULATENOUS</code>) and flag for error control (either
 <code>T</code> or <code>F</code>).</p>
@@ -550,7 +550,7 @@ senstivity calculation method to be used (<code>STG</code> for
 equal to the length of the time vector (<code>time_vec</code>) and the
 number of columns being equal to length of (<code>y</code>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>×</mi><annotation encoding="application/x-tex">\times</annotation></semantics></math><code>p</code> + 1). The first columns is for time. Currently, the
-sensitivity of every enitity is calculated with respect to every
+sensitivity of every entity is calculated with respect to every
 parameter in model. For example, for the current model with
 <code>3</code> entities (ODEs) and <code>3</code> parameters, a total of
 <code>9</code> sensitivities are calculated at each output time,
@@ -757,7 +757,7 @@ threads, one per thread, is documented in the comments of
 </h2>
 <ul>
 <li><p>The package <code>sundialr</code> provides a way to interface
-with the famous <code>SUNDIALS</code> C library (provided by Lawerence
+with the famous <code>SUNDIALS</code> C library (provided by Lawrence
 Livermore National Security) to solver initial value problems.</p></li>
 <li><p>The package allows the system of differential equations to be
 written in <code>R</code> or using <code>Rcpp</code>. Function

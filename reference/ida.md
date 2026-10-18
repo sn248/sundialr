@@ -29,7 +29,7 @@ ida(
 
 - IRes:
 
-  Inital Value of ydot
+  Initial value of ydot
 
 - input_function:
 

@@ -21,7 +21,7 @@ The four exported functions from the package are:
   a system of ODEs.
 
 - `cvodes` - An interface to the `CVODES` function in `SUNDIALS` to
-  calculate forward sensitivites with respect to parameters of the ODE
+  calculate forward sensitivities with respect to parameters of the ODE
   system.
 
 - `ida` - An interface to the `IDA` function in `SUNDIALS` to solve a
@@ -305,7 +305,7 @@ abstol <- c(1e-8,1e-14,1e-6)
 df1 <- sundialr::ida(time_vec, IC, IRes, DAE_R , params, reltol, abstol) 
 ```
 
-## Solving an ODE system with discontinuties in solution
+## Solving an ODE system with discontinuities in solution
 
 The `cvsolve` function defined in `sundialr` package provides a
 convenience interface to solve ODEs with one or more discontinuities in
@@ -364,7 +364,7 @@ state (the only state in this system) at the times specified by the
 
 - `ID` represents the index of the state with discontinuity
 
-- `TIMES` represents the times at which discontinutiy is applied
+- `TIMES` represents the times at which a discontinuity is applied
 
 - `VAL` represents the value **added** to the value of the state at
   specified times.
@@ -405,7 +405,7 @@ df2 <- sundialr::cvsolve(TSAMP, c(1), ODE_R, params, TDOSE)  # solving with disc
 ## first column is time, second column is the state
 time <- df2[,1]
 y1 <- df2[,2]
-plot(time, y1, type = "l", lty = 1, main = "An ODE system with discontinuties", frame.plot = F)   
+plot(time, y1, type = "l", lty = 1, main = "An ODE system with discontinuities", frame.plot = F)   
 ```
 
 ![](my-vignette_files/figure-html/unnamed-chunk-4-1.png)
@@ -494,14 +494,14 @@ df1 <- cvodes(time_vec, IC, ODE_R , params, reltol, abstol,"STG",F)  ## using R
 df2 <- cvodes(time_vec, IC, ODE_Rcpp , params, reltol, abstol,"STG",F)  ## using Rcpp
 ```
 
-The additional arguments in `cvodes` specify the senstivity calculation
+The additional arguments in `cvodes` specify the sensitivity calculation
 method to be used (`STG` for `STAGGERED` or `SIM` for `SIMULATENOUS`)
 and flag for error control (either `T` or `F`).
 
 The output of `cvodes` is a matrix with number of rows equal to the
 length of the time vector (`time_vec`) and the number of columns being
 equal to length of (`y` $`\times`$`p` + 1). The first columns is for
-time. Currently, the sensitivity of every enitity is calculated with
+time. Currently, the sensitivity of every entity is calculated with
 respect to every parameter in model. For example, for the current model
 with `3` entities (ODEs) and `3` parameters, a total of `9`
 sensitivities are calculated at each output time, i.e. `y1` w.r.t `p1`,
@@ -704,7 +704,7 @@ Some points to note:
 ## Summary
 
 - The package `sundialr` provides a way to interface with the famous
-  `SUNDIALS` C library (provided by Lawerence Livermore National
+  `SUNDIALS` C library (provided by Lawrence Livermore National
   Security) to solver initial value problems.
 
 - The package allows the system of differential equations to be written

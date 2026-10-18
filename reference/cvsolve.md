@@ -1,6 +1,6 @@
 # cvsolve
 
-CVSOLVE solver to solve stiff ODEs with discontinuties
+CVSOLVE solver to solve stiff ODEs with discontinuities
 
 ## Usage
 
