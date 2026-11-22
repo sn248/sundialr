@@ -4,6 +4,7 @@
 #define RHS_FUNC_H
 
 #include <sundials_err_record.h>
+#include <state_names.h>
 
 // struct to use if R or Rcpp function is input as RHS function
 struct rhs_func{
@@ -11,6 +12,7 @@ struct rhs_func{
   Rcpp::NumericVector params;
   SEXP jac_eqn;        // user-supplied jacobian, if provided, else R_NilValue
   sundials_err_record *err;  // collects errors raised inside the callbacks
+  SEXP y_names;        // names(IC), set on y before each call, or R_NilValue
 };
 
 int rhs_function(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data);

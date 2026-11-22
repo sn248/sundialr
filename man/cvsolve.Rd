@@ -18,7 +18,7 @@ cvsolve(
 \arguments{
 \item{time_vector}{time vector}
 
-\item{IC}{Initial Conditions}
+\item{IC}{Initial Conditions. If named, the names are passed on: \code{y} arrives named in \code{input_function} and \code{jacobian}, so it can be indexed by name (\code{y["A"]})}
 
 \item{input_function}{Right Hand Side function of ODEs}
 

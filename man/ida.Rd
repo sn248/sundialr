@@ -18,7 +18,7 @@ ida(
 \arguments{
 \item{time_vector}{time vector}
 
-\item{IC}{Initial Value of y}
+\item{IC}{Initial Value of y. If named, the names are passed on: \code{y} and \code{ydot} arrive named in \code{input_function} and \code{jacobian}, so they can be indexed by name (\code{y["A"]})}
 
 \item{IRes}{Initial value of ydot}
 

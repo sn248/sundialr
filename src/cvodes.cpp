@@ -30,6 +30,9 @@
 
 #include <Rcpp.h>
 #include <algorithm>                   // to convert SensType to upper case - input cleaning
+#include <cmath>                       // std::floor, std::fabs for sensIC
+#include <cstring>                     // std::strcmp for sensIC names
+#include <vector>
 
 #include <cvodes/cvodes.h>
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector            */
@@ -59,7 +62,28 @@ struct rhs_func_sens{
   SEXP jac_eqn;
   SEXP sens_eqn;              // user sensitivity RHS, or R_NilValue
   sundials_err_record *err;   // collects errors raised inside the callbacks
+  SEXP y_names;               // names(IC), set on y, ydot and yS, or R_NilValue
+  // The array CVODES perturbs when it approximates the sensitivity equations
+  // by difference quotients (the p argument of CVodeSetSensParams). Without
+  // IC sensitivities this is params.begin() itself. With them it is a longer
+  // array holding the parameters followed by one placeholder per IC
+  // sensitivity, and its first params.length() entries are copied into
+  // params before every call to R; see sync_params().
+  const double *p_sens;
+  // Scaling factors, one per sensitivity (the pbar of CVodeSetSensParams).
+  // Read by ic_sens_rhs() to size its difference-quotient increment.
+  const double *pbar;
 };
+
+// Make the parameter vector handed to R reflect any perturbation CVODES has
+// applied to p_sens. A no-op unless IC sensitivities are requested, because
+// p_sens then aliases params.
+static inline void sync_params(struct rhs_func_sens *data) {
+  double *p = data->params.begin();
+  if (data->p_sens != p) {
+    std::copy(data->p_sens, data->p_sens + data->params.length(), p);
+  }
+}
 
 // function called by CVodeInit if user inputs R function
 // Called by SUNDIALS from its own C code, so the body runs under
@@ -82,6 +106,8 @@ int rhs_function_sens(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data)
     for (int i = 0; i < y_len; i++){
       y1[i] = y_ptr[i];
     }
+    set_state_names(y1, my_rhs_fun->y_names);
+    sync_params(my_rhs_fun);
 
     NumericVector ydot1(y_len);    // filled with zeros
 
@@ -148,15 +174,85 @@ static int jac_cvodes(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
     struct rhs_func_sens *data = (struct rhs_func_sens*)user_data;
     if (!data) { return -1; }
     return sundials_callback_guard(data->err, [&]() -> int {
-      return jac_eval(t, y, JAC, data->jac_eqn, data->params);
+      sync_params(data);
+      return jac_eval(t, y, JAC, data->jac_eqn, data->params, data->y_names);
     });
 }
 
+// Calls the user's RHS at (t, y) and checks the length of what comes back.
+// Used by ic_sens_rhs(); the caller has already run sync_params().
+static NumericVector call_rhs(struct rhs_func_sens *data, sunrealtype t,
+                              const NumericVector &y) {
+  NumericVector f = data->rhs_eqn(t, y, data->params);
+  if (f.length() != y.length()) {
+    stop("The RHS function must return a vector of the same length as the state vector: expected %d, got %d",
+         (int)y.length(), (int)f.length());
+  }
+  return f;
+}
+
+// d(yS)/dt for a sensitivity with respect to an initial condition, which is
+// J %*% yS: an initial value enters no right-hand side, so there is no df/dp
+// term. sundialr computes this itself rather than asking the user's
+// `sensitivity` function, so that function only ever sees parameter indices
+// and one written for parameters alone keeps working when sensIC is added.
+//
+// With a user Jacobian the product is exact. Without one it is the centred
+// directional difference (f(y + d yS) - f(y - d yS)) / (2 d), the scheme
+// CVODES' own difference quotients use by default (CV_CENTERED), with the
+// increment chosen as CVODES chooses it in cvSensRhs1InternalDQ:
+//   d = 1 / max(||yS||_WRMS, 1 / (sqrt(max(rtol, uround)) * pbar))
+// The weights are those of ewt() below, inlined because it is defined later.
+static void ic_sens_rhs(struct rhs_func_sens *data, sunrealtype t,
+                        const NumericVector &y1, const sunrealtype *yS_ptr,
+                        int iS, sunrealtype *ySdot_ptr) {
+  int n = y1.length();
+
+  if (data->jac_eqn != R_NilValue) {
+    Function jac_fun(data->jac_eqn);
+    NumericMatrix J = jac_fun(t, y1, data->params);
+    if (J.nrow() != n || J.ncol() != n) {
+      stop("The Jacobian function must return a %d-by-%d matrix; got %d-by-%d",
+           n, n, J.nrow(), J.ncol());
+    }
+    for (int i = 0; i < n; i++) {
+      double s = 0.0;
+      for (int j = 0; j < n; j++) s += J(i, j) * yS_ptr[j];
+      ySdot_ptr[i] = s;
+    }
+    return;
+  }
+
+  const double *atol = data->atol.begin();
+  double wrms = 0.0;
+  for (int i = 0; i < n; i++) {
+    double w = 1.0 / (data->rtol * std::fabs(y1[i]) + atol[i]);
+    wrms += (yS_ptr[i] * w) * (yS_ptr[i] * w);
+  }
+  wrms = std::sqrt(wrms / n);
+  double Delta  = std::sqrt(std::max(data->rtol, (double)SUN_UNIT_ROUNDOFF));
+  double rdelta = 1.0 / (Delta * data->pbar[iS]);
+  double d      = 1.0 / std::max(wrms, rdelta);
+
+  NumericVector yp(n), ym(n);
+  for (int i = 0; i < n; i++) {
+    yp[i] = y1[i] + d * yS_ptr[i];
+    ym[i] = y1[i] - d * yS_ptr[i];
+  }
+  set_state_names(yp, data->y_names);
+  set_state_names(ym, data->y_names);
+  NumericVector fp = call_rhs(data, t, yp);
+  NumericVector fm = call_rhs(data, t, ym);
+  for (int i = 0; i < n; i++) ySdot_ptr[i] = (fp[i] - fm[i]) / (2.0 * d);
+}
+
 // Sensitivity right-hand side, used when the caller supplies `sensitivity`.
-// CVODES calls this once per parameter (a CVSensRhs1Fn); it delegates to the R
-// function stored in data->sens_eqn, whose signature is
+// CVODES calls this once per sensitivity (a CVSensRhs1Fn). For a parameter it
+// delegates to the R function stored in data->sens_eqn, whose signature is
 //   sens_rhs(t, y, ydot, iS, yS, p)  ->  numeric vector of length(y)
 // returning d(yS_iS)/dt = J %*% yS_iS + df/dp_iS. iS is passed 1-based to R.
+// The sensitivities past the parameters are the sensIC ones, which never reach
+// the R function: ic_sens_rhs() computes them.
 // Called by SUNDIALS from its own C code, so the body runs under
 // sundials_callback_guard; see the note on rhs_function in rhs_func.cpp.
 static int sens_rhs1_cvodes(int Ns, sunrealtype t, N_Vector y, N_Vector ydot,
@@ -168,11 +264,26 @@ static int sens_rhs1_cvodes(int Ns, sunrealtype t, N_Vector y, N_Vector ydot,
 
       int n = NV_LENGTH_S(y);
 
+      if (iS >= data->params.length()) {
+        NumericVector y1(n);
+        sunrealtype *y_ptr = N_VGetArrayPointer(y);
+        for (int i = 0; i < n; i++) y1[i] = y_ptr[i];
+        set_state_names(y1, data->y_names);
+        sync_params(data);
+        ic_sens_rhs(data, t, y1, N_VGetArrayPointer(yS), iS,
+                    N_VGetArrayPointer(ySdot));
+        return 0;
+      }
+
       NumericVector y1(n), ydot1(n), yS1(n);
       sunrealtype *y_ptr    = N_VGetArrayPointer(y);
       sunrealtype *ydot_ptr = N_VGetArrayPointer(ydot);
       sunrealtype *yS_ptr   = N_VGetArrayPointer(yS);
       for (int i = 0; i < n; i++) { y1[i] = y_ptr[i]; ydot1[i] = ydot_ptr[i]; yS1[i] = yS_ptr[i]; }
+      set_state_names(y1, data->y_names);
+      set_state_names(ydot1, data->y_names);
+      set_state_names(yS1, data->y_names);
+      sync_params(data);
 
       Function sens_fun(data->sens_eqn);
       // iS arrives 0-based from CVODES; hand R the 1-based parameter index
@@ -195,16 +306,19 @@ static int sens_rhs1_cvodes(int Ns, sunrealtype t, N_Vector y, N_Vector ydot,
 //'
 //' CVODES solver to solve ODEs and calculate sensitivities
 //'@param time_vector time vector
-//'@param IC Initial Conditions
+//'@param IC Initial Conditions. If named, the names are passed on to every function the solver calls: \code{y}, \code{ydot} and \code{yS} arrive named, so they can be indexed by name (\code{y["A"]})
 //'@param input_function Right Hand Side function of ODEs
-//'@param Parameters Parameters input to ODEs
+//'@param Parameters Parameters input to ODEs. Their names, if any, are kept
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 //'@param SensType Sensitivity Type - allowed values are "STG" (for Staggered, default) or "SIM" (for Simultaneous)
 //'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
 //'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)}. Default is NULL
-//'@param sensitivity (Optional) Sensitivity right-hand side with signature \code{function(t, y, ydot, iS, yS, p)} returning the derivative \code{d(yS_iS)/dt = J \%*\% yS_iS + df/dp_iS} as a numeric vector of \code{length(y)}, where \code{iS} is the 1-based parameter index. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS
-//'@returns A Matrix. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector
+//'@param sensitivity (Optional) Sensitivity right-hand side with signature \code{function(t, y, ydot, iS, yS, p)} returning the derivative \code{d(yS_iS)/dt = J \%*\% yS_iS + df/dp_iS} as a numeric vector of \code{length(y)}, where \code{iS} is the 1-based parameter index. The function is only ever called for parameters, so \code{iS} never exceeds \code{length(Parameters)}, with or without \code{sensIC}: the sensitivities with respect to initial conditions satisfy \code{d(yS)/dt = J \%*\% yS}, which the solver computes itself, exactly from \code{jacobian} when one is supplied and otherwise by a centred difference of \code{input_function} along \code{yS}. Supply \code{jacobian} as well when the initial-condition sensitivities need to be exact. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS
+//'@param sensIC (Optional) States whose initial values are also sensitivity parameters, as 1-based indices into \code{IC} or as names of \code{IC}. Each adds one sensitivity, started at the unit vector for its state, so its block holds \code{d(y)/d(IC[i])}. Default is NULL: sensitivities with respect to \code{Parameters} only
+//'@returns A matrix with \code{1 + length(IC) * (length(Parameters) + length(sensIC))} columns. The first column is the time vector. The remaining columns hold the sensitivities in blocks of \code{length(IC)}, one block per parameter: the sensitivities of all states with respect to the first parameter, then of all states with respect to the second parameter, and so on. The sensitivity of state \code{j} with respect to parameter \code{k} is in column \code{1 + (k - 1) * length(IC) + j}. The blocks for \code{sensIC} follow the parameter blocks, in the order given in \code{sensIC}, so they are numbered as if they were parameters \code{length(Parameters) + 1}, \code{length(Parameters) + 2}, and so on.
+//'
+//' The state solution is attached as the attribute \code{"solution"}: a matrix with the same layout as the output of \code{\link{cvode}}, time in the first column followed by one column per state. Retrieve it with \code{attr(result, "solution")}. As with any attribute, subsetting the returned matrix drops it, so extract it first.
 //'@example /inst/examples/cvs_Roberts_dns.r
 // [[Rcpp::export]]
 NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
@@ -213,9 +327,10 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
                       double reltolerance = 0.0001,
                       NumericVector abstolerance = 0.0001,
                       std::string SensType = "STG",
-                      bool ErrCon = 'F',
+                      bool ErrCon = false,
                       Nullable<Function> jacobian = R_NilValue,
-                      Nullable<Function> sensitivity = R_NilValue){
+                      Nullable<Function> sensitivity = R_NilValue,
+                      SEXP sensIC = R_NilValue){
 
   int flag;
 
@@ -249,8 +364,86 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
     }
   }
 
-  // Number of sensitivity parameters; needed by the guard to size the yS free
+  // Number of model parameters
   int NP = Parameters.length();
+
+  // States whose initial values are sensitivity parameters (0-based), from
+  // sensIC. Validated here, before any SUNDIALS object exists.
+  std::vector<int> ic_idx;
+  if (sensIC != R_NilValue && Rf_length(sensIC) > 0) {
+    int n_ic = Rf_length(sensIC);
+    if (TYPEOF(sensIC) == STRSXP) {
+      SEXP ic_names = Rf_getAttrib(IC, R_NamesSymbol);
+      if (ic_names == R_NilValue) {
+        stop("sensIC is given by name, but IC has no names");
+      }
+      for (int m = 0; m < n_ic; m++) {
+        SEXP s = STRING_ELT(sensIC, m);
+        if (s == NA_STRING) stop("sensIC must not contain NA");
+        int found = -1;
+        for (int j = 0; j < y_len; j++) {
+          SEXP nj = STRING_ELT(ic_names, j);
+          if (nj != NA_STRING && std::strcmp(CHAR(nj), CHAR(s)) == 0) { found = j; break; }
+        }
+        if (found < 0) stop("sensIC names a state that is not in names(IC): %s", CHAR(s));
+        ic_idx.push_back(found);
+      }
+    } else if (TYPEOF(sensIC) == INTSXP || TYPEOF(sensIC) == REALSXP) {
+      NumericVector idx(sensIC);
+      for (int m = 0; m < n_ic; m++) {
+        double v = idx[m];
+        if (ISNAN(v) || v != std::floor(v) || v < 1 || v > y_len) {
+          stop("sensIC must hold whole numbers between 1 and length(IC) = %d", y_len);
+        }
+        ic_idx.push_back((int)v - 1);
+      }
+    } else {
+      stop("sensIC must be NULL, a vector of state indices or a vector of state names");
+    }
+    for (size_t a = 0; a < ic_idx.size(); a++)
+      for (size_t b = a + 1; b < ic_idx.size(); b++)
+        if (ic_idx[a] == ic_idx[b]) stop("sensIC must not list a state more than once");
+  }
+
+  // Total number of sensitivities: one per parameter, then one per sensIC
+  // state, in that order. Needed by the guard to size the yS free.
+  int NIC = (int)ic_idx.size();
+  int NS  = NP + NIC;
+
+  // The parameter array CVODES perturbs for its difference quotients, and the
+  // scaling factors pbar that go with it. Without IC sensitivities this is
+  // Parameters itself, exactly as before. With them, CVODES needs one entry
+  // per sensitivity, so the parameters are followed by one placeholder per
+  // sensIC state. The RHS never reads a placeholder, so perturbing it changes
+  // nothing: the difference quotient then yields J %*% yS with no df/dp term,
+  // which is precisely the IC sensitivity equation. Because CVODES perturbs
+  // this array rather than Parameters, the R function is handed a separate
+  // length-NP vector that sync_params() refreshes from it before each call.
+  NumericVector p_cvodes, pbar, p_for_R;
+  if (NIC == 0) {
+    p_cvodes = Parameters;
+    pbar     = Parameters;
+    p_for_R  = Parameters;
+  } else {
+    p_cvodes = NumericVector(NS);
+    pbar     = NumericVector(NS);
+    p_for_R  = NumericVector(NP);
+    for (int k = 0; k < NP; k++) {
+      p_cvodes[k] = Parameters[k];
+      pbar[k]     = Parameters[k];
+      p_for_R[k]  = Parameters[k];
+    }
+    if (NP > 0) p_for_R.attr("names") = Rf_getAttrib(Parameters, R_NamesSymbol);
+    for (int m = 0; m < NIC; m++) {
+      double ic = IC[ic_idx[m]];
+      p_cvodes[NP + m] = ic;
+      // pbar scales the sensitivity's tolerances (atol / pbar under
+      // CVodeSensEEtolerances) and the difference-quotient increment. An IC
+      // sensitivity d(y)/d(y0_i) has the size of y / y0_i, which is the same
+      // convention as pbar = p for a parameter; an IC of zero falls back to 1.
+      pbar[NP + m] = (ic != 0.0) ? std::fabs(ic) : 1.0;
+    }
+  }
 
   // Receives SUNDIALS errors. Declared before the guard so that it is
   // destroyed after it - the SUNContext freed there holds a pointer to it.
@@ -266,10 +459,10 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
 
   // Free in the same order the trailing free calls used to; runs on the
   // normal return and on the exceptions thrown by stop() below. yS must be
-  // freed with the same count it was cloned with (NP).
+  // freed with the same count it was cloned with (NS).
   auto sundials_cleanup = make_scope_guard([&]{
     if (y0)        N_VDestroy(y0);
-    if (yS)        N_VDestroyVectorArray(yS, NP);
+    if (yS)        N_VDestroyVectorArray(yS, NS);
     if (cvode_mem) CVodeFree(&cvode_mem);
     if (LS)        SUNLinSolFree(LS);
     if (SM)        SUNMatDestroy(SM);
@@ -306,7 +499,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
 
   // //----------------------------------------------------------------------------
   /* Set sensitivity initial conditions */
-  yS = N_VCloneVectorArray(NP, y0);   // vector of sensitivities (yS)
+  yS = N_VCloneVectorArray(NS, y0);   // vector of sensitivities (yS)
 
   // Call CVodeCreate to create the solver memory and specify the Backward Differentiation Formula
   cvode_mem = CVodeCreate(CV_BDF, sunctx);
@@ -331,12 +524,15 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   SEXP sens_sexp = R_NilValue;
   if (sensitivity.isNotNull()) sens_sexp = as<SEXP>(sensitivity);
   struct rhs_func_sens my_rhs_function = {input_function,
-                                          Parameters,
+                                          p_for_R,
                                           reltol,
                                           abstol,
                                           jac_sexp,
                                           sens_sexp,
-                                          &sun_err};
+                                          &sun_err,
+                                          Rf_getAttrib(IC, R_NamesSymbol),
+                                          p_cvodes.begin(),
+                                          pbar.begin()};
 
   // setting the user_data in rhs function
   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
@@ -370,7 +566,9 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   }
 
   if (check_retval(yS, "N_VCloneVectorArray")) { sundials_stop(sun_err, "N_VCloneVectorArray", "Stopping cvodes, something went wrong in setting Sensitivity Array!"); }
-  for (int is=0;is<NP;is++) N_VConst(SUN_RCONST(0.0), yS[is]);
+  for (int is=0;is<NS;is++) N_VConst(SUN_RCONST(0.0), yS[is]);
+  // An IC sensitivity starts at the unit vector of its state: d(y0)/d(y0_i) = e_i
+  for (int m=0;m<NIC;m++) NV_Ith_S(yS[NP + m], ic_idx[m]) = SUN_RCONST(1.0);
 
   /* Call CVodeSensInit1 to activate forward sensitivity computations
    and allocate internal memory for CVODES related to sensitivity
@@ -382,7 +580,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   // function to evaluate the sensitivity equations analytically. Passing NULL
   // (the default) instead tells CVODES to approximate it by finite differences
   // of the state right-hand side, which needs no extra function from the caller
-  // but evaluates the state RHS an extra NP times per internal step - each an R
+  // but evaluates the state RHS an extra NS times per internal step - each an R
   // callback, the most expensive thing in the solve - and is only as accurate
   // as the difference quotients.
   //
@@ -390,7 +588,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   int ism = CV_STAGGERED;
   if (SensType.compare("SIM") == 0) ism = CV_SIMULTANEOUS;
   CVSensRhs1Fn fS1 = sensitivity.isNotNull() ? sens_rhs1_cvodes : NULL;
-  flag = CVodeSensInit1(cvode_mem, NP, ism, fS1, yS);
+  flag = CVodeSensInit1(cvode_mem, NS, ism, fS1, yS);
   if(check_retval(flag, "CVodeSensInit1")) { sundials_stop(sun_err, "CVodeSensInit1", "Stopping cvodes, something went wrong in calculating Sensitivities!"); }
 
   /* Call CVodeSensEEtolerances to estimate tolerances for sensitivity
@@ -405,7 +603,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   // p = (my_rhs_function.params).begin();
   // Rcout << (my_rhs_function.params).begin() << "\n";
   // Rcout << &(ptr->params[0]);
-  flag = CVodeSetSensParams(cvode_mem, (my_rhs_function.params).begin(), Parameters.begin(), NULL);  // double *y = x.begin()
+  flag = CVodeSetSensParams(cvode_mem, p_cvodes.begin(), pbar.begin(), NULL);
   if (check_retval(flag, "CVodeSetSensParams")) { sundials_stop(sun_err, "CVodeSetSensParams", "Stopping cvodes, something went wrong in setting Sensitivity Parameters!"); }
 
   // First row for initial conditions, First column is for time
@@ -418,12 +616,12 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
     soln(0,i+1) = IC[i];
   }
 
-  NumericMatrix sens(Dimension(time_vec_len, (y_len * NP) + 1));
-  // Store the Sensitivity Results
-  // Sensitivity of each entitiy w.r.t. parameters is zero at initial time
+  NumericMatrix sens(Dimension(time_vec_len, (y_len * NS) + 1));
+  // Store the Sensitivity Results. The first row is yS(0): zero for every
+  // parameter, the unit vector of its state for every IC sensitivity.
   sens(0,0) = time_vector[0];           // get the first time value
-  for(int i = 0; i<y_len; i++){
-    sens(0,i+1) = 0.0;
+  for (int m = 0; m < NIC; m++){
+    sens(0, y_len*(NP + m) + ic_idx[m] + 1) = 1.0;
   }
 
   sunrealtype tout;  // For output times
@@ -449,7 +647,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
 
     if (flag == CV_SUCCESS) {
       sens(iout+1, 0) = time;               // first column is for time
-      for (int i = 0; i < NP; i++){
+      for (int i = 0; i < NS; i++){
         yS_ptr = N_VGetArrayPointer(yS[i]);   // sensitivities w.r.t. param i
         for(int j = 0; j < y_len; j++){
           // store results in soln matrix
@@ -462,6 +660,7 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
 
   /* SUNDIALS objects are released by sundials_cleanup on scope exit */
 
+  sens.attr("solution") = soln;
   return sens;
 
 

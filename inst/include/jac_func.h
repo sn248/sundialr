@@ -3,14 +3,18 @@
 
 // Prerequisites: Rcpp.h, nvector_serial.h, sunmatrix_dense.h
 
+#include <state_names.h>
+
 // Used by cvode, cvodes, cvsolve.
 // R function signature: f(t, y, p)  ->  n-by-n matrix of d(ydot_i)/d(y_j)
 static inline int jac_eval(sunrealtype t, N_Vector y, SUNMatrix JAC,
-                           SEXP jac_eqn, Rcpp::NumericVector params) {
+                           SEXP jac_eqn, Rcpp::NumericVector params,
+                           SEXP y_names) {
   int n = NV_LENGTH_S(y);
   Rcpp::NumericVector y1(n);
   sunrealtype *y_ptr = N_VGetArrayPointer(y);
   for (int i = 0; i < n; i++) y1[i] = y_ptr[i];
+  set_state_names(y1, y_names);
 
   Rcpp::Function jac_fun(jac_eqn);
   Rcpp::NumericMatrix J = jac_fun(t, y1, params);
@@ -30,12 +34,15 @@ static inline int jac_eval(sunrealtype t, N_Vector y, SUNMatrix JAC,
 // R function signature: f(t, y, ydot, cj, p)  ->  n-by-n matrix of dF/dy + cj * dF/dydot
 static inline int jac_eval_ida(sunrealtype t, sunrealtype cj,
                                N_Vector y, N_Vector yp, SUNMatrix JAC,
-                               SEXP jac_eqn, Rcpp::NumericVector params) {
+                               SEXP jac_eqn, Rcpp::NumericVector params,
+                               SEXP y_names) {
   int n = NV_LENGTH_S(y);
   Rcpp::NumericVector y1(n), yp1(n);
   sunrealtype *y_ptr  = N_VGetArrayPointer(y);
   sunrealtype *yp_ptr = N_VGetArrayPointer(yp);
   for (int i = 0; i < n; i++) { y1[i] = y_ptr[i]; yp1[i] = yp_ptr[i]; }
+  set_state_names(y1, y_names);
+  set_state_names(yp1, y_names);
 
   Rcpp::Function jac_fun(jac_eqn);
   Rcpp::NumericMatrix J = jac_fun(t, y1, yp1, cj, params);

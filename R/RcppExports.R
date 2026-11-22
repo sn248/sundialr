@@ -65,7 +65,7 @@
 #'
 #' CVODE solver to solve stiff ODEs
 #'@param time_vector time vector
-#'@param IC Initial Conditions
+#'@param IC Initial Conditions. If named, the names are passed on: \code{y} arrives named in \code{input_function} and \code{jacobian}, so it can be indexed by name (\code{y["A"]})
 #'@param input_function Right Hand Side function of ODEs
 #'@param Parameters Parameters input to ODEs
 #'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
@@ -81,26 +81,29 @@ cvode <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.
 #'
 #' CVODES solver to solve ODEs and calculate sensitivities
 #'@param time_vector time vector
-#'@param IC Initial Conditions
+#'@param IC Initial Conditions. If named, the names are passed on to every function the solver calls: \code{y}, \code{ydot} and \code{yS} arrive named, so they can be indexed by name (\code{y["A"]})
 #'@param input_function Right Hand Side function of ODEs
-#'@param Parameters Parameters input to ODEs
+#'@param Parameters Parameters input to ODEs. Their names, if any, are kept
 #'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 #'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 #'@param SensType Sensitivity Type - allowed values are "STG" (for Staggered, default) or "SIM" (for Simultaneous)
 #'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
 #'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)}. Default is NULL
-#'@param sensitivity (Optional) Sensitivity right-hand side with signature \code{function(t, y, ydot, iS, yS, p)} returning the derivative \code{d(yS_iS)/dt = J \%*\% yS_iS + df/dp_iS} as a numeric vector of \code{length(y)}, where \code{iS} is the 1-based parameter index. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS
-#'@returns A Matrix. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector
+#'@param sensitivity (Optional) Sensitivity right-hand side with signature \code{function(t, y, ydot, iS, yS, p)} returning the derivative \code{d(yS_iS)/dt = J \%*\% yS_iS + df/dp_iS} as a numeric vector of \code{length(y)}, where \code{iS} is the 1-based parameter index. The function is only ever called for parameters, so \code{iS} never exceeds \code{length(Parameters)}, with or without \code{sensIC}: the sensitivities with respect to initial conditions satisfy \code{d(yS)/dt = J \%*\% yS}, which the solver computes itself, exactly from \code{jacobian} when one is supplied and otherwise by a centred difference of \code{input_function} along \code{yS}. Supply \code{jacobian} as well when the initial-condition sensitivities need to be exact. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS
+#'@param sensIC (Optional) States whose initial values are also sensitivity parameters, as 1-based indices into \code{IC} or as names of \code{IC}. Each adds one sensitivity, started at the unit vector for its state, so its block holds \code{d(y)/d(IC[i])}. Default is NULL: sensitivities with respect to \code{Parameters} only
+#'@returns A matrix with \code{1 + length(IC) * (length(Parameters) + length(sensIC))} columns. The first column is the time vector. The remaining columns hold the sensitivities in blocks of \code{length(IC)}, one block per parameter: the sensitivities of all states with respect to the first parameter, then of all states with respect to the second parameter, and so on. The sensitivity of state \code{j} with respect to parameter \code{k} is in column \code{1 + (k - 1) * length(IC) + j}. The blocks for \code{sensIC} follow the parameter blocks, in the order given in \code{sensIC}, so they are numbered as if they were parameters \code{length(Parameters) + 1}, \code{length(Parameters) + 2}, and so on.
+#'
+#' The state solution is attached as the attribute \code{"solution"}: a matrix with the same layout as the output of \code{\link{cvode}}, time in the first column followed by one column per state. Retrieve it with \code{attr(result, "solution")}. As with any attribute, subsetting the returned matrix drops it, so extract it first.
 #'@example /inst/examples/cvs_Roberts_dns.r
-cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001, SensType = "STG", ErrCon = 'F', jacobian = NULL, sensitivity = NULL) {
-    .Call('_sundialr_cvodes', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType, ErrCon, jacobian, sensitivity)
+cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001, SensType = "STG", ErrCon = FALSE, jacobian = NULL, sensitivity = NULL, sensIC = NULL) {
+    .Call('_sundialr_cvodes', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType, ErrCon, jacobian, sensitivity, sensIC)
 }
 
 #'cvsolve
 #'
 #'CVSOLVE solver to solve stiff ODEs with discontinuities
 #'@param time_vector time vector
-#'@param IC Initial Conditions
+#'@param IC Initial Conditions. If named, the names are passed on: \code{y} arrives named in \code{input_function} and \code{jacobian}, so it can be indexed by name (\code{y["A"]})
 #'@param input_function Right Hand Side function of ODEs
 #'@param Parameters Parameters input to ODEs
 #'@param Events Discontinuities in the solution (a DataFrame, default value is NULL). Three columns, names ignored: the 1-based index of the state, the time of the discontinuity, and the value to add to that state at that time. The value is always added to the current value of the state, including at the initial time, so the initial conditions in \code{IC} are the starting point and an event at t = 0 adds to them.
@@ -117,7 +120,7 @@ cvsolve <- function(time_vector, IC, input_function, Parameters, Events = NULL, 
 #'
 #' IDA solver to solve stiff DAEs
 #'@param time_vector time vector
-#'@param IC Initial Value of y
+#'@param IC Initial Value of y. If named, the names are passed on: \code{y} and \code{ydot} arrive named in \code{input_function} and \code{jacobian}, so they can be indexed by name (\code{y["A"]})
 #'@param IRes Initial value of ydot
 #'@param input_function Right Hand Side function of DAEs
 #'@param Parameters Parameters input to ODEs

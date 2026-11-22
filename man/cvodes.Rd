@@ -12,19 +12,20 @@ cvodes(
   reltolerance = 1e-04,
   abstolerance = 1e-04,
   SensType = "STG",
-  ErrCon = "F",
+  ErrCon = FALSE,
   jacobian = NULL,
-  sensitivity = NULL
+  sensitivity = NULL,
+  sensIC = NULL
 )
 }
 \arguments{
 \item{time_vector}{time vector}
 
-\item{IC}{Initial Conditions}
+\item{IC}{Initial Conditions. If named, the names are passed on to every function the solver calls: \code{y}, \code{ydot} and \code{yS} arrive named, so they can be indexed by name (\code{y["A"]})}
 
 \item{input_function}{Right Hand Side function of ODEs}
 
-\item{Parameters}{Parameters input to ODEs}
+\item{Parameters}{Parameters input to ODEs. Their names, if any, are kept}
 
 \item{reltolerance}{Relative Tolerance (a scalar, default value  = 1e-04)}
 
@@ -36,10 +37,14 @@ cvodes(
 
 \item{jacobian}{(Optional) Jacobian of the RHS with signature \code{function(t, y, p)}. Default is NULL}
 
-\item{sensitivity}{(Optional) Sensitivity right-hand side with signature \code{function(t, y, ydot, iS, yS, p)} returning the derivative \code{d(yS_iS)/dt = J \%*\% yS_iS + df/dp_iS} as a numeric vector of \code{length(y)}, where \code{iS} is the 1-based parameter index. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS}
+\item{sensitivity}{(Optional) Sensitivity right-hand side with signature \code{function(t, y, ydot, iS, yS, p)} returning the derivative \code{d(yS_iS)/dt = J \%*\% yS_iS + df/dp_iS} as a numeric vector of \code{length(y)}, where \code{iS} is the 1-based parameter index. The function is only ever called for parameters, so \code{iS} never exceeds \code{length(Parameters)}, with or without \code{sensIC}: the sensitivities with respect to initial conditions satisfy \code{d(yS)/dt = J \%*\% yS}, which the solver computes itself, exactly from \code{jacobian} when one is supplied and otherwise by a centred difference of \code{input_function} along \code{yS}. Supply \code{jacobian} as well when the initial-condition sensitivities need to be exact. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS}
+
+\item{sensIC}{(Optional) States whose initial values are also sensitivity parameters, as 1-based indices into \code{IC} or as names of \code{IC}. Each adds one sensitivity, started at the unit vector for its state, so its block holds \code{d(y)/d(IC[i])}. Default is NULL: sensitivities with respect to \code{Parameters} only}
 }
 \value{
-A Matrix. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector
+A matrix with \code{1 + length(IC) * (length(Parameters) + length(sensIC))} columns. The first column is the time vector. The remaining columns hold the sensitivities in blocks of \code{length(IC)}, one block per parameter: the sensitivities of all states with respect to the first parameter, then of all states with respect to the second parameter, and so on. The sensitivity of state \code{j} with respect to parameter \code{k} is in column \code{1 + (k - 1) * length(IC) + j}. The blocks for \code{sensIC} follow the parameter blocks, in the order given in \code{sensIC}, so they are numbered as if they were parameters \code{length(Parameters) + 1}, \code{length(Parameters) + 2}, and so on.
+
+The state solution is attached as the attribute \code{"solution"}: a matrix with the same layout as the output of \code{\link{cvode}}, time in the first column followed by one column per state. Retrieve it with \code{attr(result, "solution")}. As with any attribute, subsetting the returned matrix drops it, so extract it first.
 }
 \description{
 CVODES solver to solve ODEs and calculate sensitivities
