@@ -61,6 +61,7 @@ int rhs_function(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data){
     for (int i = 0; i < y_len; i++){
       y1[i] = Ith(y,i+1);
     }
+    set_state_names(y1, my_rhs_fun->y_names);
 
     NumericVector ydot1(y_len);    // filled with zeros
 

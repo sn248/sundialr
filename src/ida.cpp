@@ -53,6 +53,7 @@ struct res_func{
   NumericVector params;
   SEXP jac_eqn;
   sundials_err_record *err;   // collects errors raised inside the callbacks
+  SEXP y_names;               // names(IC), set on y and ydot before each call, or R_NilValue
 };
 
 // function called by IDAInit if user inputs R function
@@ -77,6 +78,7 @@ int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* use
     for (int i = 0; i < yy_len; i++){
       yy1[i] = yy_ptr[i];                           // Ith(y,i+1);
     }
+    set_state_names(yy1, my_res_fun->y_names);
 
     int yp_len = NV_LENGTH_S(yp);
     // NumericVector analog of yp
@@ -85,6 +87,7 @@ int res_function(sunrealtype t, N_Vector yy, N_Vector yp, N_Vector rr, void* use
     for (int i = 0; i < yp_len; i++){
       yp1[i] = yp_ptr[i];                           // Ith(y,i+1);
     }
+    set_state_names(yp1, my_res_fun->y_names);
 
     // NumericVector analog of rr
     int rr_len = NV_LENGTH_S(rr);
@@ -135,7 +138,7 @@ static int jac_ida(sunrealtype t, sunrealtype cj,
     struct res_func *data = (struct res_func*)user_data;
     if (!data) { return -1; }
     return sundials_callback_guard(data->err, [&]() -> int {
-      return jac_eval_ida(t, cj, yy, yp, JAC, data->jac_eqn, data->params);
+      return jac_eval_ida(t, cj, yy, yp, JAC, data->jac_eqn, data->params, data->y_names);
     });
 }
 //------------------------------------------------------------------------------
@@ -144,7 +147,7 @@ static int jac_ida(sunrealtype t, sunrealtype cj,
 //'
 //' IDA solver to solve stiff DAEs
 //'@param time_vector time vector
-//'@param IC Initial Value of y
+//'@param IC Initial Value of y. If named, the names are passed on: \code{y} and \code{ydot} arrive named in \code{input_function} and \code{jacobian}, so they can be indexed by name (\code{y["A"]})
 //'@param IRes Initial value of ydot
 //'@param input_function Right Hand Side function of DAEs
 //'@param Parameters Parameters input to ODEs
@@ -262,7 +265,8 @@ NumericMatrix ida(NumericVector time_vector, NumericVector IC,
 
   SEXP jac_sexp = R_NilValue;  // for manual jacobian, if provided
   if (jacobian.isNotNull()) jac_sexp = as<SEXP>(jacobian);
-  struct res_func my_res_function = {input_function, Parameters, jac_sexp, &sun_err};
+  struct res_func my_res_function = {input_function, Parameters, jac_sexp, &sun_err,
+                                    Rf_getAttrib(IC, R_NamesSymbol)};
 
   // setting the user data in the rhs residual function
   flag = IDASetUserData(ida_mem, (void*)&my_res_function);

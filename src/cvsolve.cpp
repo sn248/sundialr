@@ -59,7 +59,7 @@ static int jac_cvsolve(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
   struct rhs_func *data = (struct rhs_func*)user_data;
   if (!data) { return -1; }
   return sundials_callback_guard(data->err, [&]() -> int {
-    return jac_eval(t, y, JAC, data->jac_eqn, data->params);
+    return jac_eval(t, y, JAC, data->jac_eqn, data->params, data->y_names);
   });
 }
 
@@ -69,7 +69,7 @@ static int jac_cvsolve(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
 //'
 //'CVSOLVE solver to solve stiff ODEs with discontinuities
 //'@param time_vector time vector
-//'@param IC Initial Conditions
+//'@param IC Initial Conditions. If named, the names are passed on: \code{y} arrives named in \code{input_function} and \code{jacobian}, so it can be indexed by name (\code{y["A"]})
 //'@param input_function Right Hand Side function of ODEs
 //'@param Parameters Parameters input to ODEs
 //'@param Events Discontinuities in the solution (a DataFrame, default value is NULL). Three columns, names ignored: the 1-based index of the state, the time of the discontinuity, and the value to add to that state at that time. The value is always added to the current value of the state, including at the initial time, so the initial conditions in \code{IC} are the starting point and an event at t = 0 adds to them.
@@ -256,7 +256,8 @@ NumericMatrix cvsolve(NumericVector time_vector, NumericVector IC,
   if (!input_function){ stop("There is no input function, stopping!"); }
 
   // order of input is rhs input function, Parameters and User-supplied Jacobian (optional)
-  struct rhs_func my_rhs_function = {input_function, Parameters, jac_sexp, &sun_err};
+  struct rhs_func my_rhs_function = {input_function, Parameters, jac_sexp, &sun_err,
+                                     Rf_getAttrib(IC, R_NamesSymbol)};
 
   // setting the user_data in rhs function
   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);

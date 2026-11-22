@@ -59,7 +59,7 @@ static int jac_cvode(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
   struct rhs_func *data = (struct rhs_func*)user_data;
   if (!data) { return -1; }
   return sundials_callback_guard(data->err, [&]() -> int {
-    return jac_eval(t, y, JAC, data->jac_eqn, data->params);
+    return jac_eval(t, y, JAC, data->jac_eqn, data->params, data->y_names);
   });
 }
 
@@ -68,7 +68,7 @@ static int jac_cvode(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
 //'
 //' CVODE solver to solve stiff ODEs
 //'@param time_vector time vector
-//'@param IC Initial Conditions
+//'@param IC Initial Conditions. If named, the names are passed on: \code{y} arrives named in \code{input_function} and \code{jacobian}, so it can be indexed by name (\code{y["A"]})
 //'@param input_function Right Hand Side function of ODEs
 //'@param Parameters Parameters input to ODEs
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
@@ -174,7 +174,8 @@ NumericMatrix cvode(NumericVector time_vector, NumericVector IC,
    // Check if jacobian is not NULL, fill the jac_sexp with input value
    SEXP jac_sexp = R_NilValue;
    if (jacobian.isNotNull()) jac_sexp = as<SEXP>(jacobian);
-   struct rhs_func my_rhs_function = {input_function, Parameters, jac_sexp, &sun_err};
+   struct rhs_func my_rhs_function = {input_function, Parameters, jac_sexp, &sun_err,
+                                     Rf_getAttrib(IC, R_NamesSymbol)};
 
    // setting the user_data in rhs function
    flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);
