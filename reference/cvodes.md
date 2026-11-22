@@ -13,9 +13,10 @@ cvodes(
   reltolerance = 1e-04,
   abstolerance = 1e-04,
   SensType = "STG",
-  ErrCon = "F",
+  ErrCon = FALSE,
   jacobian = NULL,
-  sensitivity = NULL
+  sensitivity = NULL,
+  sensIC = NULL
 )
 ```
 
@@ -27,7 +28,9 @@ cvodes(
 
 - IC:
 
-  Initial Conditions
+  Initial Conditions. If named, the names are passed on to every
+  function the solver calls: `y`, `ydot` and `yS` arrive named, so they
+  can be indexed by name (`y["A"]`)
 
 - input_function:
 
@@ -35,7 +38,7 @@ cvodes(
 
 - Parameters:
 
-  Parameters input to ODEs
+  Parameters input to ODEs. Their names, if any, are kept
 
 - reltolerance:
 
@@ -65,15 +68,43 @@ cvodes(
   (Optional) Sensitivity right-hand side with signature
   `function(t, y, ydot, iS, yS, p)` returning the derivative
   `d(yS_iS)/dt = J %*% yS_iS + df/dp_iS` as a numeric vector of
-  `length(y)`, where `iS` is the 1-based parameter index. Default is
-  NULL, in which case the sensitivity equations are approximated by
-  finite differences of the RHS
+  `length(y)`, where `iS` is the 1-based parameter index. The function
+  is only ever called for parameters, so `iS` never exceeds
+  `length(Parameters)`, with or without `sensIC`: the sensitivities with
+  respect to initial conditions satisfy `d(yS)/dt = J %*% yS`, which the
+  solver computes itself, exactly from `jacobian` when one is supplied
+  and otherwise by a centred difference of `input_function` along `yS`.
+  Supply `jacobian` as well when the initial-condition sensitivities
+  need to be exact. Default is NULL, in which case the sensitivity
+  equations are approximated by finite differences of the RHS
+
+- sensIC:
+
+  (Optional) States whose initial values are also sensitivity
+  parameters, as 1-based indices into `IC` or as names of `IC`. Each
+  adds one sensitivity, started at the unit vector for its state, so its
+  block holds `d(y)/d(IC[i])`. Default is NULL: sensitivities with
+  respect to `Parameters` only
 
 ## Value
 
-A Matrix. First column is the time-vector, the next y \* p columns are
-sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters
-etc. y is the state vector, p is the parameter vector
+A matrix with `1 + length(IC) * (length(Parameters) + length(sensIC))`
+columns. The first column is the time vector. The remaining columns hold
+the sensitivities in blocks of `length(IC)`, one block per parameter:
+the sensitivities of all states with respect to the first parameter,
+then of all states with respect to the second parameter, and so on. The
+sensitivity of state `j` with respect to parameter `k` is in column
+`1 + (k - 1) * length(IC) + j`. The blocks for `sensIC` follow the
+parameter blocks, in the order given in `sensIC`, so they are numbered
+as if they were parameters `length(Parameters) + 1`,
+`length(Parameters) + 2`, and so on.
+
+The state solution is attached as the attribute `"solution"`: a matrix
+with the same layout as the output of
+[`cvode`](http://sn248.github.io/sundialr/reference/cvode.md), time in
+the first column followed by one column per state. Retrieve it with
+`attr(result, "solution")`. As with any attribute, subsetting the
+returned matrix drops it, so extract it first.
 
 ## Examples
 

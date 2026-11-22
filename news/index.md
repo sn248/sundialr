@@ -1,6 +1,62 @@
 # Changelog
 
+## sundialr v0.2.2
+
+- **New feature**:
+  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
+  computes sensitivities with respect to initial conditions. The new
+  argument `sensIC` lists the states whose initial values are
+  sensitivity parameters, as 1-based indices into `IC` or as names of
+  `IC`; each adds a block of `length(IC)` columns holding
+  `d(y)/d(IC[i])`, after the parameter blocks and in the order given.
+  The parameter blocks are unchanged, and the default `NULL` gives
+  exactly the previous output. Without a `sensitivity` function CVODES
+  approximates the IC sensitivity equations by finite differences, as it
+  does for parameters. A `sensitivity` function is still called only for
+  parameters, so one written for `Parameters` alone keeps working when
+  `sensIC` is added. The IC sensitivities satisfy `d(yS)/dt = J %*% yS`,
+  which
+  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
+  computes itself: exactly from `jacobian` when one is supplied,
+  otherwise by a centred difference of the right-hand side along `yS`
+- **New feature**: the names on `IC` now reach the user’s functions in
+  every solver. The state vector `y` (and `ydot` in
+  [`ida()`](http://sn248.github.io/sundialr/reference/ida.md), and
+  `ydot`/`yS` in a
+  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
+  sensitivity function) used to arrive unnamed, because each callback
+  copies the state into a fresh vector, so a right-hand side written by
+  name (`y["A"]`) needed an adapter. Names on `Parameters` were already
+  passed through and still are. Unnamed inputs behave exactly as before
+- Fixed
+  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
+  failing whenever `ErrCon` was left at its default. The default was the
+  character `'F'`, which `Rcpp` refuses to convert to a logical, so
+  `cvodes(time_vector, IC, f, p)` stopped with “Not compatible with
+  requested type: \[type=character; target=logical\]”. The default is
+  now `FALSE`, as documented. Calls that pass `ErrCon` explicitly are
+  unaffected
+- [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md) now
+  returns the state solution as well as the sensitivities. It is
+  attached to the returned matrix as the attribute `"solution"`, a
+  matrix laid out like the output of
+  [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md) (time,
+  then one column per state), so the states no longer need a second
+  solve. The returned sensitivity matrix itself is unchanged, so
+  existing code keeps working. Subsetting the matrix drops the
+  attribute, so take it with `attr(result, "solution")` first
+- Corrected the documented column order of
+  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md). The
+  help page said the sensitivity columns held y1 with respect to every
+  parameter, then y2, and so on; they have always held every state with
+  respect to the first parameter, then every state with respect to the
+  second. The sensitivity of state `j` with respect to parameter `k` is
+  in column `1 + (k - 1) * length(IC) + j`. The behaviour is unchanged,
+  and tests now pin it against closed-form sensitivities
+
 ## sundialr v0.2.1
+
+CRAN release: 2026-10-18
 
 - **New feature**: the C API gains a second integrator, `ARKODE` run as
   a fully implicit ESDIRK method (singly diagonally implicit Runge-Kutta

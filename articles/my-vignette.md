@@ -504,19 +504,20 @@ equal to length of (`y` $`\times`$`p` + 1). The first columns is for
 time. Currently, the sensitivity of every entity is calculated with
 respect to every parameter in model. For example, for the current model
 with `3` entities (ODEs) and `3` parameters, a total of `9`
-sensitivities are calculated at each output time, i.e. `y1` w.r.t `p1`,
-`p2`, `p3`, `y2` w.r.t. `p1`, `p2`, `p3` and so on. The first 3
-(`length(y)`) columns give sensitivity w.r.t the first parameter, the
-next 3 (`length(y)`) columns give sensitivity w.r.t the second parameter
-and so on.
+sensitivities are calculated at each output time, one for each pair of
+entity and parameter. The first 3 (`length(y)`) columns give sensitivity
+w.r.t the first parameter, the next 3 (`length(y)`) columns give
+sensitivity w.r.t the second parameter and so on.
 
 In the Sensitivity Matrix output for the systems of equations described
 above, the first column gives output time, the next `3` columns provide
 sensitivity of `y1`, `y2` and `y3` w.r.t first parameter (say `p1`), the
 next three columns provide sensitivity of `y1`, `y2` and `y3` w.r.t. the
-second parameter (`p2`) and so on. The output Sensitivity Matrix is
-given below. The sensitivity values match with the values provided in
-the `CVODES` documentation.
+second parameter (`p2`) and so on. The state solution itself is attached
+to the output as the attribute `"solution"`, laid out like the output of
+`cvode` and retrieved with `attr(df1, "solution")`. The output
+Sensitivity Matrix is given below. The sensitivity values match with the
+values provided in the `CVODES` documentation.
 
 ``` r
 > df1
@@ -658,7 +659,7 @@ C_exact <- sapply(times, function(t) {
 })
 
 max(abs(C_arkode - C_exact))     # largest absolute error
-#> [1] 7.220233e-06
+#> [1] 7.220309e-06
 
 plot(times, C_arkode, type = "l", lty = 1, frame.plot = FALSE,
      xlab = "time", ylab = "C", main = "Repeated doses solved with ARKODE")

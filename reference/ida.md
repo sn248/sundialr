@@ -25,7 +25,9 @@ ida(
 
 - IC:
 
-  Initial Value of y
+  Initial Value of y. If named, the names are passed on: `y` and `ydot`
+  arrive named in `input_function` and `jacobian`, so they can be
+  indexed by name (`y["A"]`)
 
 - IRes:
 

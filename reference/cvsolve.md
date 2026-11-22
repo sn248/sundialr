@@ -25,7 +25,9 @@ cvsolve(
 
 - IC:
 
-  Initial Conditions
+  Initial Conditions. If named, the names are passed on: `y` arrives
+  named in `input_function` and `jacobian`, so it can be indexed by name
+  (`y["A"]`)
 
 - input_function:
 
