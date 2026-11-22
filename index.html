@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="index.html">sundialr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -131,6 +131,18 @@
 <div class="section level2">
 <h2 id="whats-new">What’s new?<a class="anchor" aria-label="anchor" href="#whats-new"></a>
 </h2>
+<div class="section level3">
+<h3 id="version-022">Version 0.2.2<a class="anchor" aria-label="anchor" href="#version-022"></a>
+</h3>
+<ul>
+<li>
+<strong>New</strong>: <code>cvodes</code> computes sensitivities with respect to initial conditions, via the new <code>sensIC</code> argument</li>
+<li>
+<strong>New</strong>: the names on <code>IC</code> now reach the user’s functions in every solver, so a right-hand side can index the state by name</li>
+<li>
+<code>cvodes</code> now returns the state solution as the attribute <code>"solution"</code>, and no longer fails when <code>ErrCon</code> is left at its default</li>
+</ul>
+</div>
 <div class="section level3">
 <h3 id="version-021">Version 0.2.1<a class="anchor" aria-label="anchor" href="#version-021"></a>
 </h3>
