@@ -312,11 +312,12 @@ static int sens_rhs1_cvodes(int Ns, sunrealtype t, N_Vector y, N_Vector ydot,
 //'@param reltolerance Relative Tolerance (a scalar, default value  = 1e-04)
 //'@param abstolerance Absolute Tolerance (a scalar or vector with length equal to ydot, default = 1e-04)
 //'@param SensType Sensitivity Type - allowed values are "STG" (for Staggered, default) or "SIM" (for Simultaneous)
-//'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
+//'@param ErrCon Error Control - allowed values are TRUE or FALSE (default). When TRUE the sensitivities are included in the local error test, which makes them more accurate at the cost of more steps. With the difference-quotient sensitivities (no \code{sensitivity} function) very tight tolerances, near \code{reltolerance = 1e-10}, may then exhaust the step limit; loosen them or supply \code{sensitivity}
 //'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)}. Default is NULL
 //'@param sensitivity (Optional) Sensitivity right-hand side with signature \code{function(t, y, ydot, iS, yS, p)} returning the derivative \code{d(yS_iS)/dt = J \%*\% yS_iS + df/dp_iS} as a numeric vector of \code{length(y)}, where \code{iS} is the 1-based parameter index. The function is only ever called for parameters, so \code{iS} never exceeds \code{length(Parameters)}, with or without \code{sensIC}: the sensitivities with respect to initial conditions satisfy \code{d(yS)/dt = J \%*\% yS}, which the solver computes itself, exactly from \code{jacobian} when one is supplied and otherwise by a centred difference of \code{input_function} along \code{yS}. Supply \code{jacobian} as well when the initial-condition sensitivities need to be exact. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS
 //'@param sensIC (Optional) States whose initial values are also sensitivity parameters, as 1-based indices into \code{IC} or as names of \code{IC}. Each adds one sensitivity, started at the unit vector for its state, so its block holds \code{d(y)/d(IC[i])}. Default is NULL: sensitivities with respect to \code{Parameters} only
-//'@returns A matrix with \code{1 + length(IC) * (length(Parameters) + length(sensIC))} columns. The first column is the time vector. The remaining columns hold the sensitivities in blocks of \code{length(IC)}, one block per parameter: the sensitivities of all states with respect to the first parameter, then of all states with respect to the second parameter, and so on. The sensitivity of state \code{j} with respect to parameter \code{k} is in column \code{1 + (k - 1) * length(IC) + j}. The blocks for \code{sensIC} follow the parameter blocks, in the order given in \code{sensIC}, so they are numbered as if they were parameters \code{length(Parameters) + 1}, \code{length(Parameters) + 2}, and so on.
+//'@param Events (Optional) Discontinuities in the solution, such as bolus doses, as a data frame with exactly three columns (names ignored): the 1-based index of the state, the time of the event, and the value to add to that state at that time. This is the format of \code{Events} in \code{\link{cvsolve}}, and the value is always added, including at the initial time, where it adds to \code{IC}. The solver integrates up to each event, applies it and restarts, carrying the sensitivities across unchanged: the event amounts and times are fixed, not sensitivity parameters, so an event moves the states but not their derivatives. Unlike \code{cvsolve}, the result still has one row per element of \code{time_vector}; an output time that coincides with an event reports the state just after the event. Default is NULL
+//'@returns A matrix with \code{1 + length(IC) * (length(Parameters) + length(sensIC))} columns and one row per element of \code{time_vector}. The first column is the time vector. The remaining columns hold the sensitivities in blocks of \code{length(IC)}, one block per parameter: the sensitivities of all states with respect to the first parameter, then of all states with respect to the second parameter, and so on. The sensitivity of state \code{j} with respect to parameter \code{k} is in column \code{1 + (k - 1) * length(IC) + j}. The blocks for \code{sensIC} follow the parameter blocks, in the order given in \code{sensIC}, so they are numbered as if they were parameters \code{length(Parameters) + 1}, \code{length(Parameters) + 2}, and so on.
 //'
 //' The state solution is attached as the attribute \code{"solution"}: a matrix with the same layout as the output of \code{\link{cvode}}, time in the first column followed by one column per state. Retrieve it with \code{attr(result, "solution")}. As with any attribute, subsetting the returned matrix drops it, so extract it first.
 //'@example /inst/examples/cvs_Roberts_dns.r
@@ -330,7 +331,8 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
                       bool ErrCon = false,
                       Nullable<Function> jacobian = R_NilValue,
                       Nullable<Function> sensitivity = R_NilValue,
-                      SEXP sensIC = R_NilValue){
+                      SEXP sensIC = R_NilValue,
+                      Nullable<DataFrame> Events = R_NilValue){
 
   int flag;
 
@@ -403,6 +405,39 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
     for (size_t a = 0; a < ic_idx.size(); a++)
       for (size_t b = a + 1; b < ic_idx.size(); b++)
         if (ic_idx[a] == ic_idx[b]) stop("sensIC must not list a state more than once");
+  }
+
+  // Events, validated here, before any SUNDIALS object exists, by the same
+  // rules as cvsolve(). The state index is used to subscript the state vector
+  // directly, so anything but a whole number in 1..y_len would read or write
+  // outside it. Held as records sorted by time; a stable sort keeps events at
+  // one time in the order given, though they commute since all of them add.
+  struct sens_event { double t; int state; double value; };
+  std::vector<sens_event> events;
+  if (Events.isNotNull()) {
+    DataFrame ev(Events);
+    if (ev.size() != 3) {
+      stop("Events must be a data frame with exactly three columns: state index, time and value");
+    }
+    NumericVector ev_state = ev[0];
+    NumericVector ev_time  = ev[1];
+    NumericVector ev_value = ev[2];
+    double t_max = Rcpp::max(time_vector);
+    for (int i = 0; i < ev_state.length(); i++) {
+      double s = ev_state[i], t = ev_time[i], v = ev_value[i];
+      if (ISNAN(s) || s < 1 || s > y_len || s != std::floor(s)) {
+        stop("The state index in the first column of the Events dataframe must be a whole number between 1 and the number of states");
+      }
+      if (ISNAN(t) || t < time_vector[0] || t > t_max) {
+        stop("The event time in the second column of the Events dataframe must lie between the first and last time points");
+      }
+      if (!R_FINITE(v)) {
+        stop("The event value in the third column of the Events dataframe must be a finite number");
+      }
+      events.push_back({t, (int)s - 1, v});
+    }
+    std::stable_sort(events.begin(), events.end(),
+                     [](const sens_event &a, const sens_event &b) { return a.t < b.t; });
   }
 
   // Total number of sensitivities: one per parameter, then one per sensIC
@@ -481,6 +516,15 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   sunrealtype *y0_ptr = N_VGetArrayPointer(y0);
   for (int i = 0; i<y_len; i++){
     y0_ptr[i] = IC[i];
+  }
+  // Events at the initial time add to the initial conditions, as in cvsolve().
+  // ev_next is the first event still to be applied in the solve loop. The
+  // sensitivities start from yS(0) as usual: the added amount is a constant,
+  // so d(y0)/dp is unchanged and d(y0)/d(IC[i]) is still the unit vector.
+  size_t ev_next = 0;
+  while (ev_next < events.size() && events[ev_next].t == T0) {
+    y0_ptr[events[ev_next].state] += events[ev_next].value;
+    ev_next++;
   }
 
   // Check SensType input ---------------------------------------------------------
@@ -597,6 +641,13 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   flag = CVodeSensEEtolerances(cvode_mem);
   if(check_retval(flag, "CVodeSensEEtolerances")) { sundials_stop(sun_err, "CVodeSensEEtolerances", "Stopping cvodes, something went wrong in estimating tolerances for sensitivities!"); }
 
+  /* Include the sensitivities in the local error test if ErrCon is TRUE.
+   Before 0.2.2 ErrCon was validated but never passed on, so this was always
+   CVODES' default of SUNFALSE whatever the caller asked for. The setting
+   survives CVodeSensReInit, so it holds across Events too. */
+  flag = CVodeSetSensErrCon(cvode_mem, ErrCon ? SUNTRUE : SUNFALSE);
+  if(check_retval(flag, "CVodeSetSensErrCon")) { sundials_stop(sun_err, "CVodeSetSensErrCon", "Stopping cvodes, something went wrong in setting sensitivity error control!"); }
+
   /* Call CVodeSetSensParams to specify problem parameter information for
    sensitivity calculations */
   // struct rhs_func_sens *ptr = &my_rhs_function;        // struct UserData storing my data
@@ -610,10 +661,11 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
   int y_len_1 = y_len + 1;
   NumericMatrix soln(Dimension(time_vec_len,y_len_1));
 
-  // fill the first row of soln matrix with Initial Conditions
+  // fill the first row of soln matrix with the initial state (IC plus any
+  // events at the initial time)
   soln(0,0) = time_vector[0];   // get the first time value
   for(int i = 0; i<y_len; i++){
-    soln(0,i+1) = IC[i];
+    soln(0,i+1) = y0_ptr[i];
   }
 
   NumericMatrix sens(Dimension(time_vec_len, (y_len * NS) + 1));
@@ -624,36 +676,75 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
     sens(0, y_len*(NP + m) + ic_idx[m] + 1) = 1.0;
   }
 
+  // Integrates from the current time to t, leaving the state in y0 and the
+  // sensitivities in yS.
+  auto advance_to = [&](sunrealtype t) {
+    flag = CVode(cvode_mem, t, y0, &time, CV_NORMAL);
+    if (check_retval(flag, "CVode")) { sundials_stop(sun_err, "CVode", "Stopping cvodes, something went wrong in solving the system using CVODE!"); } // Something went wrong in solving it!
+    flag = CVodeGetSens(cvode_mem, &time, yS);
+    if (check_retval(flag, "CVodeGetSens")) { sundials_stop(sun_err, "CVodeGetSens", "Stopping cvodes, something went wrong in calculating Sensitivities!"); }
+  };
+
+  // Writes the current state and sensitivities into output row `row`.
+  auto store_row = [&](int row, sunrealtype t) {
+    soln(row, 0) = t;                     // first column is for time
+    for (int i = 0; i<y_len; i++){
+      soln(row, i+1) = y0_ptr[i];
+    }
+    sens(row, 0) = t;                     // first column is for time
+    for (int i = 0; i < NS; i++){
+      sunrealtype *yS_ptr = N_VGetArrayPointer(yS[i]);   // sensitivities w.r.t. param i
+      for(int j = 0; j < y_len; j++){
+        sens(row, y_len*i+j+1) = yS_ptr[j]; // sensitivities of y1 ... yJ w.r.t param i
+      }
+    }
+  };
+
+  // t_start is the time CVODES was last (re)initialised at, and at_start says
+  // no step has been taken since, so y0 and yS still hold the state there.
+  // An output time equal to it is then filled from y0 and yS directly:
+  // CVode() refuses an output time at its initial time.
+  sunrealtype t_start = T0;
+  bool at_start = true;
+
   sunrealtype tout;  // For output times
-  sunrealtype *yS_ptr = NULL;
   for(int iout = 0; iout < NOUT-1; iout++) {
 
     // output times start from the index after initial time
     tout = time_vector[iout+1];
 
-    flag = CVode(cvode_mem, tout, y0, &time, CV_NORMAL);
-    if (check_retval(flag, "CVode")) { sundials_stop(sun_err, "CVode", "Stopping cvodes, something went wrong in solving the system using CVODE!"); } // Something went wrong in solving it!
-    if (flag == CV_SUCCESS) {
-
-      // store results in soln matrix
-      soln(iout+1, 0) = time;           // first column is for time
-      for (int i = 0; i<y_len; i++){
-        soln(iout+1, i+1) = y0_ptr[i];
+    // Apply every event up to and including tout. For each event time:
+    // integrate to it, add all the events at that time to the state, and
+    // restart both the state and the sensitivity integration from there.
+    // The sensitivities are carried across unchanged - an event adds a fixed
+    // amount, which depends on no parameter and no initial condition - but
+    // CVODES must still be restarted, because its step-size and order history
+    // describe a solution that no longer exists past the jump.
+    while (ev_next < events.size() && events[ev_next].t <= tout) {
+      // te is past the solver's current time: events at T0 were folded into
+      // the IC, and every earlier event or output time has been consumed.
+      sunrealtype te = events[ev_next].t;
+      advance_to(te);
+      while (ev_next < events.size() && events[ev_next].t == te) {
+        y0_ptr[events[ev_next].state] += events[ev_next].value;
+        ev_next++;
       }
+      flag = CVodeReInit(cvode_mem, te, y0);
+      if (check_retval(flag, "CVodeReInit")) { sundials_stop(sun_err, "CVodeReInit", "Stopping cvodes, something went wrong in reinitializing the ODE system!"); }
+      flag = CVodeSensReInit(cvode_mem, ism, yS);
+      if (check_retval(flag, "CVodeSensReInit")) { sundials_stop(sun_err, "CVodeSensReInit", "Stopping cvodes, something went wrong in reinitializing the sensitivities!"); }
+      t_start  = te;
+      at_start = true;
     }
 
-    flag = CVodeGetSens(cvode_mem, &time, yS);
-    if (check_retval(flag, "CVodeGetSens")) { sundials_stop(sun_err, "CVodeGetSens", "Stopping cvodes, something went wrong in calculating Sensitivities!"); }
-
-    if (flag == CV_SUCCESS) {
-      sens(iout+1, 0) = time;               // first column is for time
-      for (int i = 0; i < NS; i++){
-        yS_ptr = N_VGetArrayPointer(yS[i]);   // sensitivities w.r.t. param i
-        for(int j = 0; j < y_len; j++){
-          // store results in soln matrix
-          sens(iout+1, y_len*i+j+1) = yS_ptr[j]; // sensitivities of y1 ... yJ w.r.t param i
-        }
-      }
+    if (at_start && tout == t_start) {
+      // At the (re)initialisation time: nothing to integrate. With an event
+      // at tout this reports the state just after it.
+      store_row(iout+1, tout);
+    } else {
+      advance_to(tout);
+      at_start = false;
+      store_row(iout+1, time);
     }
 
   }

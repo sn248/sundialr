@@ -130,7 +130,9 @@ test_that("cvodes runs with its default arguments", {
 })
 
 test_that("sensitivity columns are grouped by parameter, as documented", {
-  out <- cvodes(chain_t, chain_y0, chain_rhs, chain_p, 1e-10, 1e-12, ErrCon = TRUE)
+  # rtol 1e-8: with ErrCon = TRUE, difference-quotient sensitivities are too
+  # noisy to pass the error test at 1e-10, and CVODES runs out of steps
+  out <- cvodes(chain_t, chain_y0, chain_rhs, chain_p, 1e-8, 1e-10, ErrCon = TRUE)
   ex  <- chain_exact(chain_t, chain_p[1], chain_p[2])
 
   # no sensitivity RHS is supplied, so CVODES uses difference quotients whose
@@ -209,7 +211,7 @@ test_that("a parameters-only sensitivity function never sees an IC index", {
   }
   # without a Jacobian the IC sensitivities come from a centred difference of
   # the RHS along yS, so they are only as accurate as that difference
-  out <- cvodes(chain_t, chain_y0_ic, chain_rhs, chain_p, 1e-10, 1e-12,
+  out <- cvodes(chain_t, chain_y0_ic, chain_rhs, chain_p, 1e-8, 1e-10,
                 ErrCon = TRUE, sensitivity = sens, sensIC = 1:2)
   expect_setequal(seen_iS, 1:2)
   expect_equal(unname(out[, 6:9]),
@@ -223,7 +225,7 @@ test_that("a parameters-only sensitivity function never sees an IC index", {
 test_that("sensIC works with the difference-quotient sensitivity RHS", {
   # no sensitivity RHS: CVODES perturbs a placeholder the RHS never reads, so
   # the difference quotient reduces to J %*% yS, the IC sensitivity equation
-  out <- cvodes(chain_t, chain_y0_ic, chain_rhs, chain_p, 1e-10, 1e-12,
+  out <- cvodes(chain_t, chain_y0_ic, chain_rhs, chain_p, 1e-8, 1e-10,
                 ErrCon = TRUE, sensIC = c(2, 1))
   ex  <- chain_ic_exact(chain_t, chain_p[1], chain_p[2])
   # blocks follow the order given in sensIC: state 2 first, then state 1
@@ -260,7 +262,127 @@ test_that("sensIC is validated", {
 test_that("sensIC works when there are no parameters", {
   # y' = -0.5 y  =>  d(y)/d(y0) = exp(-0.5 t)
   out <- cvodes(c(0, 1, 2), c(A = 2), function(t, y, p) -0.5 * y, numeric(0),
-                1e-10, 1e-12, ErrCon = TRUE, sensIC = "A")
+                1e-8, 1e-10, ErrCon = TRUE, sensIC = "A")
   expect_equal(ncol(out), 2)
   expect_equal(out[, 2], exp(-0.5 * c(0, 1, 2)), tolerance = 1e-5)
+})
+
+# Events (doses). The chain is linear and a dose into y1 is a fixed amount,
+# so by superposition every state and every parameter sensitivity is the
+# undosed closed form plus, for each dose D at td, D times the same closed
+# form started at td. The IC sensitivities do not change at all.
+dosed_exact <- function(t, a, b, doses) {
+  ex <- chain_exact(t, a, b)
+  for (d in seq_len(nrow(doses))) {
+    td <- doses$time[d]; D <- doses$value[d]
+    s  <- pmax(t - td, 0); on <- t >= td
+    exd <- chain_exact(s, a, b)
+    for (nm in names(ex)) ex[[nm]] <- ex[[nm]] + on * D * exd[[nm]]
+  }
+  ex
+}
+dose_t <- seq(0, 12, by = 1)
+# one dose off the output grid, one on it, and one at the final time
+doses  <- data.frame(state = 1, time = c(2.5, 6, 12), value = c(2, 1.5, 3))
+
+test_that("Events add doses and carry the sensitivities across them", {
+  out  <- cvodes(dose_t, chain_y0, chain_rhs, chain_p, 1e-10, 1e-12,
+                 Events = doses)
+  soln <- attr(out, "solution")
+  ex   <- dosed_exact(dose_t, chain_p[1], chain_p[2], doses)
+
+  # one row per output time, whatever the events
+  expect_equal(dim(out), c(length(dose_t), 1 + 2 * 2))
+  expect_equal(out[, 1], dose_t)
+  expect_equal(soln[, 1], dose_t)
+
+  # an output time at a dose reports the state just after it
+  expect_equal(soln[, 2], ex$y1, tolerance = 1e-6)
+  expect_equal(soln[, 3], ex$y2, tolerance = 1e-6)
+  expect_equal(out[, 2], ex$dy1_da, tolerance = 1e-5)
+  expect_equal(out[, 3], ex$dy2_da, tolerance = 1e-5)
+  expect_equal(out[, 4], ex$dy1_db, tolerance = 1e-5)
+  expect_equal(out[, 5], ex$dy2_db, tolerance = 1e-5)
+})
+
+test_that("Events agree between the analytic and difference-quotient paths", {
+  ana <- cvodes(dose_t, chain_y0_ic, chain_rhs, chain_p, 1e-10, 1e-12,
+                jacobian = chain_jac, sensitivity = chain_sens,
+                sensIC = 1:2, Events = doses)
+  dq  <- cvodes(dose_t, chain_y0_ic, chain_rhs, chain_p, 1e-10, 1e-12,
+                sensIC = 1:2, Events = doses)
+  expect_equal(ana, dq, tolerance = 1e-5)
+
+  # the IC sensitivities pass through the doses unchanged
+  expect_equal(unname(ana[, 6:9]),
+               unname(chain_ic_exact(dose_t, chain_p[1], chain_p[2])),
+               tolerance = 1e-6)
+})
+
+test_that("an event at the initial time adds to IC and leaves yS(0) alone", {
+  ev  <- data.frame(state = 2, time = 0, value = 0.5)
+  out <- cvodes(chain_t, chain_y0, chain_rhs, chain_p, 1e-10, 1e-12,
+                sensIC = 2, Events = ev)
+  ref <- cvodes(chain_t, chain_y0 + c(0, 0.5), chain_rhs, chain_p, 1e-10, 1e-12,
+                sensIC = 2)
+  expect_equal(attr(out, "solution")[1, -1], c(1, 0.5))
+  expect_equal(out[1, -1], c(0, 0, 0, 0, 0, 1))
+  expect_equal(out, ref, tolerance = 1e-8)
+})
+
+test_that("Events at one time accumulate, and match cvsolve's states", {
+  ev   <- data.frame(state = 1, time = c(3, 3, 7), value = c(1, 2, 1))
+  out  <- cvodes(dose_t, chain_y0, chain_rhs, chain_p, 1e-10, 1e-12, Events = ev)
+  ref  <- cvsolve(dose_t, chain_y0, chain_rhs, chain_p, ev, 1e-10, 1e-12)
+  # cvsolve gives each event record its own row, so the two events at t = 3
+  # make two rows there; its last row at each time is the post-event state
+  ref <- ref[!duplicated(ref[, 1], fromLast = TRUE), ]
+  expect_equal(unname(attr(out, "solution")), unname(ref), tolerance = 1e-6)
+  ex <- dosed_exact(dose_t, chain_p[1], chain_p[2],
+                    data.frame(time = c(3, 7), value = c(3, 1)))
+  expect_equal(out[, 2], ex$dy1_da, tolerance = 1e-5)
+})
+
+test_that("No Events, or an empty Events, gives the undosed result", {
+  base <- cvodes(chain_t, chain_y0, chain_rhs, chain_p, 1e-10, 1e-12)
+  expect_identical(
+    cvodes(chain_t, chain_y0, chain_rhs, chain_p, 1e-10, 1e-12, Events = NULL),
+    base)
+  expect_identical(
+    cvodes(chain_t, chain_y0, chain_rhs, chain_p, 1e-10, 1e-12,
+           Events = data.frame(state = numeric(0), time = numeric(0),
+                               value = numeric(0))),
+    base)
+})
+
+test_that("Events are validated", {
+  run <- function(ev) cvodes(chain_t, chain_y0, chain_rhs, chain_p, Events = ev)
+  expect_error(run(data.frame(state = 1, time = 1)), "exactly three columns")
+  expect_error(run(data.frame(state = 3, time = 1, value = 1)), "whole number between 1")
+  expect_error(run(data.frame(state = 0, time = 1, value = 1)), "whole number between 1")
+  expect_error(run(data.frame(state = 1.5, time = 1, value = 1)), "whole number between 1")
+  expect_error(run(data.frame(state = 1, time = -1, value = 1)), "between the first and last")
+  expect_error(run(data.frame(state = 1, time = 5, value = 1)), "between the first and last")
+  expect_error(run(data.frame(state = 1, time = NA, value = 1)), "between the first and last")
+  expect_error(run(data.frame(state = 1, time = 1, value = NA)), "finite number")
+})
+
+test_that("ErrCon = TRUE puts the sensitivities under error control", {
+  # Before 0.2.2 ErrCon was never passed to CVODES, so TRUE and FALSE gave
+  # identical results. With the sensitivities in the error test they are
+  # markedly more accurate at the same tolerance (about 30x here).
+  t  <- seq(0, 20, by = 1)
+  ex <- chain_exact(t, chain_p[1], chain_p[2])
+  ex <- cbind(ex$dy1_da, ex$dy2_da, ex$dy1_db, ex$dy2_db)
+  err <- function(ec, ev = NULL) {
+    out <- cvodes(t, chain_y0, chain_rhs, chain_p, 1e-5, 1e-8, ErrCon = ec,
+                  Events = ev)
+    max(abs(out[, -1] - ex))
+  }
+  expect_lt(err(TRUE), err(FALSE) / 5)
+
+  # the setting survives the restarts at events (an event at the final time
+  # leaves every earlier row unchanged, so the closed form still applies)
+  ev <- data.frame(state = 1, time = 20, value = 0)
+  expect_lt(err(TRUE, ev), err(FALSE, ev) / 5)
 })

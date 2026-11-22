@@ -1,3 +1,34 @@
+## Comments for version 0.2.2
++ New feature: `cvodes()` computes sensitivities with respect to initial conditions. The new `sensIC` argument lists the states whose initial values are sensitivity parameters; each adds a block of columns after the existing parameter blocks. It is the last argument and defaults to `NULL`, which gives exactly the previous output, so existing calls, including positional ones, are unaffected. A user-supplied `sensitivity` function is still called only for parameters, so one written before this release keeps working when `sensIC` is added
++ New feature: the names on `IC` now reach the user's functions in all four solvers. The state vector used to arrive unnamed because each callback copies the state into a fresh vector. Unnamed inputs behave exactly as before
++ Fixed `cvodes()` failing whenever `ErrCon` was left at its default. The default was the character `'F'`, which `Rcpp` refuses to convert to a logical, so a call relying on the default stopped with a type error. The default is now `FALSE`, as documented
++ `cvodes()` now also returns the state solution, attached to the returned matrix as the attribute `"solution"`. The returned sensitivity matrix itself is unchanged
++ Corrected the documented column order of the `cvodes()` result. The behaviour is unchanged, and tests now pin the layout against closed-form sensitivities
++ New feature: `cvodes()` accepts `Events` (fixed doses) in the same format as `cvsolve()`, restarting the state and sensitivity integration at each one and carrying the sensitivities across unchanged. It is the last argument and defaults to `NULL`, so existing calls are unaffected
++ Behaviour change: `ErrCon = TRUE` in `cvodes()` was validated but never passed to `CVODES`, so it had no effect. It now includes the sensitivities in the error test, so results change for calls that pass it. `ErrCon = FALSE`, the default, is unchanged
++ The bundled `SUNDIALS` (7.9.0), its CRAN-compliance patches and the C API are unchanged from 0.2.1
+
+### Test environments
+<!-- TODO: fill in once the 0.2.2 checks have been run -->
+* local Ubuntu 24.04, R 4.6.1
+* R-hub (via the package's GitHub Actions workflow), all R-devel:
+  * `linux`
+  * `windows`
+  * `macos`
+  * `macos-arm64`
+  * `m1-san`
+* win-builder (R-devel)
+
+### R CMD check results
+<!-- TODO: confirm against the 0.2.2 check runs -->
+0 errors | 0 warnings | 0 notes
+
+(Locally, the PDF-manual check also reports an ERROR/WARNING, but that is solely a
+missing `inconsolata.sty` LaTeX font in the local environment, not a package issue.)
+
+### Downstream dependencies
+There are currently no reverse dependencies on CRAN.
+
 ## Comments for version 0.2.1
 + Updated the upstream `SUNDIALS` to version 7.9.0. The bundled library's CRAN-compliance patches (removal of `abort()`, `stdout`/`stderr` writes and `sprintf`) apply to the new sources unchanged, and the patch script's verification step confirms that no flagged call survives
 + New feature: the C-linkage API gains an `ARKODE` (ESDIRK) integrator alongside `CVODE`, as additive `sundialr_arkode_*` entry points with the same shape as the existing ones. The bundled `SUNDIALS` build therefore now also compiles `ARKODE`; its `stdout` references (a `NULL`-file fallback and three command-line "write parameters" options) are patched out like the rest, and the patch script's verification step now covers those sources too. Existing entry points and the `R` interface are unchanged. It offers a warm reinitialisation (`ARKodeReset`) and a cold one, `sundialr_arkode_reinit_cold()` (`ARKStepReInit`), which leaves a used handle exactly as a new one would be
