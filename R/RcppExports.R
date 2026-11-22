@@ -90,9 +90,11 @@ cvode <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.
 #'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
 #'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)}. Default is NULL
 #'@param sensitivity (Optional) Sensitivity right-hand side with signature \code{function(t, y, ydot, iS, yS, p)} returning the derivative \code{d(yS_iS)/dt = J \%*\% yS_iS + df/dp_iS} as a numeric vector of \code{length(y)}, where \code{iS} is the 1-based parameter index. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS
-#'@returns A Matrix. First column is the time-vector, the next y * p columns are sensitivities of y1 w.r.t all parameters, then y2 w.r.t all parameters etc. y is the state vector, p is the parameter vector
+#'@returns A matrix with \code{1 + length(IC) * length(Parameters)} columns. The first column is the time vector. The remaining columns hold the sensitivities in blocks of \code{length(IC)}, one block per parameter: the sensitivities of all states with respect to the first parameter, then of all states with respect to the second parameter, and so on. The sensitivity of state \code{j} with respect to parameter \code{k} is in column \code{1 + (k - 1) * length(IC) + j}.
+#'
+#' The state solution is attached as the attribute \code{"solution"}: a matrix with the same layout as the output of \code{\link{cvode}}, time in the first column followed by one column per state. Retrieve it with \code{attr(result, "solution")}. As with any attribute, subsetting the returned matrix drops it, so extract it first.
 #'@example /inst/examples/cvs_Roberts_dns.r
-cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001, SensType = "STG", ErrCon = 'F', jacobian = NULL, sensitivity = NULL) {
+cvodes <- function(time_vector, IC, input_function, Parameters, reltolerance = 0.0001, abstolerance = 0.0001, SensType = "STG", ErrCon = FALSE, jacobian = NULL, sensitivity = NULL) {
     .Call('_sundialr_cvodes', PACKAGE = 'sundialr', time_vector, IC, input_function, Parameters, reltolerance, abstolerance, SensType, ErrCon, jacobian, sensitivity)
 }
 

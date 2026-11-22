@@ -100,3 +100,63 @@ test_that("analytic sensitivity RHS agrees with finite-difference sensitivities"
   # relative agreement; sensitivities span many orders of magnitude
   expect_equal(ana, fd, tolerance = 1e-3)
 })
+
+# Two-state chain y1 -> y2 with two parameters, used by the tests below.
+# y1 = exp(-a t), y2 = a/(b - a) (exp(-a t) - exp(-b t)), so every state and
+# every sensitivity has a closed form.
+chain_rhs <- function(t, y, p) c(-p[1] * y[1], p[1] * y[1] - p[2] * y[2])
+chain_t   <- c(0, 0.5, 1, 2, 4)
+chain_y0  <- c(1, 0)
+chain_p   <- c(0.5, 0.2)
+
+chain_exact <- function(t, a, b) {
+  e_a <- exp(-a * t); e_b <- exp(-b * t)
+  y2  <- a / (b - a) * (e_a - e_b)
+  list(
+    y1 = e_a, y2 = y2,
+    dy1_da = -t * e_a,
+    dy1_db = 0 * t,
+    dy2_da = b / (b - a)^2 * (e_a - e_b) - a * t * e_a / (b - a),
+    dy2_db = -a / (b - a)^2 * (e_a - e_b) + a * t * e_b / (b - a)
+  )
+}
+
+test_that("cvodes runs with its default arguments", {
+  # the default ErrCon used to be the character 'F', which Rcpp refused to
+  # convert to a logical, so a call relying on the defaults always failed
+  expect_true(isFALSE(formals(cvodes)$ErrCon))
+  out <- cvodes(chain_t, chain_y0, chain_rhs, chain_p)
+  expect_equal(dim(out), c(length(chain_t), 1 + 2 * 2))
+})
+
+test_that("sensitivity columns are grouped by parameter, as documented", {
+  out <- cvodes(chain_t, chain_y0, chain_rhs, chain_p, 1e-10, 1e-12, ErrCon = TRUE)
+  ex  <- chain_exact(chain_t, chain_p[1], chain_p[2])
+
+  # no sensitivity RHS is supplied, so CVODES uses difference quotients whose
+  # increment scales with sqrt(rtol): accurate to ~1e-6 here, far tighter than
+  # needed to tell the four columns apart
+  expect_equal(out[, 1], chain_t)
+  # column 1 + (k - 1) * length(IC) + j holds d(y_j)/d(p_k)
+  expect_equal(out[, 2], ex$dy1_da, tolerance = 1e-4)
+  expect_equal(out[, 3], ex$dy2_da, tolerance = 1e-4)
+  expect_equal(out[, 4], ex$dy1_db, tolerance = 1e-4)
+  expect_equal(out[, 5], ex$dy2_db, tolerance = 1e-4)
+})
+
+test_that("the state solution is returned as the 'solution' attribute", {
+  out  <- cvodes(chain_t, chain_y0, chain_rhs, chain_p, 1e-10, 1e-12)
+  soln <- attr(out, "solution")
+  ex   <- chain_exact(chain_t, chain_p[1], chain_p[2])
+
+  expect_true(is.matrix(soln))
+  expect_equal(dim(soln), c(length(chain_t), 1 + length(chain_y0)))
+  expect_equal(soln[, 1], chain_t)
+  expect_equal(soln[1, -1], chain_y0)
+  expect_equal(soln[, 2], ex$y1, tolerance = 1e-6)
+  expect_equal(soln[, 3], ex$y2, tolerance = 1e-6)
+
+  # the same states cvode() computes
+  ref <- cvode(chain_t, chain_y0, chain_rhs, chain_p, 1e-10, 1e-12)
+  expect_equal(unname(soln), unname(ref), tolerance = 1e-6)
+})
