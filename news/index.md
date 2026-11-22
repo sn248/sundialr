@@ -19,6 +19,20 @@
   [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
   computes itself: exactly from `jacobian` when one is supplied,
   otherwise by a centred difference of the right-hand side along `yS`
+- **New feature**:
+  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
+  accepts `Events`, discontinuities such as bolus doses, in the same
+  three-column format as
+  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  (state index, time, value to add). The solver integrates to each
+  event, adds it, and restarts both the state and the sensitivity
+  integration from there, carrying the sensitivities across unchanged:
+  event amounts and times are fixed, not sensitivity parameters. Unlike
+  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md),
+  the result keeps one row per element of `time_vector`; an output time
+  at an event reports the state just after it. Events at the initial
+  time add to `IC`. It is the last argument and defaults to `NULL`, so
+  existing calls are unaffected
 - **New feature**: the names on `IC` now reach the user’s functions in
   every solver. The state vector `y` (and `ydot` in
   [`ida()`](http://sn248.github.io/sundialr/reference/ida.md), and
@@ -34,8 +48,21 @@
   character `'F'`, which `Rcpp` refuses to convert to a logical, so
   `cvodes(time_vector, IC, f, p)` stopped with “Not compatible with
   requested type: \[type=character; target=logical\]”. The default is
-  now `FALSE`, as documented. Calls that pass `ErrCon` explicitly are
-  unaffected
+  now `FALSE`, as documented
+- **Behaviour change**: `ErrCon = TRUE` in
+  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md) now
+  does what it says. The argument was validated but never passed to
+  `CVODES`, so the sensitivities were never included in the error test
+  whatever was asked, and `TRUE` gave exactly the same result as
+  `FALSE`. With it on, the sensitivities are now error-controlled, and
+  markedly more accurate at the same tolerances (about 30 times on a
+  test problem at `reltolerance = 1e-5`), at the cost of more steps.
+  Results change for any call passing `ErrCon = TRUE`. Very tight
+  tolerances combined with the difference-quotient sensitivities (no
+  `sensitivity` function) can now exhaust `CVODES`’ step limit, because
+  the difference quotients are too noisy to pass an error test near
+  `reltolerance = 1e-10`; loosen the tolerance, or supply `sensitivity`
+  (and `jacobian` when using `sensIC`). `ErrCon = FALSE` is unchanged
 - [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md) now
   returns the state solution as well as the sensitivities. It is
   attached to the returned matrix as the attribute `"solution"`, a

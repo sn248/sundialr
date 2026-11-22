@@ -138,6 +138,8 @@
 <li>
 <strong>New</strong>: <code>cvodes</code> computes sensitivities with respect to initial conditions, via the new <code>sensIC</code> argument</li>
 <li>
+<strong>New</strong>: <code>cvodes</code> accepts <code>Events</code> (doses), in the same format as <code>cvsolve</code>, and carries the sensitivities across them</li>
+<li>
 <strong>New</strong>: the names on <code>IC</code> now reach the user’s functions in every solver, so a right-hand side can index the state by name</li>
 <li>
 <code>cvodes</code> now returns the state solution as the attribute <code>"solution"</code>, and no longer fails when <code>ErrCon</code> is left at its default</li>

@@ -16,7 +16,8 @@ cvodes(
   ErrCon = FALSE,
   jacobian = NULL,
   sensitivity = NULL,
-  sensIC = NULL
+  sensIC = NULL,
+  Events = NULL
 )
 ```
 
@@ -56,7 +57,12 @@ cvodes(
 
 - ErrCon:
 
-  Error Control - allowed values are TRUE or FALSE (default)
+  Error Control - allowed values are TRUE or FALSE (default). When TRUE
+  the sensitivities are included in the local error test, which makes
+  them more accurate at the cost of more steps. With the
+  difference-quotient sensitivities (no `sensitivity` function) very
+  tight tolerances, near `reltolerance = 1e-10`, may then exhaust the
+  step limit; loosen them or supply `sensitivity`
 
 - jacobian:
 
@@ -86,14 +92,31 @@ cvodes(
   block holds `d(y)/d(IC[i])`. Default is NULL: sensitivities with
   respect to `Parameters` only
 
+- Events:
+
+  (Optional) Discontinuities in the solution, such as bolus doses, as a
+  data frame with exactly three columns (names ignored): the 1-based
+  index of the state, the time of the event, and the value to add to
+  that state at that time. This is the format of `Events` in
+  [`cvsolve`](http://sn248.github.io/sundialr/reference/cvsolve.md), and
+  the value is always added, including at the initial time, where it
+  adds to `IC`. The solver integrates up to each event, applies it and
+  restarts, carrying the sensitivities across unchanged: the event
+  amounts and times are fixed, not sensitivity parameters, so an event
+  moves the states but not their derivatives. Unlike `cvsolve`, the
+  result still has one row per element of `time_vector`; an output time
+  that coincides with an event reports the state just after the event.
+  Default is NULL
+
 ## Value
 
 A matrix with `1 + length(IC) * (length(Parameters) + length(sensIC))`
-columns. The first column is the time vector. The remaining columns hold
-the sensitivities in blocks of `length(IC)`, one block per parameter:
-the sensitivities of all states with respect to the first parameter,
-then of all states with respect to the second parameter, and so on. The
-sensitivity of state `j` with respect to parameter `k` is in column
+columns and one row per element of `time_vector`. The first column is
+the time vector. The remaining columns hold the sensitivities in blocks
+of `length(IC)`, one block per parameter: the sensitivities of all
+states with respect to the first parameter, then of all states with
+respect to the second parameter, and so on. The sensitivity of state `j`
+with respect to parameter `k` is in column
 `1 + (k - 1) * length(IC) + j`. The blocks for `sensIC` follow the
 parameter blocks, in the order given in `sensIC`, so they are numbered
 as if they were parameters `length(Parameters) + 1`,

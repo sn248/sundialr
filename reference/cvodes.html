@@ -54,7 +54,8 @@
 <span>  ErrCon <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  jacobian <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sensitivity <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  sensIC <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  sensIC <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Events <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -91,7 +92,7 @@
 
 
 <dt id="arg-errcon">ErrCon<a class="anchor" aria-label="anchor" href="#arg-errcon"></a></dt>
-<dd><p>Error Control - allowed values are TRUE or FALSE (default)</p></dd>
+<dd><p>Error Control - allowed values are TRUE or FALSE (default). When TRUE the sensitivities are included in the local error test, which makes them more accurate at the cost of more steps. With the difference-quotient sensitivities (no <code>sensitivity</code> function) very tight tolerances, near <code>reltolerance = 1e-10</code>, may then exhaust the step limit; loosen them or supply <code>sensitivity</code></p></dd>
 
 
 <dt id="arg-jacobian">jacobian<a class="anchor" aria-label="anchor" href="#arg-jacobian"></a></dt>
@@ -105,10 +106,14 @@
 <dt id="arg-sensic">sensIC<a class="anchor" aria-label="anchor" href="#arg-sensic"></a></dt>
 <dd><p>(Optional) States whose initial values are also sensitivity parameters, as 1-based indices into <code>IC</code> or as names of <code>IC</code>. Each adds one sensitivity, started at the unit vector for its state, so its block holds <code>d(y)/d(IC[i])</code>. Default is NULL: sensitivities with respect to <code>Parameters</code> only</p></dd>
 
+
+<dt id="arg-events">Events<a class="anchor" aria-label="anchor" href="#arg-events"></a></dt>
+<dd><p>(Optional) Discontinuities in the solution, such as bolus doses, as a data frame with exactly three columns (names ignored): the 1-based index of the state, the time of the event, and the value to add to that state at that time. This is the format of <code>Events</code> in <code><a href="cvsolve.html">cvsolve</a></code>, and the value is always added, including at the initial time, where it adds to <code>IC</code>. The solver integrates up to each event, applies it and restarts, carrying the sensitivities across unchanged: the event amounts and times are fixed, not sensitivity parameters, so an event moves the states but not their derivatives. Unlike <code>cvsolve</code>, the result still has one row per element of <code>time_vector</code>; an output time that coincides with an event reports the state just after the event. Default is NULL</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A matrix with <code>1 + length(IC) * (length(Parameters) + length(sensIC))</code> columns. The first column is the time vector. The remaining columns hold the sensitivities in blocks of <code>length(IC)</code>, one block per parameter: the sensitivities of all states with respect to the first parameter, then of all states with respect to the second parameter, and so on. The sensitivity of state <code>j</code> with respect to parameter <code>k</code> is in column <code>1 + (k - 1) * length(IC) + j</code>. The blocks for <code>sensIC</code> follow the parameter blocks, in the order given in <code>sensIC</code>, so they are numbered as if they were parameters <code>length(Parameters) + 1</code>, <code>length(Parameters) + 2</code>, and so on.</p>
+    <p>A matrix with <code>1 + length(IC) * (length(Parameters) + length(sensIC))</code> columns and one row per element of <code>time_vector</code>. The first column is the time vector. The remaining columns hold the sensitivities in blocks of <code>length(IC)</code>, one block per parameter: the sensitivities of all states with respect to the first parameter, then of all states with respect to the second parameter, and so on. The sensitivity of state <code>j</code> with respect to parameter <code>k</code> is in column <code>1 + (k - 1) * length(IC) + j</code>. The blocks for <code>sensIC</code> follow the parameter blocks, in the order given in <code>sensIC</code>, so they are numbered as if they were parameters <code>length(Parameters) + 1</code>, <code>length(Parameters) + 2</code>, and so on.</p>
 <p>The state solution is attached as the attribute <code>"solution"</code>: a matrix with the same layout as the output of <code><a href="cvode.html">cvode</a></code>, time in the first column followed by one column per state. Retrieve it with <code>attr(result, "solution")</code>. As with any attribute, subsetting the returned matrix drops it, so extract it first.</p>
     </div>
 
