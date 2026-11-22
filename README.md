@@ -122,6 +122,11 @@ vignette.
 
 ## What's new?
 
+### Version 0.2.2
++ **New**: `cvodes` computes sensitivities with respect to initial conditions, via the new `sensIC` argument
++ **New**: the names on `IC` now reach the user's functions in every solver, so a right-hand side can index the state by name
++ `cvodes` now returns the state solution as the attribute `"solution"`, and no longer fails when `ErrCon` is left at its default
+
 ### Version 0.2.1
 + Updated the underlying `SUNDIALS` library to v7.9.0 (Sep 2026)
 + **New**: an ESDIRK integrator from `ARKODE` in the C API, as `sundialr_arkode_*` entry points that mirror the `CVODE` ones, so packages calling the C API can choose a one-step implicit Runge-Kutta method instead of BDF
