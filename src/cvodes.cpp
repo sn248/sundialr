@@ -70,6 +70,9 @@ struct rhs_func_sens{
   // sensitivity, and its first params.length() entries are copied into
   // params before every call to R; see sync_params().
   const double *p_sens;
+  // Scaling factors, one per sensitivity (the pbar of CVodeSetSensParams).
+  // Read by ic_sens_rhs() to size its difference-quotient increment.
+  const double *pbar;
 };
 
 // Make the parameter vector handed to R reflect any perturbation CVODES has
@@ -176,11 +179,80 @@ static int jac_cvodes(sunrealtype t, N_Vector y, N_Vector fy, SUNMatrix JAC,
     });
 }
 
+// Calls the user's RHS at (t, y) and checks the length of what comes back.
+// Used by ic_sens_rhs(); the caller has already run sync_params().
+static NumericVector call_rhs(struct rhs_func_sens *data, sunrealtype t,
+                              const NumericVector &y) {
+  NumericVector f = data->rhs_eqn(t, y, data->params);
+  if (f.length() != y.length()) {
+    stop("The RHS function must return a vector of the same length as the state vector: expected %d, got %d",
+         (int)y.length(), (int)f.length());
+  }
+  return f;
+}
+
+// d(yS)/dt for a sensitivity with respect to an initial condition, which is
+// J %*% yS: an initial value enters no right-hand side, so there is no df/dp
+// term. sundialr computes this itself rather than asking the user's
+// `sensitivity` function, so that function only ever sees parameter indices
+// and one written for parameters alone keeps working when sensIC is added.
+//
+// With a user Jacobian the product is exact. Without one it is the centred
+// directional difference (f(y + d yS) - f(y - d yS)) / (2 d), the scheme
+// CVODES' own difference quotients use by default (CV_CENTERED), with the
+// increment chosen as CVODES chooses it in cvSensRhs1InternalDQ:
+//   d = 1 / max(||yS||_WRMS, 1 / (sqrt(max(rtol, uround)) * pbar))
+// The weights are those of ewt() below, inlined because it is defined later.
+static void ic_sens_rhs(struct rhs_func_sens *data, sunrealtype t,
+                        const NumericVector &y1, const sunrealtype *yS_ptr,
+                        int iS, sunrealtype *ySdot_ptr) {
+  int n = y1.length();
+
+  if (data->jac_eqn != R_NilValue) {
+    Function jac_fun(data->jac_eqn);
+    NumericMatrix J = jac_fun(t, y1, data->params);
+    if (J.nrow() != n || J.ncol() != n) {
+      stop("The Jacobian function must return a %d-by-%d matrix; got %d-by-%d",
+           n, n, J.nrow(), J.ncol());
+    }
+    for (int i = 0; i < n; i++) {
+      double s = 0.0;
+      for (int j = 0; j < n; j++) s += J(i, j) * yS_ptr[j];
+      ySdot_ptr[i] = s;
+    }
+    return;
+  }
+
+  const double *atol = data->atol.begin();
+  double wrms = 0.0;
+  for (int i = 0; i < n; i++) {
+    double w = 1.0 / (data->rtol * std::fabs(y1[i]) + atol[i]);
+    wrms += (yS_ptr[i] * w) * (yS_ptr[i] * w);
+  }
+  wrms = std::sqrt(wrms / n);
+  double Delta  = std::sqrt(std::max(data->rtol, (double)SUN_UNIT_ROUNDOFF));
+  double rdelta = 1.0 / (Delta * data->pbar[iS]);
+  double d      = 1.0 / std::max(wrms, rdelta);
+
+  NumericVector yp(n), ym(n);
+  for (int i = 0; i < n; i++) {
+    yp[i] = y1[i] + d * yS_ptr[i];
+    ym[i] = y1[i] - d * yS_ptr[i];
+  }
+  set_state_names(yp, data->y_names);
+  set_state_names(ym, data->y_names);
+  NumericVector fp = call_rhs(data, t, yp);
+  NumericVector fm = call_rhs(data, t, ym);
+  for (int i = 0; i < n; i++) ySdot_ptr[i] = (fp[i] - fm[i]) / (2.0 * d);
+}
+
 // Sensitivity right-hand side, used when the caller supplies `sensitivity`.
-// CVODES calls this once per parameter (a CVSensRhs1Fn); it delegates to the R
-// function stored in data->sens_eqn, whose signature is
+// CVODES calls this once per sensitivity (a CVSensRhs1Fn). For a parameter it
+// delegates to the R function stored in data->sens_eqn, whose signature is
 //   sens_rhs(t, y, ydot, iS, yS, p)  ->  numeric vector of length(y)
 // returning d(yS_iS)/dt = J %*% yS_iS + df/dp_iS. iS is passed 1-based to R.
+// The sensitivities past the parameters are the sensIC ones, which never reach
+// the R function: ic_sens_rhs() computes them.
 // Called by SUNDIALS from its own C code, so the body runs under
 // sundials_callback_guard; see the note on rhs_function in rhs_func.cpp.
 static int sens_rhs1_cvodes(int Ns, sunrealtype t, N_Vector y, N_Vector ydot,
@@ -191,6 +263,17 @@ static int sens_rhs1_cvodes(int Ns, sunrealtype t, N_Vector y, N_Vector ydot,
     return sundials_callback_guard(data->err, [&]() -> int {
 
       int n = NV_LENGTH_S(y);
+
+      if (iS >= data->params.length()) {
+        NumericVector y1(n);
+        sunrealtype *y_ptr = N_VGetArrayPointer(y);
+        for (int i = 0; i < n; i++) y1[i] = y_ptr[i];
+        set_state_names(y1, data->y_names);
+        sync_params(data);
+        ic_sens_rhs(data, t, y1, N_VGetArrayPointer(yS), iS,
+                    N_VGetArrayPointer(ySdot));
+        return 0;
+      }
 
       NumericVector y1(n), ydot1(n), yS1(n);
       sunrealtype *y_ptr    = N_VGetArrayPointer(y);
@@ -231,7 +314,7 @@ static int sens_rhs1_cvodes(int Ns, sunrealtype t, N_Vector y, N_Vector ydot,
 //'@param SensType Sensitivity Type - allowed values are "STG" (for Staggered, default) or "SIM" (for Simultaneous)
 //'@param ErrCon Error Control - allowed values are TRUE or FALSE (default)
 //'@param jacobian (Optional) Jacobian of the RHS with signature \code{function(t, y, p)}. Default is NULL
-//'@param sensitivity (Optional) Sensitivity right-hand side with signature \code{function(t, y, ydot, iS, yS, p)} returning the derivative \code{d(yS_iS)/dt = J \%*\% yS_iS + df/dp_iS} as a numeric vector of \code{length(y)}, where \code{iS} is the 1-based parameter index. With \code{sensIC}, \code{iS} runs past \code{length(Parameters)}: \code{iS = length(Parameters) + m} is the sensitivity with respect to the initial value of the \code{m}-th state listed in \code{sensIC}, which has no \code{df/dp} term, so the function must return \code{J \%*\% yS} alone. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS
+//'@param sensitivity (Optional) Sensitivity right-hand side with signature \code{function(t, y, ydot, iS, yS, p)} returning the derivative \code{d(yS_iS)/dt = J \%*\% yS_iS + df/dp_iS} as a numeric vector of \code{length(y)}, where \code{iS} is the 1-based parameter index. The function is only ever called for parameters, so \code{iS} never exceeds \code{length(Parameters)}, with or without \code{sensIC}: the sensitivities with respect to initial conditions satisfy \code{d(yS)/dt = J \%*\% yS}, which the solver computes itself, exactly from \code{jacobian} when one is supplied and otherwise by a centred difference of \code{input_function} along \code{yS}. Supply \code{jacobian} as well when the initial-condition sensitivities need to be exact. Default is NULL, in which case the sensitivity equations are approximated by finite differences of the RHS
 //'@param sensIC (Optional) States whose initial values are also sensitivity parameters, as 1-based indices into \code{IC} or as names of \code{IC}. Each adds one sensitivity, started at the unit vector for its state, so its block holds \code{d(y)/d(IC[i])}. Default is NULL: sensitivities with respect to \code{Parameters} only
 //'@returns A matrix with \code{1 + length(IC) * (length(Parameters) + length(sensIC))} columns. The first column is the time vector. The remaining columns hold the sensitivities in blocks of \code{length(IC)}, one block per parameter: the sensitivities of all states with respect to the first parameter, then of all states with respect to the second parameter, and so on. The sensitivity of state \code{j} with respect to parameter \code{k} is in column \code{1 + (k - 1) * length(IC) + j}. The blocks for \code{sensIC} follow the parameter blocks, in the order given in \code{sensIC}, so they are numbered as if they were parameters \code{length(Parameters) + 1}, \code{length(Parameters) + 2}, and so on.
 //'
@@ -448,7 +531,8 @@ NumericMatrix cvodes(NumericVector time_vector, NumericVector IC,
                                           sens_sexp,
                                           &sun_err,
                                           Rf_getAttrib(IC, R_NamesSymbol),
-                                          p_cvodes.begin()};
+                                          p_cvodes.begin(),
+                                          pbar.begin()};
 
   // setting the user_data in rhs function
   flag = CVodeSetUserData(cvode_mem, (void*)&my_rhs_function);

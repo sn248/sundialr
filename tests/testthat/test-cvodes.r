@@ -171,22 +171,27 @@ chain_ic_exact <- function(t, a, b) {
   cbind(e_a, a / (b - a) * (e_a - e_b), 0 * t, e_b)
 }
 chain_y0_ic <- c(1, 0.3)
-# analytic sensitivity RHS: parameters first, then the two IC sensitivities,
-# which have no df/dp term
+# Analytic sensitivity RHS written for the parameters alone, in the usual
+# J %*% yS + df/dp[, iS] form. It indexes past the end of dfdp for any iS
+# beyond length(p), so the stopifnot pins that sundialr never passes it an
+# IC sensitivity: those are computed by the solver itself.
+chain_jac  <- function(t, y, p) matrix(c(-p[1], p[1], 0, -p[2]), 2)
 chain_sens <- function(t, y, ydot, iS, yS, p) {
-  J <- matrix(c(-p[1], p[1], 0, -p[2]), 2)
-  dfdp <- switch(iS, c(-y[1], y[1]), c(0, -y[2]), c(0, 0), c(0, 0))
-  as.vector(J %*% yS) + dfdp
+  stopifnot(iS >= 1, iS <= length(p))
+  dfdp <- cbind(c(-y[1], y[1]), c(0, -y[2]))
+  as.vector(chain_jac(t, y, p) %*% yS) + dfdp[, iS]
 }
 
 test_that("sensIC appends IC sensitivity blocks after the parameter blocks", {
+  # with a Jacobian, the IC sensitivities are J %*% yS exactly
   out <- cvodes(chain_t, chain_y0_ic, chain_rhs, chain_p, 1e-10, 1e-12,
-                ErrCon = TRUE, sensitivity = chain_sens, sensIC = 1:2)
+                ErrCon = TRUE, jacobian = chain_jac, sensitivity = chain_sens,
+                sensIC = 1:2)
   expect_equal(ncol(out), 1 + 2 * (2 + 2))
 
   # the parameter blocks are unaffected by the extra sensitivities
   ref <- cvodes(chain_t, chain_y0_ic, chain_rhs, chain_p, 1e-10, 1e-12,
-                ErrCon = TRUE, sensitivity = chain_sens)
+                ErrCon = TRUE, jacobian = chain_jac, sensitivity = chain_sens)
   expect_equal(out[, 1:5], ref[, 1:5], tolerance = 1e-8)
 
   # yS(0) is the unit vector of each listed state
@@ -194,6 +199,25 @@ test_that("sensIC appends IC sensitivity blocks after the parameter blocks", {
   expect_equal(unname(out[, 6:9]),
                unname(chain_ic_exact(chain_t, chain_p[1], chain_p[2])),
                tolerance = 1e-7)
+})
+
+test_that("a parameters-only sensitivity function never sees an IC index", {
+  seen_iS <- integer(0)
+  sens <- function(t, y, ydot, iS, yS, p) {
+    seen_iS <<- union(seen_iS, iS)
+    chain_sens(t, y, ydot, iS, yS, p)
+  }
+  # without a Jacobian the IC sensitivities come from a centred difference of
+  # the RHS along yS, so they are only as accurate as that difference
+  out <- cvodes(chain_t, chain_y0_ic, chain_rhs, chain_p, 1e-10, 1e-12,
+                ErrCon = TRUE, sensitivity = sens, sensIC = 1:2)
+  expect_setequal(seen_iS, 1:2)
+  expect_equal(unname(out[, 6:9]),
+               unname(chain_ic_exact(chain_t, chain_p[1], chain_p[2])),
+               tolerance = 1e-4)
+  # the parameter blocks still come from the user's function, exactly
+  ex <- chain_exact(chain_t, chain_p[1], chain_p[2])
+  expect_equal(out[, 2], ex$dy1_da, tolerance = 1e-7)
 })
 
 test_that("sensIC works with the difference-quotient sensitivity RHS", {
