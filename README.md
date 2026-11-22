@@ -124,6 +124,7 @@ vignette.
 
 ### Version 0.2.2
 + **New**: `cvodes` computes sensitivities with respect to initial conditions, via the new `sensIC` argument
++ **New**: `cvodes` accepts `Events` (doses), in the same format as `cvsolve`, and carries the sensitivities across them
 + **New**: the names on `IC` now reach the user's functions in every solver, so a right-hand side can index the state by name
 + `cvodes` now returns the state solution as the attribute `"solution"`, and no longer fails when `ErrCon` is left at its default
 

@@ -4,6 +4,8 @@
 + Fixed `cvodes()` failing whenever `ErrCon` was left at its default. The default was the character `'F'`, which `Rcpp` refuses to convert to a logical, so a call relying on the default stopped with a type error. The default is now `FALSE`, as documented
 + `cvodes()` now also returns the state solution, attached to the returned matrix as the attribute `"solution"`. The returned sensitivity matrix itself is unchanged
 + Corrected the documented column order of the `cvodes()` result. The behaviour is unchanged, and tests now pin the layout against closed-form sensitivities
++ New feature: `cvodes()` accepts `Events` (fixed doses) in the same format as `cvsolve()`, restarting the state and sensitivity integration at each one and carrying the sensitivities across unchanged. It is the last argument and defaults to `NULL`, so existing calls are unaffected
++ Behaviour change: `ErrCon = TRUE` in `cvodes()` was validated but never passed to `CVODES`, so it had no effect. It now includes the sensitivities in the error test, so results change for calls that pass it. `ErrCon = FALSE`, the default, is unchanged
 + The bundled `SUNDIALS` (7.9.0), its CRAN-compliance patches and the C API are unchanged from 0.2.1
 
 ### Test environments
