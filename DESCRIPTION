@@ -2,7 +2,7 @@ Package: sundialr
 Type: Package
 Title: An Interface to 'SUNDIALS' Ordinary Differential Equation (ODE) Solvers
 Version: 0.2.2
-Date: 2026-10-17
+Date: 2026-11-22
 Authors@R: c(
     person("Satyaprakash", "Nayak", email = "satyaprakash.nayak@gmail.com", role = c("aut", "cre","cph"), comment = c(ORCID = "0000-0001-7225-1317")),
     person("Lawrence Livermore National Security", role =  c("cph")),
@@ -10,9 +10,9 @@ Authors@R: c(
     person("University of Maryland Baltimore County", role =  c("cph"))
     )
 Maintainer: Satyaprakash Nayak <satyaprakash.nayak@gmail.com>
-URL: https://github.com/sn248/sundialr, http://sn248.github.io/sundialr/
+URL: https://github.com/sn248/sundialr, https://sn248.github.io/sundialr/
 BugReports: https://github.com/sn248/sundialr/issues
-Description: Provides a way to call the functions in 'SUNDIALS' C ODE solving library (<https://computing.llnl.gov/projects/sundials>). Currently the serial version of ODE solver, 'CVODE', sensitivity calculator 'CVODES' and differential algebraic solver 'IDA' from the 'SUNDIALS' library are implemented. The package requires ODE to be written as an 'R' or 'Rcpp' function and does not require the 'SUNDIALS' library to be installed on the local machine.
+Description: Provides a way to call the functions in the 'SUNDIALS' C ODE solving library (<https://computing.llnl.gov/projects/sundials>). Currently the serial versions of the ODE solver 'CVODE', the sensitivity calculator 'CVODES' and the differential algebraic equation solver 'IDA' from the 'SUNDIALS' library are implemented, together with a wrapper around 'CVODE' for systems with discontinuities such as repeated doses. The ODE is written as an 'R' or 'Rcpp' function, and the 'SUNDIALS' library does not need to be installed on the local machine. A C-level interface to 'CVODE' and 'ARKODE' is also registered for use from the compiled code of other packages.
 License: BSD_3_clause + file LICENSE
 Copyright: file COPYRIGHTS
 Imports:

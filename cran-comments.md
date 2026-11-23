@@ -6,11 +6,12 @@
 + Corrected the documented column order of the `cvodes()` result. The behaviour is unchanged, and tests now pin the layout against closed-form sensitivities
 + New feature: `cvodes()` accepts `Events` (fixed doses) in the same format as `cvsolve()`, restarting the state and sensitivity integration at each one and carrying the sensitivities across unchanged. It is the last argument and defaults to `NULL`, so existing calls are unaffected
 + Behaviour change: `ErrCon = TRUE` in `cvodes()` was validated but never passed to `CVODES`, so it had no effect. It now includes the sensitivities in the error test, so results change for calls that pass it. `ErrCon = FALSE`, the default, is unchanged
++ The `Description` field now also mentions `cvsolve()` and the C-level interface, which it predated, and the package website URL uses `https`
 + The bundled `SUNDIALS` (7.9.0), its CRAN-compliance patches and the C API are unchanged from 0.2.1
 
 ### Test environments
-<!-- TODO: fill in once the 0.2.2 checks have been run -->
 * local Ubuntu 24.04, R 4.6.1
+* GitHub Actions: Ubuntu (R-devel, R-release, R-oldrel-1), macOS (R-release), Windows (R-release)
 * R-hub (via the package's GitHub Actions workflow), all R-devel:
   * `linux`
   * `windows`
@@ -20,11 +21,10 @@
 * win-builder (R-devel)
 
 ### R CMD check results
-<!-- TODO: confirm against the 0.2.2 check runs -->
 0 errors | 0 warnings | 0 notes
 
-(Locally, the PDF-manual check also reports an ERROR/WARNING, but that is solely a
-missing `inconsolata.sty` LaTeX font in the local environment, not a package issue.)
+(Locally, the only NOTEs are a non-portable `-mno-omit-leaf-frame-pointer` flag that
+comes from the local `R` build configuration, and HTML Tidy not being installed.)
 
 ### Downstream dependencies
 There are currently no reverse dependencies on CRAN.
