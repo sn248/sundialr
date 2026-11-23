@@ -98,8 +98,8 @@ cvodes(
   data frame with exactly three columns (names ignored): the 1-based
   index of the state, the time of the event, and the value to add to
   that state at that time. This is the format of `Events` in
-  [`cvsolve`](http://sn248.github.io/sundialr/reference/cvsolve.md), and
-  the value is always added, including at the initial time, where it
+  [`cvsolve`](https://sn248.github.io/sundialr/reference/cvsolve.md),
+  and the value is always added, including at the initial time, where it
   adds to `IC`. The solver integrates up to each event, applies it and
   restarts, carrying the sensitivities across unchanged: the event
   amounts and times are fixed, not sensitivity parameters, so an event
@@ -124,7 +124,7 @@ as if they were parameters `length(Parameters) + 1`,
 
 The state solution is attached as the attribute `"solution"`: a matrix
 with the same layout as the output of
-[`cvode`](http://sn248.github.io/sundialr/reference/cvode.md), time in
+[`cvode`](https://sn248.github.io/sundialr/reference/cvode.md), time in
 the first column followed by one column per state. Retrieve it with
 `attr(result, "solution")`. As with any attribute, subsetting the
 returned matrix drops it, so extract it first.

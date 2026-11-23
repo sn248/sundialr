@@ -3,7 +3,7 @@
 ## sundialr v0.2.2
 
 - **New feature**:
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md)
   computes sensitivities with respect to initial conditions. The new
   argument `sensIC` lists the states whose initial values are
   sensitivity parameters, as 1-based indices into `IC` or as names of
@@ -16,41 +16,41 @@
   parameters, so one written for `Parameters` alone keeps working when
   `sensIC` is added. The IC sensitivities satisfy `d(yS)/dt = J %*% yS`,
   which
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md)
   computes itself: exactly from `jacobian` when one is supplied,
   otherwise by a centred difference of the right-hand side along `yS`
 - **New feature**:
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md)
   accepts `Events`, discontinuities such as bolus doses, in the same
   three-column format as
-  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md)
   (state index, time, value to add). The solver integrates to each
   event, adds it, and restarts both the state and the sensitivity
   integration from there, carrying the sensitivities across unchanged:
   event amounts and times are fixed, not sensitivity parameters. Unlike
-  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md),
+  [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md),
   the result keeps one row per element of `time_vector`; an output time
   at an event reports the state just after it. Events at the initial
   time add to `IC`. It is the last argument and defaults to `NULL`, so
   existing calls are unaffected
 - **New feature**: the names on `IC` now reach the user’s functions in
   every solver. The state vector `y` (and `ydot` in
-  [`ida()`](http://sn248.github.io/sundialr/reference/ida.md), and
+  [`ida()`](https://sn248.github.io/sundialr/reference/ida.md), and
   `ydot`/`yS` in a
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md)
   sensitivity function) used to arrive unnamed, because each callback
   copies the state into a fresh vector, so a right-hand side written by
   name (`y["A"]`) needed an adapter. Names on `Parameters` were already
   passed through and still are. Unnamed inputs behave exactly as before
 - Fixed
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md)
   failing whenever `ErrCon` was left at its default. The default was the
   character `'F'`, which `Rcpp` refuses to convert to a logical, so
   `cvodes(time_vector, IC, f, p)` stopped with “Not compatible with
   requested type: \[type=character; target=logical\]”. The default is
   now `FALSE`, as documented
 - **Behaviour change**: `ErrCon = TRUE` in
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md) now
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md) now
   does what it says. The argument was validated but never passed to
   `CVODES`, so the sensitivities were never included in the error test
   whatever was asked, and `TRUE` gave exactly the same result as
@@ -63,23 +63,23 @@
   the difference quotients are too noisy to pass an error test near
   `reltolerance = 1e-10`; loosen the tolerance, or supply `sensitivity`
   (and `jacobian` when using `sensIC`). `ErrCon = FALSE` is unchanged
-- [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md) now
+- [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md) now
   returns the state solution as well as the sensitivities. It is
   attached to the returned matrix as the attribute `"solution"`, a
   matrix laid out like the output of
-  [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md) (time,
-  then one column per state), so the states no longer need a second
-  solve. The returned sensitivity matrix itself is unchanged, so
+  [`cvode()`](https://sn248.github.io/sundialr/reference/cvode.md)
+  (time, then one column per state), so the states no longer need a
+  second solve. The returned sensitivity matrix itself is unchanged, so
   existing code keeps working. Subsetting the matrix drops the
   attribute, so take it with `attr(result, "solution")` first
 - Corrected the documented column order of
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md). The
-  help page said the sensitivity columns held y1 with respect to every
-  parameter, then y2, and so on; they have always held every state with
-  respect to the first parameter, then every state with respect to the
-  second. The sensitivity of state `j` with respect to parameter `k` is
-  in column `1 + (k - 1) * length(IC) + j`. The behaviour is unchanged,
-  and tests now pin it against closed-form sensitivities
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md).
+  The help page said the sensitivity columns held y1 with respect to
+  every parameter, then y2, and so on; they have always held every state
+  with respect to the first parameter, then every state with respect to
+  the second. The sensitivity of state `j` with respect to parameter `k`
+  is in column `1 + (k - 1) * length(IC) + j`. The behaviour is
+  unchanged, and tests now pin it against closed-form sensitivities
 
 ## sundialr v0.2.1
 
@@ -171,21 +171,21 @@ CRAN release: 2026-10-18
 CRAN release: 2026-08-07
 
 - **New feature**:
-  [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md),
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md),
-  [`ida()`](http://sn248.github.io/sundialr/reference/ida.md) and
-  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  [`cvode()`](https://sn248.github.io/sundialr/reference/cvode.md),
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md),
+  [`ida()`](https://sn248.github.io/sundialr/reference/ida.md) and
+  [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md)
   accept an optional `jacobian` argument, an `R` function giving the
   Jacobian of the system analytically. When it is not supplied, which
   remains the default, `SUNDIALS` approximates the Jacobian by finite
   differences as before, so existing code is unaffected. For
-  [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md),
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md) and
-  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  [`cvode()`](https://sn248.github.io/sundialr/reference/cvode.md),
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md) and
+  [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md)
   the function has the same signature as the system itself,
   `function(t, y, p)`, and returns an n-by-n matrix whose `[i, j]` entry
   is `d(ydot[i])/d(y[j])`. For
-  [`ida()`](http://sn248.github.io/sundialr/reference/ida.md) it is
+  [`ida()`](https://sn248.github.io/sundialr/reference/ida.md) it is
   `function(t, y, ydot, cj, p)` and returns `dF/dy + cj * dF/dydot`,
   `cj` being a scalar supplied by the solver. Supplying the Jacobian is
   usually faster and more accurate on stiff systems
@@ -206,7 +206,7 @@ CRAN release: 2026-08-07
   embedded as an integrator inside another package’s own solve loop; the
   existing `R` interface is unchanged
 - **New feature**:
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md)
   accepts an optional `sensitivity` argument, an `R` function giving the
   sensitivity right-hand side analytically. When it is not supplied,
   which remains the default, `SUNDIALS` approximates the sensitivity
@@ -228,7 +228,7 @@ CRAN release: 2026-08-07
 - Added `tools/strip_sundials_tarball.sh` to reproducibly strip the
   bundled SUNDIALS tarball of examples, docs, tests and benchmarks
 - **Behaviour change**: an `Events` record at time 0 in
-  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md)
   now adds its value to the initial condition instead of replacing it,
   so the `IC` supplied by the caller is always the starting state and t
   = 0 behaves like every other event time. Several events at t = 0 on
@@ -239,42 +239,42 @@ CRAN release: 2026-08-07
   the old numbers, subtract the initial condition from the value of any
   event at time 0
 - Fixed
-  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md)
   treating the initial time as 0 rather than as the first element of
   `time_vector`. An event at the initial time is now applied to the
   initial conditions as intended; previously, if the time vector began
   anywhere other than 0, such an event was silently dropped and its
   value lost with no error or warning
-- [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+- [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md)
   now rejects an event time outside the range of `time_vector` instead
   of accepting it. An event before the first output time cannot be
   applied, since the solve starts there; it previously produced a row of
   zeros in the returned matrix and discarded the event. Event times that
   are `NA` are rejected for the same reason
-- [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md) no
-  longer returns rows of zeros. A record that does not advance the
+- [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md)
+  no longer returns rows of zeros. A record that does not advance the
   solution — one at the initial time, or one sharing a time with the
   record before it — was skipped without storing anything, leaving that
   row filled with zeros instead of the state
 - Fixed a bug in
-  [`ida()`](http://sn248.github.io/sundialr/reference/ida.md) and
-  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  [`ida()`](https://sn248.github.io/sundialr/reference/ida.md) and
+  [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md)
   where a scalar `abstolerance` (the default) allocated a length-1
   tolerance vector instead of one entry per state. On systems with more
   than one state this read and wrote past the end of that vector, and
   the solvers failed immediately with a corrector convergence error at
   the initial time. Passing `abstolerance` as a vector of the same
   length as `IC` was unaffected, as were
-  [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md) and
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md)
-- [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md),
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md),
-  [`ida()`](http://sn248.github.io/sundialr/reference/ida.md) and
-  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md) no
-  longer leak memory when a call ends in an error. The SUNDIALS objects
-  behind each solve are now released by a scope guard instead of by free
-  calls at the end of the function, so they are also freed when an error
-  unwinds the stack. Previously a failed call leaked everything
+  [`cvode()`](https://sn248.github.io/sundialr/reference/cvode.md) and
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md)
+- [`cvode()`](https://sn248.github.io/sundialr/reference/cvode.md),
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md),
+  [`ida()`](https://sn248.github.io/sundialr/reference/ida.md) and
+  [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md)
+  no longer leak memory when a call ends in an error. The SUNDIALS
+  objects behind each solve are now released by a scope guard instead of
+  by free calls at the end of the function, so they are also freed when
+  an error unwinds the stack. Previously a failed call leaked everything
   allocated up to the point of the error, which accumulated when solvers
   were called repeatedly (for example from an optimiser or a fitting
   loop). This includes errors raised by SUNDIALS itself, such as a
@@ -282,10 +282,10 @@ CRAN release: 2026-08-07
   skipped all cleanup, and were the most common source of the leak,
   since a solver that fails to converge is exactly the case a user is
   likely to retry in a loop. Separately,
-  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+  [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md)
   never freed its constraints vector on any path, including successful
   ones
-- [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md)
+- [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md)
   now rejects an invalid state index in the first column of `Events`.
   The index is converted to a position in the state vector and used to
   subscript it directly, so a value outside `1:length(IC)` wrote outside
@@ -307,8 +307,8 @@ CRAN release: 2026-08-07
   shape, was copied out element by element regardless and the solve
   continued on uninitialised memory
 - Added test coverage for
-  [`ida()`](http://sn248.github.io/sundialr/reference/ida.md) and
-  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md),
+  [`ida()`](https://sn248.github.io/sundialr/reference/ida.md) and
+  [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md),
   which previously had none, including a check that a scalar and an
   equivalent vector `abstolerance` give identical results, and for the
   callback error handling above
@@ -318,15 +318,15 @@ CRAN release: 2026-08-07
   of a generic description. Five call sites also reported the wrong
   name, which is now corrected: `CVodeSetLinearSolver` was reported as
   `CVDlsSetLinearSolver` (a name removed in SUNDIALS 4) in
-  [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md) and
-  [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md),
+  [`cvode()`](https://sn248.github.io/sundialr/reference/cvode.md) and
+  [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md),
   `CVodeWFtolerances` as `CVodeSetEwtFn` and `CVodeSensInit1` as
   `CVodeSensInit` in
-  [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md), and
-  `IDASetUserData` and `IDASolve` as their
-  [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md)
+  [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md),
+  and `IDASetUserData` and `IDASolve` as their
+  [`cvode()`](https://sn248.github.io/sundialr/reference/cvode.md)
   equivalents in
-  [`ida()`](http://sn248.github.io/sundialr/reference/ida.md)
+  [`ida()`](https://sn248.github.io/sundialr/reference/ida.md)
 
 ## sundialr v0.1.7
 

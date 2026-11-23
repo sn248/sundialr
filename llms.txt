@@ -101,8 +101,8 @@ soln <- cvode(time_vec, IC, ODE_R, params, reltol, abstol, jacobian = JAC_R)
 The system and the Jacobian can also be written in `C++` with `Rcpp`
 instead of in `R`, which avoids the cost of calling back into `R` at
 every step. The examples in
-[`?cvode`](http://sn248.github.io/sundialr/reference/cvode.md) show both
-forms.
+[`?cvode`](https://sn248.github.io/sundialr/reference/cvode.md) show
+both forms.
 
 ## The other solvers
 
@@ -113,14 +113,14 @@ parameter estimation and identifiability work need. The sensitivity
 equations can be solved either staggered or simultaneously with the
 state equations, and can be included in or excluded from the error
 control. See
-[`?cvodes`](http://sn248.github.io/sundialr/reference/cvodes.md).
+[`?cvodes`](https://sn248.github.io/sundialr/reference/cvodes.md).
 
 **`ida`** solves differential-algebraic equations, systems that mix
 differential equations with algebraic constraints and so cannot be
 written as `y' = f(t, y)`. The system is given as a residual
 `F(t, y, y', p) = 0`, and an initial value of `y'` consistent with the
 constraints at the initial time is required alongside the initial values
-of `y`. See [`?ida`](http://sn248.github.io/sundialr/reference/ida.md).
+of `y`. See [`?ida`](https://sn248.github.io/sundialr/reference/ida.md).
 
 **`cvsolve`** is a convenience wrapper around `cvode` for systems whose
 solution has discontinuities. Discontinuities are described by a data
@@ -129,7 +129,7 @@ that time; the solver integrates up to each one, applies it, and
 restarts. The motivating case is simulating repeated bolus doses of a
 drug in clinical pharmacokinetics, where each dose is an instantaneous
 addition to a compartment. See
-[`?cvsolve`](http://sn248.github.io/sundialr/reference/cvsolve.md) and
+[`?cvsolve`](https://sn248.github.io/sundialr/reference/cvsolve.md) and
 the vignette.
 
 ## What’s new?
@@ -166,7 +166,7 @@ the vignette.
   approximate it by finite differences. It defaults to `NULL`, so
   existing code is unaffected. See the quick start above for `cvode`;
   `ida` takes a different form, documented in
-  [`?ida`](http://sn248.github.io/sundialr/reference/ida.md)
+  [`?ida`](https://sn248.github.io/sundialr/reference/ida.md)
 - Updated the underlying `SUNDIALS` library to v7.8.0 (Jun 2026)
 - **Behaviour change**: in `cvsolve`, an event at time 0 now adds its
   value to the initial conditions rather than replacing them, so the
@@ -184,19 +184,19 @@ the vignette.
 - Added test coverage for `ida` and `cvsolve`
 
 For the full list, and for earlier versions, see
-[NEWS.md](http://sn248.github.io/sundialr/NEWS.md).
+[NEWS.md](https://sn248.github.io/sundialr/NEWS.md).
 
 # Package index
 
 ## All functions
 
-- [`cvode()`](http://sn248.github.io/sundialr/reference/cvode.md) :
+- [`cvode()`](https://sn248.github.io/sundialr/reference/cvode.md) :
   cvode
-- [`cvodes()`](http://sn248.github.io/sundialr/reference/cvodes.md) :
+- [`cvodes()`](https://sn248.github.io/sundialr/reference/cvodes.md) :
   cvodes
-- [`cvsolve()`](http://sn248.github.io/sundialr/reference/cvsolve.md) :
+- [`cvsolve()`](https://sn248.github.io/sundialr/reference/cvsolve.md) :
   cvsolve
-- [`ida()`](http://sn248.github.io/sundialr/reference/ida.md) : ida
+- [`ida()`](https://sn248.github.io/sundialr/reference/ida.md) : ida
 
 # Articles
 
@@ -204,4 +204,4 @@ For the full list, and for earlier versions, see
 
 - [sundialr - An Interface to 'SUNDIALS' Ordinary Differential Equation
   (ODE)
-  Solvers](http://sn248.github.io/sundialr/articles/my-vignette.md):
+  Solvers](https://sn248.github.io/sundialr/articles/my-vignette.md):
